@@ -1,0 +1,344 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="booking-steps-container">
+    <div class="container">
+        <!-- プログレスバー -->
+        <div class="progress-container">
+            <div class="progress-bar">
+                <div class="step active">
+                    <div class="step-number">1</div>
+                    <div class="step-label">サービス選択</div>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-label">日時選択</div>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-label">お客様情報</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ステップ1: サービス選択 -->
+        <div class="step-content">
+            <h1>ステップ1: ご希望のサービスをお選びください</h1>
+            <p class="step-description">
+                GRACE SPAでご利用いただけるサービスの中から、ご希望のものをお選びください。
+            </p>
+
+            <form method="post" class="service-selection-form">
+                {% csrf_token %}
+                
+                {% if form.errors %}
+                    <div class="alert alert-error">
+                        {{ form.errors }}
+                    </div>
+                {% endif %}
+
+                <div class="services-grid">
+                    {% for service in services %}
+                    <div class="service-option">
+                        <input type="radio" name="service" value="{{ service.id }}" id="service_{{ service.id }}" class="service-radio">
+                        <label for="service_{{ service.id }}" class="service-card">
+                            <div class="service-header">
+                                <h3>{{ service.name }}</h3>
+                                <div class="service-price">¥{{ service.price|floatformat:0 }}</div>
+                            </div>
+                            <div class="service-details">
+                                <div class="service-duration">
+                                    <span class="icon">⏰</span>
+                                    {{ service.duration_minutes }}分
+                                </div>
+                                {% if service.description %}
+                                <div class="service-description">
+                                    {{ service.description }}
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="select-indicator">
+                                <span class="checkmark">✓</span>
+                            </div>
+                        </label>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="form-actions">
+                    <a href="{% url 'website:home' %}" class="btn btn-secondary">戻る</a>
+                    <button type="submit" class="btn btn-primary">次へ進む</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .booking-steps-container {
+        padding: 2rem 0;
+        min-height: 80vh;
+        background: #faf8f5;
+    }
+
+    /* プログレスバー */
+    .progress-container {
+        margin-bottom: 3rem;
+    }
+
+    .progress-bar {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 3rem;
+        position: relative;
+    }
+
+    .progress-bar::before {
+        content: '';
+        position: absolute;
+        top: 25px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 60%;
+        height: 2px;
+        background: #e0e0e0;
+        z-index: 1;
+    }
+
+    .step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+        z-index: 2;
+    }
+
+    .step-number {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: #e0e0e0;
+        color: #666;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 1.2rem;
+        margin-bottom: 0.5rem;
+        transition: all 0.3s;
+    }
+
+    .step.active .step-number {
+        background: #8b7355;
+        color: white;
+    }
+
+    .step-label {
+        font-size: 0.9rem;
+        color: #666;
+        text-align: center;
+    }
+
+    .step.active .step-label {
+        color: #8b7355;
+        font-weight: bold;
+    }
+
+    /* メインコンテンツ */
+    .step-content {
+        background: white;
+        padding: 3rem;
+        border-radius: 15px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    .step-content h1 {
+        color: #8b7355;
+        text-align: center;
+        margin-bottom: 1rem;
+        font-size: 2rem;
+    }
+
+    .step-description {
+        text-align: center;
+        color: #666;
+        margin-bottom: 3rem;
+        font-size: 1.1rem;
+    }
+
+    /* サービス選択 */
+    .services-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 3rem;
+    }
+
+    .service-option {
+        position: relative;
+    }
+
+    .service-radio {
+        display: none;
+    }
+
+    .service-card {
+        display: block;
+        background: #f8f5f0;
+        border: 3px solid transparent;
+        border-radius: 15px;
+        padding: 2rem;
+        cursor: pointer;
+        transition: all 0.3s;
+        position: relative;
+        height: 100%;
+    }
+
+    .service-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        border-color: #d4c4a8;
+    }
+
+    .service-radio:checked + .service-card {
+        border-color: #8b7355;
+        background: linear-gradient(135deg, #fff9e6 0%, #ffeaa7 100%);
+    }
+
+    .service-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .service-header h3 {
+        color: #8b7355;
+        margin: 0;
+        font-size: 1.4rem;
+    }
+
+    .service-price {
+        font-size: 1.8rem;
+        font-weight: bold;
+        color: #a68b5b;
+    }
+
+    .service-details {
+        color: #555;
+    }
+
+    .service-duration {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+        font-weight: bold;
+        color: #8b7355;
+    }
+
+    .service-duration .icon {
+        font-size: 1.2rem;
+    }
+
+    .service-description {
+        line-height: 1.6;
+        color: #666;
+    }
+
+    .select-indicator {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: #8b7355;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transform: scale(0);
+        transition: all 0.3s;
+    }
+
+    .service-radio:checked + .service-card .select-indicator {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    /* フォームアクション */
+    .form-actions {
+        text-align: center;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .btn {
+        padding: 1rem 2rem;
+        border: none;
+        border-radius: 50px;
+        font-size: 1.1rem;
+        text-decoration: none;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: inline-block;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #8b7355 0%, #a68b5b 100%);
+        color: white;
+    }
+
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+    }
+
+    .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+
+    .alert {
+        padding: 1rem;
+        margin-bottom: 2rem;
+        border-radius: 5px;
+    }
+
+    .alert-error {
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+    }
+
+    /* レスポンシブ */
+    @media (max-width: 768px) {
+        .progress-bar {
+            gap: 1.5rem;
+        }
+
+        .step-content {
+            padding: 2rem 1rem;
+        }
+
+        .services-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .form-actions {
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .btn {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}

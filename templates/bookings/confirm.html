@@ -1,0 +1,316 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="confirm-container">
+    <div class="container">
+        <div class="confirm-card">
+            <div class="confirm-header">
+                <h1>予約内容のご確認</h1>
+                <p>以下の内容でお間違いございませんか？</p>
+            </div>
+
+            <div class="booking-details">
+                <h2>予約内容</h2>
+                
+                <div class="detail-section">
+                    <h3>サービス情報</h3>
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <span class="label">サービス名:</span>
+                            <span class="value">{{ service.name }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="label">施術時間:</span>
+                            <span class="value">{{ service.duration_minutes }}分</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="label">料金:</span>
+                            <span class="value price">¥{{ service.price|floatformat:0 }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <h3>予約日時・施術者</h3>
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <span class="label">ご予約日:</span>
+                            <span class="value">{{ booking_date|date:"Y年m月d日 (D)" }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="label">ご予約時間:</span>
+                            <span class="value">{{ booking_time }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="label">施術者:</span>
+                            <span class="value">
+                                {% if therapist %}
+                                    {{ therapist.display_name }}
+                                {% else %}
+                                    指名なし（どなたでも）
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <h3>お客様情報</h3>
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <span class="label">お名前:</span>
+                            <span class="value">{{ customer_name }} 様</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="label">メールアドレス:</span>
+                            <span class="value">{{ customer_email }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="label">電話番号:</span>
+                            <span class="value">{{ customer_phone }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                {% if notes %}
+                <div class="detail-section">
+                    <h3>ご要望・備考</h3>
+                    <div class="notes-content">
+                        {{ notes|linebreaks }}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="important-notice">
+                <h3>重要なお知らせ</h3>
+                <ul>
+                    <li>ご予約は仮申込みとなります。スタッフが確認後、確定のご連絡をいたします</li>
+                    <li>確認メールをお送りしますので、必ずご確認ください</li>
+                    <li>当店は完全予約制です。ご予約時間の5分前にお越しください</li>
+                    <li>10分以上の遅刻をされた場合、足湯サービスができない場合があります</li>
+                    <li>当日キャンセル・無断キャンセルはキャンセル料が発生する場合があります</li>
+                </ul>
+            </div>
+
+            <form method="post" class="confirm-form">
+                {% csrf_token %}
+                <div class="form-actions">
+                    <a href="{% url 'bookings:booking_step3' %}" class="btn btn-secondary">戻って修正</a>
+                    <button type="submit" class="btn btn-primary btn-large">この内容で予約申込みする</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .confirm-container {
+        padding: 2rem 0;
+        min-height: 80vh;
+        background: #faf8f5;
+    }
+
+    .confirm-card {
+        background: white;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 3rem;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+
+    .confirm-header {
+        text-align: center;
+        margin-bottom: 3rem;
+        padding-bottom: 2rem;
+        border-bottom: 3px solid #8b7355;
+    }
+
+    .confirm-header h1 {
+        color: #8b7355;
+        font-size: 2.2rem;
+        margin-bottom: 1rem;
+    }
+
+    .confirm-header p {
+        font-size: 1.1rem;
+        color: #666;
+    }
+
+    .booking-details h2 {
+        color: #8b7355;
+        margin-bottom: 2rem;
+        text-align: center;
+        font-size: 1.8rem;
+    }
+
+    .detail-section {
+        margin-bottom: 2.5rem;
+        padding: 1.5rem;
+        background: #f8f5f0;
+        border-radius: 10px;
+        border-left: 4px solid #8b7355;
+    }
+
+    .detail-section h3 {
+        color: #8b7355;
+        margin-bottom: 1rem;
+        font-size: 1.2rem;
+    }
+
+    .detail-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+    }
+
+    .detail-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+
+    .detail-item .label {
+        font-weight: bold;
+        color: #666;
+        min-width: 120px;
+    }
+
+    .detail-item .value {
+        font-weight: bold;
+        color: #333;
+        text-align: right;
+    }
+
+    .detail-item .value.price {
+        font-size: 1.3rem;
+        color: #8b7355;
+    }
+
+    .notes-content {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 8px;
+        line-height: 1.6;
+        color: #555;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+
+    .important-notice {
+        background: #fff3cd;
+        border: 2px solid #ffc107;
+        border-radius: 10px;
+        padding: 2rem;
+        margin: 3rem 0;
+    }
+
+    .important-notice h3 {
+        color: #856404;
+        margin-bottom: 1.5rem;
+        font-size: 1.3rem;
+        text-align: center;
+    }
+
+    .important-notice ul {
+        color: #856404;
+        padding-left: 1.5rem;
+        line-height: 1.8;
+    }
+
+    .important-notice li {
+        margin-bottom: 0.8rem;
+    }
+
+    .form-actions {
+        text-align: center;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 3rem;
+        gap: 1rem;
+    }
+
+    .btn {
+        padding: 1rem 2rem;
+        border: none;
+        border-radius: 50px;
+        font-size: 1.1rem;
+        text-decoration: none;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: inline-block;
+        text-align: center;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #8b7355 0%, #a68b5b 100%);
+        color: white;
+        flex: 1;
+        max-width: 400px;
+    }
+
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+        min-width: 150px;
+    }
+
+    .btn-large {
+        padding: 1.5rem 3rem;
+        font-size: 1.2rem;
+        font-weight: bold;
+    }
+
+    .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        text-decoration: none;
+        color: white;
+    }
+
+    /* レスポンシブ */
+    @media (max-width: 768px) {
+        .confirm-card {
+            padding: 2rem 1rem;
+            margin: 1rem;
+        }
+
+        .confirm-header h1 {
+            font-size: 1.8rem;
+        }
+
+        .detail-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .detail-item {
+            flex-direction: column;
+            text-align: center;
+            gap: 0.5rem;
+        }
+
+        .detail-item .label {
+            min-width: auto;
+        }
+
+        .detail-item .value {
+            text-align: center;
+        }
+
+        .form-actions {
+            flex-direction: column;
+        }
+
+        .btn {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}

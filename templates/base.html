@@ -100,7 +100,7 @@
                     <li><a href="{% url 'website:therapists' %}">セラピスト紹介</a></li>
                     <li><a href="#">メニュー</a></li>
                     <li><a href="#">アクセス</a></li>
-                    <li><a href="{% url 'bookings:booking_create' %}" class="nav-booking-btn">予約する</a></li>
+                    <li><a href="{% url 'bookings:booking_step1' %}" class="nav-booking-btn">予約する</a></li>
                     {% if user.is_staff %}
                         <li><a href="{% url 'dashboard:home' %}" style="color: #f4e4bc;">管理画面</a></li>
                     {% endif %}

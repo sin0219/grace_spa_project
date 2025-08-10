@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Service, Customer, Booking, TimeSlot, Therapist
+from .models import Service, Customer, Booking, Therapist, BusinessHours, BookingSettings
 
 @admin.register(Therapist)
 class TherapistAdmin(admin.ModelAdmin):
@@ -11,7 +11,7 @@ class TherapistAdmin(admin.ModelAdmin):
     
     fieldsets = (
         ('基本情報', {
-            'fields': ('name', 'display_name', 'photo')
+            'fields': ('name', 'display_name')  # photo は一時的にコメントアウト
         }),
         ('プロフィール', {
             'fields': ('introduction', 'specialties', 'experience_years')
@@ -60,9 +60,25 @@ class BookingAdmin(admin.ModelAdmin):
     )
     readonly_fields = ['created_at', 'updated_at']
 
-@admin.register(TimeSlot)
-class TimeSlotAdmin(admin.ModelAdmin):
-    list_display = ['weekday', 'start_time', 'end_time', 'is_available']
-    list_filter = ['weekday', 'is_available']
-    list_editable = ['is_available']
-    ordering = ['weekday', 'start_time']
+@admin.register(BusinessHours)
+class BusinessHoursAdmin(admin.ModelAdmin):
+    list_display = ['weekday_display', 'is_open', 'open_time', 'close_time', 'last_booking_time']
+    list_filter = ['is_open']
+    list_editable = ['is_open', 'open_time', 'close_time', 'last_booking_time']
+    ordering = ['weekday']
+    
+    def weekday_display(self, obj):
+        return dict(BusinessHours.WEEKDAY_CHOICES)[obj.weekday]
+    weekday_display.short_description = '曜日'
+
+@admin.register(BookingSettings)
+class BookingSettingsAdmin(admin.ModelAdmin):
+    list_display = ['booking_interval_minutes', 'advance_booking_days', 'default_treatment_duration', 'updated_at']
+    
+    def has_add_permission(self, request):
+        # 設定は1つだけしか作成できないようにする
+        return not BookingSettings.objects.exists()
+    
+    def has_delete_permission(self, request, obj=None):
+        # 設定は削除できないようにする
+        return False    

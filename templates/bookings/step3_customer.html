@@ -1,0 +1,418 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="booking-steps-container">
+    <div class="container">
+        <!-- プログレスバー -->
+        <div class="progress-container">
+            <div class="progress-bar">
+                <div class="step completed">
+                    <div class="step-number">✓</div>
+                    <div class="step-label">サービス選択</div>
+                </div>
+                <div class="step completed">
+                    <div class="step-number">✓</div>
+                    <div class="step-label">日時選択</div>
+                </div>
+                <div class="step active">
+                    <div class="step-number">3</div>
+                    <div class="step-label">お客様情報</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ステップ3: お客様情報入力 -->
+        <div class="step-content">
+            <h1>ステップ3: お客様情報のご入力</h1>
+            
+            <!-- 予約内容確認 -->
+            <div class="booking-summary">
+                <h3>ご予約内容</h3>
+                <div class="summary-grid">
+                    <div class="summary-item">
+                        <span class="label">サービス:</span>
+                        <span class="value">{{ service.name }}</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="label">施術者:</span>
+                        <span class="value">
+                            {% if therapist %}
+                                {{ therapist.display_name }}
+                            {% else %}
+                                指名なし（どなたでも）
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="label">日時:</span>
+                        <span class="value">{{ booking_date|date:"Y年m月d日 (D)" }} {{ booking_time }}</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="label">料金:</span>
+                        <span class="value price">¥{{ service.price|floatformat:0 }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <form method="post" class="customer-form">
+                {% csrf_token %}
+                
+                {% if form.errors %}
+                    <div class="alert alert-error">
+                        {% for field, errors in form.errors.items %}
+                            {% for error in errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <div class="form-section">
+                    <h3>お客様情報</h3>
+                    
+                    <div class="form-group">
+                        <label for="{{ form.customer_name.id_for_label }}">{{ form.customer_name.label }}</label>
+                        {{ form.customer_name }}
+                        {% if form.customer_name.errors %}
+                            <div class="field-error">{{ form.customer_name.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="{{ form.customer_email.id_for_label }}">{{ form.customer_email.label }}</label>
+                            {{ form.customer_email }}
+                            <small class="form-help">予約確認メールをお送りします</small>
+                            {% if form.customer_email.errors %}
+                                <div class="field-error">{{ form.customer_email.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="{{ form.customer_phone.id_for_label }}">{{ form.customer_phone.label }}</label>
+                            {{ form.customer_phone }}
+                            <small class="form-help">緊急時の連絡先として使用します</small>
+                            {% if form.customer_phone.errors %}
+                                <div class="field-error">{{ form.customer_phone.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- セキュリティ注意事項 -->
+                <div class="security-notice">
+                    <h4>🔒 個人情報の取り扱いについて</h4>
+                    <ul>
+                        <li>お客様の個人情報は予約管理・連絡のためのみに使用いたします</li>
+                        <li>第三者に提供することは一切ございません</li>
+                        <li>同一メールアドレス・電話番号での1日の予約は2件までとさせていただいております</li>
+                        <li>不正な予約と判断される場合、お断りする場合があります</li>
+                    </ul>
+                </div>
+
+                <div class="form-actions">
+                    <a href="{% url 'bookings:booking_step2' %}" class="btn btn-secondary">戻る</a>
+                    <button type="submit" class="btn btn-primary">予約内容を確認する</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .booking-steps-container {
+        padding: 2rem 0;
+        min-height: 80vh;
+        background: #faf8f5;
+    }
+
+    /* プログレスバー */
+    .progress-container {
+        margin-bottom: 3rem;
+    }
+
+    .progress-bar {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 3rem;
+        position: relative;
+    }
+
+    .progress-bar::before {
+        content: '';
+        position: absolute;
+        top: 25px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 60%;
+        height: 2px;
+        background: #28a745;
+        z-index: 1;
+    }
+
+    .step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+        z-index: 2;
+    }
+
+    .step-number {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: #e0e0e0;
+        color: #666;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 1.2rem;
+        margin-bottom: 0.5rem;
+        transition: all 0.3s;
+    }
+
+    .step.active .step-number {
+        background: #8b7355;
+        color: white;
+    }
+
+    .step.completed .step-number {
+        background: #28a745;
+        color: white;
+    }
+
+    .step-label {
+        font-size: 0.9rem;
+        color: #666;
+        text-align: center;
+    }
+
+    .step.active .step-label,
+    .step.completed .step-label {
+        color: #8b7355;
+        font-weight: bold;
+    }
+
+    /* メインコンテンツ */
+    .step-content {
+        background: white;
+        padding: 3rem;
+        border-radius: 15px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    .step-content h1 {
+        color: #8b7355;
+        text-align: center;
+        margin-bottom: 2rem;
+        font-size: 2rem;
+    }
+
+    /* 予約内容確認 */
+    .booking-summary {
+        background: #f8f5f0;
+        padding: 2rem;
+        border-radius: 10px;
+        margin-bottom: 3rem;
+        border-left: 4px solid #8b7355;
+    }
+
+    .booking-summary h3 {
+        color: #8b7355;
+        margin-bottom: 1.5rem;
+        font-size: 1.3rem;
+    }
+
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+    }
+
+    .summary-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.8rem;
+        background: white;
+        border-radius: 8px;
+    }
+
+    .summary-item .label {
+        font-weight: bold;
+        color: #666;
+    }
+
+    .summary-item .value {
+        font-weight: bold;
+        color: #333;
+    }
+
+    .summary-item .value.price {
+        font-size: 1.2rem;
+        color: #8b7355;
+    }
+
+    /* フォーム */
+    .form-section {
+        margin-bottom: 3rem;
+    }
+
+    .form-section h3 {
+        color: #8b7355;
+        margin-bottom: 1.5rem;
+        border-bottom: 2px solid #f4e4bc;
+        padding-bottom: 0.5rem;
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+        display: block;
+        font-weight: bold;
+        color: #555;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 1rem;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: border-color 0.3s;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #8b7355;
+        box-shadow: 0 0 5px rgba(139, 115, 85, 0.3);
+    }
+
+    .form-help {
+        display: block;
+        font-size: 0.9rem;
+        color: #666;
+        margin-top: 0.5rem;
+    }
+
+    .field-error {
+        color: #dc3545;
+        font-size: 0.9rem;
+        margin-top: 0.5rem;
+    }
+
+    /* セキュリティ注意事項 */
+    .security-notice {
+        background: #e8f4f8;
+        border: 2px solid #17a2b8;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 3rem;
+    }
+
+    .security-notice h4 {
+        color: #0c5460;
+        margin-bottom: 1rem;
+    }
+
+    .security-notice ul {
+        color: #0c5460;
+        padding-left: 1.5rem;
+        line-height: 1.6;
+    }
+
+    .security-notice li {
+        margin-bottom: 0.5rem;
+    }
+
+    /* アラート */
+    .alert {
+        padding: 1rem;
+        margin-bottom: 2rem;
+        border-radius: 8px;
+    }
+
+    .alert-error {
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+    }
+
+    /* フォームアクション */
+    .form-actions {
+        text-align: center;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 2rem;
+    }
+
+    .btn {
+        padding: 1rem 2rem;
+        border: none;
+        border-radius: 50px;
+        font-size: 1.1rem;
+        text-decoration: none;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: inline-block;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #8b7355 0%, #a68b5b 100%);
+        color: white;
+    }
+
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+    }
+
+    .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+
+    /* レスポンシブ */
+    @media (max-width: 768px) {
+        .progress-bar {
+            gap: 1.5rem;
+        }
+
+        .step-content {
+            padding: 2rem 1rem;
+        }
+
+        .summary-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+
+        .form-actions {
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .btn {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}

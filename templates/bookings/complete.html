@@ -1,0 +1,433 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="complete-container">
+    <div class="container">
+        <div class="complete-card">
+            <div class="success-animation">
+                <div class="success-icon">
+                    <div class="success-circle">
+                        <div class="success-checkmark">✓</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="complete-content">
+                <h1>予約申込み完了！</h1>
+                <p class="complete-message">
+                    ありがとうございます！<br>
+                    予約申込みを受け付けました。
+                </p>
+
+                <div class="next-steps">
+                    <h2>今後の流れ</h2>
+                    <div class="steps-timeline">
+                        <div class="timeline-step">
+                            <div class="step-icon">📧</div>
+                            <div class="step-content">
+                                <h3>1. 確認メール送信</h3>
+                                <p>数分以内に予約内容の確認メールをお送りします</p>
+                            </div>
+                        </div>
+                        <div class="timeline-step">
+                            <div class="step-icon">👀</div>
+                            <div class="step-content">
+                                <h3>2. スタッフ確認</h3>
+                                <p>スタッフが予約内容を確認いたします</p>
+                            </div>
+                        </div>
+                        <div class="timeline-step">
+                            <div class="step-icon">✅</div>
+                            <div class="step-content">
+                                <h3>3. 予約確定通知</h3>
+                                <p>確認完了後、予約確定のご連絡をいたします</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="important-reminders">
+                    <h2>ご来店時の注意事項</h2>
+                    <div class="reminder-cards">
+                        <div class="reminder-card">
+                            <div class="reminder-icon">🕐</div>
+                            <h3>ご来店時間</h3>
+                            <p>ご予約時間の5分前にお越しください</p>
+                        </div>
+                        <div class="reminder-card">
+                            <div class="reminder-icon">⚠️</div>
+                            <h3>遅刻について</h3>
+                            <p>10分以上の遅刻は足湯サービスができない場合があります</p>
+                        </div>
+                        <div class="reminder-card">
+                            <div class="reminder-icon">💧</div>
+                            <h3>足湯サービス</h3>
+                            <p>施術前に無料の足湯をご利用いただけます</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="contact-info">
+                    <h2>お問い合わせ</h2>
+                    <p>ご不明な点がございましたら、お気軽にお問い合わせください。</p>
+                    <div class="contact-details">
+                        <div class="contact-item">
+                            <span class="contact-label">電話:</span>
+                            <span class="contact-value">090-1234-5678</span>
+                        </div>
+                        <div class="contact-item">
+                            <span class="contact-label">メール:</span>
+                            <span class="contact-value">info@gracespa.com</span>
+                        </div>
+                        <div class="contact-item">
+                            <span class="contact-label">営業時間:</span>
+                            <span class="contact-value">月〜土 9:00-20:00（日曜定休）</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="actions">
+                    <a href="{% url 'website:home' %}" class="btn btn-primary">ホームに戻る</a>
+                    <a href="{% url 'bookings:booking_step1' %}" class="btn btn-secondary">別の予約をする</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .complete-container {
+        padding: 2rem 0;
+        min-height: 90vh;
+        background: linear-gradient(135deg, #faf8f5 0%, #f0ebe3 100%);
+        display: flex;
+        align-items: center;
+    }
+
+    .complete-card {
+        background: white;
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 3rem;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+        text-align: center;
+    }
+
+    /* 成功アニメーション */
+    .success-animation {
+        margin-bottom: 2rem;
+    }
+
+    .success-icon {
+        display: inline-block;
+        animation: bounceIn 0.8s ease-out;
+    }
+
+    .success-circle {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+        box-shadow: 0 10px 30px rgba(40, 167, 69, 0.3);
+    }
+
+    .success-checkmark {
+        font-size: 4rem;
+        color: white;
+        font-weight: bold;
+        animation: checkmarkAppear 0.5s ease-out 0.3s both;
+    }
+
+    @keyframes bounceIn {
+        0% {
+            transform: scale(0);
+            opacity: 0;
+        }
+        50% {
+            transform: scale(1.1);
+        }
+        100% {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+
+    @keyframes checkmarkAppear {
+        0% {
+            transform: scale(0);
+            opacity: 0;
+        }
+        100% {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+
+    /* メインコンテンツ */
+    .complete-content h1 {
+        color: #8b7355;
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+        animation: fadeInUp 0.6s ease-out 0.2s both;
+    }
+
+    .complete-message {
+        font-size: 1.3rem;
+        color: #666;
+        margin-bottom: 3rem;
+        line-height: 1.6;
+        animation: fadeInUp 0.6s ease-out 0.4s both;
+    }
+
+    @keyframes fadeInUp {
+        0% {
+            transform: translateY(30px);
+            opacity: 0;
+        }
+        100% {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    /* タイムライン */
+    .next-steps {
+        margin-bottom: 3rem;
+        text-align: left;
+    }
+
+    .next-steps h2 {
+        color: #8b7355;
+        text-align: center;
+        margin-bottom: 2rem;
+        font-size: 1.8rem;
+    }
+
+    .steps-timeline {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .timeline-step {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        padding: 1.5rem;
+        background: #f8f5f0;
+        border-radius: 15px;
+        border-left: 4px solid #8b7355;
+        transition: transform 0.3s;
+    }
+
+    .timeline-step:hover {
+        transform: translateX(5px);
+    }
+
+    .step-icon {
+        font-size: 2.5rem;
+        min-width: 60px;
+        text-align: center;
+    }
+
+    .step-content h3 {
+        color: #8b7355;
+        margin-bottom: 0.5rem;
+        font-size: 1.2rem;
+    }
+
+    .step-content p {
+        color: #666;
+        margin: 0;
+        line-height: 1.5;
+    }
+
+    /* リマインダーカード */
+    .important-reminders {
+        margin-bottom: 3rem;
+    }
+
+    .important-reminders h2 {
+        color: #8b7355;
+        text-align: center;
+        margin-bottom: 2rem;
+        font-size: 1.8rem;
+    }
+
+    .reminder-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .reminder-card {
+        background: #fff3cd;
+        border: 2px solid #ffc107;
+        border-radius: 15px;
+        padding: 2rem;
+        text-align: center;
+        transition: transform 0.3s;
+    }
+
+    .reminder-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .reminder-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+
+    .reminder-card h3 {
+        color: #856404;
+        margin-bottom: 1rem;
+        font-size: 1.1rem;
+    }
+
+    .reminder-card p {
+        color: #856404;
+        margin: 0;
+        line-height: 1.5;
+    }
+
+    /* 連絡先情報 */
+    .contact-info {
+        margin-bottom: 3rem;
+        padding: 2rem;
+        background: #e8f4f8;
+        border-radius: 15px;
+        border: 2px solid #17a2b8;
+    }
+
+    .contact-info h2 {
+        color: #0c5460;
+        margin-bottom: 1rem;
+        font-size: 1.5rem;
+    }
+
+    .contact-info p {
+        color: #0c5460;
+        margin-bottom: 1.5rem;
+    }
+
+    .contact-details {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+    }
+
+    .contact-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        background: white;
+        border-radius: 8px;
+    }
+
+    .contact-label {
+        font-weight: bold;
+        color: #0c5460;
+    }
+
+    .contact-value {
+        color: #0c5460;
+    }
+
+    /* アクションボタン */
+    .actions {
+        display: flex;
+        justify-content: center;
+        gap: 1.5rem;
+        margin-top: 3rem;
+    }
+
+    .btn {
+        padding: 1rem 2.5rem;
+        border: none;
+        border-radius: 50px;
+        font-size: 1.1rem;
+        text-decoration: none;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: inline-block;
+        font-weight: bold;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #8b7355 0%, #a68b5b 100%);
+        color: white;
+    }
+
+    .btn-secondary {
+        background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+        color: white;
+    }
+
+    .btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        text-decoration: none;
+        color: white;
+    }
+
+    /* レスポンシブ */
+    @media (max-width: 768px) {
+        .complete-card {
+            padding: 2rem 1rem;
+            margin: 1rem;
+        }
+
+        .complete-content h1 {
+            font-size: 2rem;
+        }
+
+        .complete-message {
+            font-size: 1.1rem;
+        }
+
+        .success-circle {
+            width: 100px;
+            height: 100px;
+        }
+
+        .success-checkmark {
+            font-size: 3rem;
+        }
+
+        .timeline-step {
+            flex-direction: column;
+            text-align: center;
+        }
+
+        .reminder-cards {
+            grid-template-columns: 1fr;
+        }
+
+        .contact-details {
+            grid-template-columns: 1fr;
+        }
+
+        .contact-item {
+            flex-direction: column;
+            gap: 0.5rem;
+            text-align: center;
+        }
+
+        .actions {
+            flex-direction: column;
+        }
+
+        .btn {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}

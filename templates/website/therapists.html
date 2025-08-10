@@ -60,7 +60,7 @@
                         
                         <!-- 予約ボタン -->
                         <div class="therapist-actions">
-                            <a href="{% url 'bookings:booking_create' %}?therapist={{ therapist.id }}" class="btn-book-therapist">
+                            <a href="{% url 'bookings:booking_step1' %}?therapist={{ therapist.id }}" class="btn-book-therapist">
                                 {{ therapist.display_name }}さんを指名予約
                             </a>
                         </div>
@@ -73,14 +73,14 @@
             <div class="general-booking">
                 <h3>施術者を指定せずに予約する</h3>
                 <p>特にご希望の施術者がない場合は、こちらからご予約ください。</p>
-                <a href="{% url 'bookings:booking_create' %}" class="btn-general-booking">施術者指定なしで予約</a>
+                <a href="{% url 'bookings:booking_step1' %}" class="btn-general-booking">施術者指定なしで予約</a>
             </div>
             
         {% else %}
             <div class="no-therapists">
                 <h2>施術者情報準備中</h2>
                 <p>現在、施術者の詳細情報を準備しております。しばらくお待ちください。</p>
-                <a href="{% url 'bookings:booking_create' %}" class="btn-general-booking">ご予約はこちら</a>
+                <a href="{% url 'bookings:booking_step1' %}" class="btn-general-booking">ご予約はこちら</a>
             </div>
         {% endif %}
     </div>
