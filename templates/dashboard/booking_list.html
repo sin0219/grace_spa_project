@@ -1,0 +1,159 @@
+{% extends 'dashboard/base_dashboard.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}予約一覧{% endblock %}
+
+{% block content %}
+<!-- フィルター -->
+<div class="card">
+    <div class="card-header">
+        <h3>検索・フィルター</h3>
+    </div>
+    <div class="card-body">
+        <form method="get" style="display: flex; gap: 1rem; align-items: end;">
+            <div class="form-group" style="margin-bottom: 0;">
+                <label for="status">ステータス</label>
+                <select name="status" id="status" class="form-control" style="width: 150px;">
+                    <option value="">全て</option>
+                    {% for value, label in status_choices %}
+                        <option value="{{ value }}" {% if current_status == value %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <label for="date">日付</label>
+                <input type="date" name="date" id="date" value="{{ current_date }}" class="form-control" style="width: 150px;">
+            </div>
+            <button type="submit" class="btn btn-primary">検索</button>
+            <a href="{% url 'dashboard:booking_list' %}" class="btn btn-secondary">リセット</a>
+        </form>
+    </div>
+</div>
+
+<!-- 予約一覧 -->
+<div class="card">
+    <div class="card-header">
+        <h3>予約一覧 ({{ bookings.count }}件)</h3>
+    </div>
+    <div class="card-body">
+        {% if bookings %}
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>予約日時</th>
+                        <th>お客様情報</th>
+                        <th>サービス</th>
+                        <th>料金</th>
+                        <th>ステータス</th>
+                        <th>申込日</th>
+                        <th>アクション</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for booking in bookings %}
+                    <tr>
+                        <td>
+                            <strong>{{ booking.booking_date|date:"Y/m/d (D)" }}</strong><br>
+                            {{ booking.booking_time }}
+                        </td>
+                        <td>
+                            <strong>{{ booking.customer.name }}</strong><br>
+                            <small>{{ booking.customer.email }}</small><br>
+                            <small>{{ booking.customer.phone }}</small>
+                        </td>
+                        <td>{{ booking.service.name }}</td>
+                        <td>¥{{ booking.service.price|floatformat:0 }}</td>
+                        <td>
+                            {% if booking.status == 'pending' %}
+                                <span class="badge badge-pending">申込中</span>
+                            {% elif booking.status == 'confirmed' %}
+                                <span class="badge badge-confirmed">確定</span>
+                            {% elif booking.status == 'completed' %}
+                                <span class="badge badge-completed">完了</span>
+                            {% elif booking.status == 'cancelled' %}
+                                <span class="badge badge-cancelled">キャンセル</span>
+                            {% elif booking.status == 'no_show' %}
+                                <span class="badge badge-no-show">無断キャンセル</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {{ booking.created_at|date:"m/d H:i" }}
+                        </td>
+                        <td>
+                            <a href="{% url 'dashboard:booking_detail' booking.id %}" class="btn btn-primary btn-sm">詳細</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p style="text-align: center; color: #666; padding: 3rem;">
+                条件に合う予約が見つかりません。
+            </p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- 統計情報 -->
+<div class="card">
+    <div class="card-header">
+        <h3>予約統計</h3>
+    </div>
+    <div class="card-body">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">
+                    {{ bookings|length }}
+                </div>
+                <div class="stat-label">総予約数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">
+                    {% with pending_count=0 %}
+                        {% for booking in bookings %}
+                            {% if booking.status == 'pending' %}
+                                {% with pending_count=pending_count|add:1 %}{% endwith %}
+                            {% endif %}
+                        {% endfor %}
+                        {% for booking in bookings %}
+                            {% if booking.status == 'pending' %}
+                                {{ forloop.counter0|add:1 }}
+                                {% if forloop.last %}{% endif %}
+                            {% endif %}
+                        {% endfor %}
+                    {% endwith %}
+                </div>
+                <div class="stat-label">承認待ち</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">
+                    {% with confirmed_count=0 %}
+                        {% for booking in bookings %}
+                            {% if booking.status == 'confirmed' %}
+                                {{ forloop.counter0|add:1 }}
+                                {% if forloop.last %}{% endif %}
+                            {% endif %}
+                        {% endfor %}
+                    {% endwith %}
+                </div>
+                <div class="stat-label">確定済み</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">
+                    {% with total_revenue=0 %}
+                        {% for booking in bookings %}
+                            {% if booking.status == 'completed' %}
+                                {% with total_revenue=total_revenue|add:booking.service.price %}{% endwith %}
+                            {% endif %}
+                        {% endfor %}
+                        ¥{% for booking in bookings %}{% if booking.status == 'completed' %}{{ booking.service.price|add:0 }}{% if not forloop.last %}+{% endif %}{% endif %}{% endfor %}
+                    {% endwith %}
+                </div>
+                <div class="stat-label">完了済み売上</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,191 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="success-container">
+    <div class="container">
+        <div class="success-card">
+            <div class="success-icon">✓</div>
+            <h1>予約申込み完了</h1>
+            <p class="success-message">
+                ありがとうございます！<br>
+                予約申込みを受け付けました。
+            </p>
+            
+            <div class="booking-details">
+                <h2>予約内容</h2>
+                <div class="detail-row">
+                    <span class="label">お客様名:</span>
+                    <span class="value">{{ booking.customer.name }} 様</span>
+                </div>
+                <div class="detail-row">
+                    <span class="label">メールアドレス:</span>
+                    <span class="value">{{ booking.customer.email }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="label">電話番号:</span>
+                    <span class="value">{{ booking.customer.phone }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="label">サービス:</span>
+                    <span class="value">{{ booking.service.name }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="label">ご予約日時:</span>
+                    <span class="value">{{ booking.booking_date }} {{ booking.booking_time }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="label">料金:</span>
+                    <span class="value">¥{{ booking.service.price|floatformat:0 }}</span>
+                </div>
+                {% if booking.notes %}
+                <div class="detail-row">
+                    <span class="label">ご要望・備考:</span>
+                    <span class="value">{{ booking.notes }}</span>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="notice">
+                <h3>重要なお知らせ</h3>
+                <ul>
+                    <li>確認メールをお送りしますので、必ずご確認ください</li>
+                    <li>ご予約時間の5分前にお越しください</li>
+                    <li>10分以上の遅刻をされた場合、足湯サービスができない場合があります</li>
+                    <li>当日キャンセル・無断キャンセルはキャンセル料が発生する場合があります</li>
+                </ul>
+            </div>
+            
+            <div class="actions">
+                <a href="{% url 'website:home' %}" class="btn-home">ホームに戻る</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .success-container {
+        padding: 2rem 0;
+        min-height: 80vh;
+        display: flex;
+        align-items: center;
+    }
+    
+    .success-card {
+        background: white;
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 3rem;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        text-align: center;
+    }
+    
+    .success-icon {
+        font-size: 4rem;
+        color: #28a745;
+        margin-bottom: 1rem;
+        display: inline-block;
+        width: 80px;
+        height: 80px;
+        line-height: 80px;
+        background: #d4edda;
+        border-radius: 50%;
+    }
+    
+    .success-card h1 {
+        color: #8b7355;
+        margin-bottom: 1rem;
+        font-size: 2rem;
+    }
+    
+    .success-message {
+        font-size: 1.2rem;
+        color: #666;
+        margin-bottom: 2rem;
+        line-height: 1.6;
+    }
+    
+    .booking-details {
+        background: #f8f5f0;
+        padding: 2rem;
+        border-radius: 10px;
+        margin-bottom: 2rem;
+        text-align: left;
+    }
+    
+    .booking-details h2 {
+        color: #8b7355;
+        margin-bottom: 1.5rem;
+        text-align: center;
+        border-bottom: 2px solid #a68b5b;
+        padding-bottom: 0.5rem;
+    }
+    
+    .detail-row {
+        display: flex;
+        margin-bottom: 1rem;
+        align-items: flex-start;
+    }
+    
+    .detail-row .label {
+        font-weight: bold;
+        color: #555;
+        min-width: 120px;
+        flex-shrink: 0;
+    }
+    
+    .detail-row .value {
+        color: #333;
+        flex: 1;
+    }
+    
+    .notice {
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+        text-align: left;
+    }
+    
+    .notice h3 {
+        color: #856404;
+        margin-bottom: 1rem;
+        text-align: center;
+    }
+    
+    .notice ul {
+        color: #856404;
+        padding-left: 1.5rem;
+    }
+    
+    .notice li {
+        margin-bottom: 0.5rem;
+        line-height: 1.4;
+    }
+    
+    .actions {
+        text-align: center;
+    }
+    
+    .btn-home {
+        background: linear-gradient(135deg, #8b7355 0%, #a68b5b 100%);
+        color: white;
+        padding: 1rem 2rem;
+        border-radius: 50px;
+        text-decoration: none;
+        font-size: 1.1rem;
+        transition: all 0.3s;
+        display: inline-block;
+    }
+    
+    .btn-home:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        color: white;
+        text-decoration: none;
+    }
+</style>
+{% endblock %}

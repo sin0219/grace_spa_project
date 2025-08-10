@@ -1,0 +1,266 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <div class="hero-content">
+        <h1>GRACE SPA</h1>
+        <p>歴18年のプロフェッショナルセラピストによる<br>本格オイルマッサージで究極の癒しを</p>
+        <a href="{% url 'bookings:booking_create' %}" class="cta-button">今すぐ予約する</a>
+    </div>
+</section>
+
+<section id="about" class="section">
+    <div class="container">
+        <h2>サロンについて</h2>
+        <div class="about-content">
+            <p>GRACE SPAは、18年の経験を持つプロフェッショナルセラピストが運営する完全予約制のプライベートサロンです。</p>
+            <p>ハワイの伝統的なロミロミマッサージを取り入れたオイルセラピーと、タイ政府認定セラピストによるタイ古式マッサージで、お客様一人ひとりに合わせた最高の癒しの時間をご提供いたします。</p>
+        </div>
+    </div>
+</section>
+
+<section id="services" class="services">
+    <div class="container">
+        <h2>メニュー</h2>
+        <div class="services-grid">
+            {% for service in services %}
+            <div class="service-card">
+                <h3>{{ service.name }}</h3>
+                <div class="price">¥{{ service.price }}</div>
+                <p>{{ service.duration }}のしっかりとした施術で、疲れた身体を芯からほぐします。</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<style>
+    .hero {
+        height: 80vh;
+        background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), 
+                    linear-gradient(135deg, #d4c4a8 0%, #b8a082 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        color: white;
+    }
+
+    .hero-content h1 {
+        font-size: 3.5rem;
+        margin-bottom: 1rem;
+        letter-spacing: 5px;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    }
+
+    .hero-content p {
+        font-size: 1.2rem;
+        margin-bottom: 2rem;
+        max-width: 600px;
+    }
+
+    .cta-button {
+        background: linear-gradient(135deg, #8b7355 0%, #a68b5b 100%);
+        color: white;
+        padding: 1rem 2rem;
+        border: none;
+        border-radius: 50px;
+        font-size: 1.1rem;
+        text-decoration: none;
+        display: inline-block;
+        transition: all 0.3s;
+    }
+
+    .cta-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+
+    .section {
+        padding: 4rem 0;
+    }
+
+    .section h2 {
+        text-align: center;
+        font-size: 2.5rem;
+        margin-bottom: 3rem;
+        color: #8b7355;
+        position: relative;
+    }
+
+    .section h2::after {
+        content: '';
+        position: absolute;
+        bottom: -10px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 60px;
+        height: 3px;
+        background: linear-gradient(135deg, #8b7355 0%, #a68b5b 100%);
+    }
+
+    .about-content {
+        max-width: 800px;
+        margin: 0 auto;
+        font-size: 1.1rem;
+        line-height: 1.8;
+        text-align: center;
+    }
+
+    .about-content p {
+        margin-bottom: 1.5rem;
+    }
+
+    .services {
+        background: #f8f5f0;
+        padding: 4rem 0;
+    }
+
+    .services-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+        margin-top: 2rem;
+    }
+
+    .service-card {
+        background: white;
+        padding: 2rem;
+        border-radius: 15px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        text-align: center;
+        transition: transform 0.3s;
+    }
+
+    .service-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .service-card h3 {
+        color: #8b7355;
+        margin-bottom: 1rem;
+        font-size: 1.3rem;
+    }
+
+    .price {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #a68b5b;
+        margin: 1rem 0;
+    }
+
+    .therapists {
+        background: white;
+        padding: 4rem 0;
+    }
+
+    .therapists h2 {
+        text-align: center;
+        font-size: 2.5rem;
+        margin-bottom: 3rem;
+        color: #8b7355;
+        position: relative;
+    }
+
+    .therapists h2::after {
+        content: '';
+        position: absolute;
+        bottom: -10px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 60px;
+        height: 3px;
+        background: linear-gradient(135deg, #8b7355 0%, #a68b5b 100%);
+    }
+
+    .therapists-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+        margin-top: 2rem;
+    }
+
+    .therapist-card {
+        background: #f8f5f0;
+        padding: 2rem;
+        border-radius: 15px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        text-align: center;
+        transition: transform 0.3s;
+        position: relative;
+    }
+
+    .therapist-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .therapist-card.featured {
+        background: linear-gradient(135deg, #fff9e6 0%, #ffeaa7 100%);
+        border: 2px solid #8b7355;
+    }
+
+    .therapist-photo {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        margin: 0 auto 1.5rem;
+        overflow: hidden;
+        border: 3px solid #8b7355;
+    }
+
+    .therapist-photo img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .therapist-photo.placeholder {
+        background: #e9ecef;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+        color: #6c757d;
+    }
+
+    .therapist-info h3 {
+        color: #8b7355;
+        margin-bottom: 0.5rem;
+        font-size: 1.4rem;
+    }
+
+    .experience {
+        color: #a68b5b;
+        font-weight: bold;
+        margin-bottom: 1rem;
+        font-size: 1rem;
+    }
+
+    .specialties {
+        color: #666;
+        font-weight: bold;
+        margin-bottom: 1rem;
+        font-size: 0.95rem;
+    }
+
+    .introduction {
+        color: #555;
+        line-height: 1.6;
+        font-size: 0.9rem;
+    }
+
+    .featured-badge {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        background: #8b7355;
+        color: white;
+        padding: 0.3rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: bold;
+    }
+</style>
+{% endblock %}

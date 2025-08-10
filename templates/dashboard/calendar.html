@@ -1,0 +1,349 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% load calendar_extras %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}{{ year }}年{{ month }}月 カレンダー{% endblock %}
+
+{% block content %}
+<!-- カレンダーナビゲーション -->
+<div class="card">
+    <div class="card-body" style="padding: 1rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <a href="{% url 'dashboard:calendar' %}?year={{ prev_year }}&month={{ prev_month }}" 
+               class="btn btn-secondary">
+                ← {{ prev_month }}月
+            </a>
+            
+            <h2 style="margin: 0; color: #8b7355;">
+                {{ year }}年{{ month }}月 ({{ month_name }})
+            </h2>
+            
+            <a href="{% url 'dashboard:calendar' %}?year={{ next_year }}&month={{ next_month }}" 
+               class="btn btn-secondary">
+                {{ next_month }}月 →
+            </a>
+        </div>
+        
+        <div style="text-align: center; margin-top: 1rem;">
+            <a href="{% url 'dashboard:calendar' %}" class="btn btn-primary">今月に戻る</a>
+        </div>
+    </div>
+</div>
+
+<!-- カレンダー -->
+<div class="card">
+    <div class="card-body" style="padding: 0;">
+        <div class="calendar-container">
+            <!-- 曜日ヘッダー -->
+            <div class="calendar-header">
+                <div class="calendar-day-header">月</div>
+                <div class="calendar-day-header">火</div>
+                <div class="calendar-day-header">水</div>
+                <div class="calendar-day-header">木</div>
+                <div class="calendar-day-header">金</div>
+                <div class="calendar-day-header saturday">土</div>
+                <div class="calendar-day-header sunday">日</div>
+            </div>
+            
+            <!-- カレンダー本体 -->
+            <div class="calendar-body">
+                {% for week in calendar_data %}
+                    {% for day_data in week %}
+                        {% if day_data.day == 0 %}
+                            <div class="calendar-day empty"></div>
+                        {% else %}
+                            <div class="calendar-day {% if day_data.is_today %}today{% endif %}">
+                                <div class="day-number">
+                                    {{ day_data.day }}
+                                    {% if day_data.is_today %}
+                                        <span class="today-badge">今日</span>
+                                    {% endif %}
+                                </div>
+                                
+                                {% if day_data.bookings %}
+                                    <div class="day-bookings">
+                                        {% for booking in day_data.bookings %}
+                                            <div class="booking-item status-{{ booking.status }}" 
+                                                 title="{{ booking.customer.name }} - {{ booking.service.name }} ({{ booking.booking_time }})">
+                                                <div class="booking-time">{{ booking.booking_time|date:"H:i" }}</div>
+                                                <div class="booking-customer">{{ booking.customer.name }}</div>
+                                                <div class="booking-service">{{ booking.service.name }}</div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 凡例 -->
+<div class="card">
+    <div class="card-header">
+        <h3>凡例</h3>
+    </div>
+    <div class="card-body">
+        <div style="display: flex; gap: 2rem; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <div class="legend-box status-pending"></div>
+                <span>申込中</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <div class="legend-box status-confirmed"></div>
+                <span>確定済み</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <div class="legend-box status-completed"></div>
+                <span>施術完了</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <div class="legend-box status-cancelled"></div>
+                <span>キャンセル</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 月次統計 -->
+<div class="card">
+    <div class="card-header">
+        <h3>{{ month }}月の統計</h3>
+    </div>
+    <div class="card-body">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">
+                    {% with total_bookings=0 %}
+                        {% for day_bookings in bookings_by_date.values %}
+                            {% with total_bookings=total_bookings|add:day_bookings|length %}{% endwith %}
+                        {% endfor %}
+                        {{ bookings_by_date.values|length }}
+                    {% endwith %}
+                </div>
+                <div class="stat-label">総予約数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">
+                    {% with confirmed_bookings=0 %}
+                        {% for day_bookings in bookings_by_date.values %}
+                            {% for booking in day_bookings %}
+                                {% if booking.status == 'confirmed' %}
+                                    {% with confirmed_bookings=confirmed_bookings|add:1 %}{% endwith %}
+                                {% endif %}
+                            {% endfor %}
+                        {% endfor %}
+                        {{ confirmed_bookings }}
+                    {% endwith %}
+                </div>
+                <div class="stat-label">確定済み</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">
+                    {% with completed_bookings=0 %}
+                        {% for day_bookings in bookings_by_date.values %}
+                            {% for booking in day_bookings %}
+                                {% if booking.status == 'completed' %}
+                                    {% with completed_bookings=completed_bookings|add:1 %}{% endwith %}
+                                {% endif %}
+                            {% endfor %}
+                        {% endfor %}
+                        {{ completed_bookings }}
+                    {% endwith %}
+                </div>
+                <div class="stat-label">施術完了</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">
+                    {% with total_revenue=0 %}
+                        {% for day_bookings in bookings_by_date.values %}
+                            {% for booking in day_bookings %}
+                                {% if booking.status == 'completed' %}
+                                    {% with total_revenue=total_revenue|add:booking.service.price %}{% endwith %}
+                                {% endif %}
+                            {% endfor %}
+                        {% endfor %}
+                        ¥{{ total_revenue|floatformat:0 }}
+                    {% endwith %}
+                </div>
+                <div class="stat-label">売上</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .calendar-container {
+        width: 100%;
+        background: white;
+    }
+
+    .calendar-header {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        background: #f8f9fa;
+        border-bottom: 2px solid #8b7355;
+    }
+
+    .calendar-day-header {
+        padding: 1rem;
+        text-align: center;
+        font-weight: bold;
+        color: #8b7355;
+        border-right: 1px solid #e9ecef;
+    }
+
+    .calendar-day-header.saturday {
+        color: #0066cc;
+    }
+
+    .calendar-day-header.sunday {
+        color: #cc0000;
+    }
+
+    .calendar-body {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        min-height: 600px;
+    }
+
+    .calendar-day {
+        border-right: 1px solid #e9ecef;
+        border-bottom: 1px solid #e9ecef;
+        min-height: 120px;
+        padding: 0.5rem;
+        position: relative;
+        background: white;
+    }
+
+    .calendar-day.empty {
+        background: #f8f9fa;
+    }
+
+    .calendar-day.today {
+        background: linear-gradient(135deg, #fff9e6 0%, #ffeaa7 100%);
+    }
+
+    .day-number {
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .today-badge {
+        background: #8b7355;
+        color: white;
+        font-size: 0.7rem;
+        padding: 0.2rem 0.4rem;
+        border-radius: 10px;
+    }
+
+    .day-bookings {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .booking-item {
+        padding: 0.25rem;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        line-height: 1.2;
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+
+    .booking-item:hover {
+        transform: scale(1.02);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+
+    .booking-item.status-pending {
+        background: #fff3cd;
+        border-left: 3px solid #ffc107;
+        color: #856404;
+    }
+
+    .booking-item.status-confirmed {
+        background: #d4edda;
+        border-left: 3px solid #28a745;
+        color: #155724;
+    }
+
+    .booking-item.status-completed {
+        background: #d1ecf1;
+        border-left: 3px solid #17a2b8;
+        color: #0c5460;
+    }
+
+    .booking-item.status-cancelled {
+        background: #f8d7da;
+        border-left: 3px solid #dc3545;
+        color: #721c24;
+    }
+
+    .booking-time {
+        font-weight: bold;
+        font-size: 0.9rem;
+    }
+
+    .booking-customer {
+        font-weight: bold;
+    }
+
+    .booking-service {
+        font-size: 0.7rem;
+        opacity: 0.8;
+    }
+
+    .legend-box {
+        width: 20px;
+        height: 20px;
+        border-radius: 4px;
+    }
+
+    .legend-box.status-pending {
+        background: #ffc107;
+    }
+
+    .legend-box.status-confirmed {
+        background: #28a745;
+    }
+
+    .legend-box.status-completed {
+        background: #17a2b8;
+    }
+
+    .legend-box.status-cancelled {
+        background: #dc3545;
+    }
+
+    /* レスポンシブ対応 */
+    @media (max-width: 768px) {
+        .calendar-day {
+            min-height: 100px;
+            padding: 0.25rem;
+        }
+
+        .booking-item {
+            font-size: 0.7rem;
+            padding: 0.2rem;
+        }
+
+        .booking-customer,
+        .booking-service {
+            display: none;
+        }
+
+        .calendar-day-header {
+            padding: 0.5rem;
+            font-size: 0.9rem;
+        }
+    }
+</style>
+{% endblock %}

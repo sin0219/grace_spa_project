@@ -1,0 +1,179 @@
+{% extends 'dashboard/base_dashboard.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}顧客一覧{% endblock %}
+
+{% block content %}
+<!-- 検索 -->
+<div class="card">
+    <div class="card-header">
+        <h3>顧客検索</h3>
+    </div>
+    <div class="card-body">
+        <form method="get" style="display: flex; gap: 1rem; align-items: end;">
+            <div class="form-group" style="margin-bottom: 0; flex: 1;">
+                <label for="search">お名前・メールアドレス・電話番号で検索</label>
+                <input type="text" name="search" id="search" value="{{ search_query }}" 
+                       class="form-control" placeholder="山田太郎 or yamada@example.com">
+            </div>
+            <button type="submit" class="btn btn-primary">検索</button>
+            <a href="{% url 'dashboard:customer_list' %}" class="btn btn-secondary">リセット</a>
+        </form>
+    </div>
+</div>
+
+<!-- 顧客一覧 -->
+<div class="card">
+    <div class="card-header">
+        <h3>顧客一覧 ({{ customers.count }}名)</h3>
+    </div>
+    <div class="card-body">
+        {% if customers %}
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>お客様情報</th>
+                        <th>連絡先</th>
+                        <th>予約回数</th>
+                        <th>最終予約日</th>
+                        <th>登録日</th>
+                        <th>ステータス</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for customer in customers %}
+                    <tr>
+                        <td>
+                            <strong>{{ customer.name }}</strong>
+                            {% if customer.booking_count == 1 %}
+                                <span class="badge" style="background: #17a2b8; color: white; font-size: 0.7rem;">初回</span>
+                            {% elif customer.booking_count >= 5 %}
+                                <span class="badge" style="background: #ffc107; color: #212529; font-size: 0.7rem;">常連</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div>{{ customer.email }}</div>
+                            <small style="color: #666;">{{ customer.phone }}</small>
+                        </td>
+                        <td>
+                            <strong>{{ customer.booking_count }}回</strong>
+                        </td>
+                        <td>
+                            {% with latest_booking=customer.booking_set.first %}
+                                {% if latest_booking %}
+                                    {{ latest_booking.booking_date|date:"Y/m/d" }}
+                                    {% if latest_booking.status == 'pending' %}
+                                        <br><span class="badge badge-pending">申込中</span>
+                                    {% elif latest_booking.status == 'confirmed' %}
+                                        <br><span class="badge badge-confirmed">確定</span>
+                                    {% elif latest_booking.status == 'completed' %}
+                                        <br><span class="badge badge-completed">完了</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span style="color: #666;">なし</span>
+                                {% endif %}
+                            {% endwith %}
+                        </td>
+                        <td>{{ customer.created_at|date:"Y/m/d" }}</td>
+                        <td>
+                            {% with active_bookings=customer.booking_set.all %}
+                                {% with pending_count=0 confirmed_count=0 %}
+                                    {% for booking in active_bookings %}
+                                        {% if booking.status == 'pending' %}
+                                            {% with pending_count=pending_count|add:1 %}{% endwith %}
+                                        {% elif booking.status == 'confirmed' %}
+                                            {% with confirmed_count=confirmed_count|add:1 %}{% endwith %}
+                                        {% endif %}
+                                    {% endfor %}
+                                    {% if pending_count > 0 %}
+                                        <span class="badge badge-pending">申込中</span>
+                                    {% elif confirmed_count > 0 %}
+                                        <span class="badge badge-confirmed">予約あり</span>
+                                    {% else %}
+                                        <span style="color: #666;">-</span>
+                                    {% endif %}
+                                {% endwith %}
+                            {% endwith %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p style="text-align: center; color: #666; padding: 3rem;">
+                {% if search_query %}
+                    「{{ search_query }}」に該当する顧客が見つかりません。
+                {% else %}
+                    まだ顧客の登録がありません。
+                {% endif %}
+            </p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- 顧客統計 -->
+<div class="card">
+    <div class="card-header">
+        <h3>顧客統計</h3>
+    </div>
+    <div class="card-body">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">{{ customers.count }}</div>
+                <div class="stat-label">総顧客数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">
+                    {% with new_customers=0 %}
+                        {% for customer in customers %}
+                            {% if customer.booking_count == 1 %}
+                                {% with new_customers=new_customers|add:1 %}{% endwith %}
+                            {% endif %}
+                        {% endfor %}
+                        {% for customer in customers %}
+                            {% if customer.booking_count == 1 and forloop.last %}
+                                {{ forloop.counter0|add:1 }}
+                            {% endif %}
+                        {% endfor %}
+                    {% endwith %}
+                </div>
+                <div class="stat-label">新規顧客</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">
+                    {% with repeat_customers=0 %}
+                        {% for customer in customers %}
+                            {% if customer.booking_count >= 2 %}
+                                {% with repeat_customers=repeat_customers|add:1 %}{% endwith %}
+                            {% endif %}
+                        {% endfor %}
+                        {% for customer in customers %}
+                            {% if customer.booking_count >= 2 and forloop.last %}
+                                {{ forloop.counter0|add:1 }}
+                            {% endif %}
+                        {% endfor %}
+                    {% endwith %}
+                </div>
+                <div class="stat-label">リピーター</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">
+                    {% with vip_customers=0 %}
+                        {% for customer in customers %}
+                            {% if customer.booking_count >= 5 %}
+                                {% with vip_customers=vip_customers|add:1 %}{% endwith %}
+                            {% endif %}
+                        {% endfor %}
+                        {% for customer in customers %}
+                            {% if customer.booking_count >= 5 and forloop.last %}
+                                {{ forloop.counter0|add:1 }}
+                            {% endif %}
+                        {% endfor %}
+                    {% endwith %}
+                </div>
+                <div class="stat-label">常連客</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

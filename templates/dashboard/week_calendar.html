@@ -1,0 +1,367 @@
+{% extends 'dashboard/base_dashboard.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}週単位カレンダー{% endblock %}
+
+{% block content %}
+<!-- 週ナビゲーション -->
+<div class="card">
+    <div class="card-body" style="padding: 1rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <a href="{% url 'dashboard:week_calendar' %}?year={{ prev_week.year }}&month={{ prev_week.month }}&day={{ prev_week.day }}" 
+               class="btn btn-secondary">
+                ← 前週
+            </a>
+            
+            <div style="text-align: center;">
+                <h2 style="margin: 0; color: #8b7355;">
+                    {{ week_start|date:"Y年m月d日" }} - {{ week_end|date:"m月d日" }}
+                </h2>
+                <p style="margin: 0.5rem 0; color: #666;">
+                    {{ week_start|date:"(D)" }} - {{ week_end|date:"(D)" }}
+                </p>
+            </div>
+            
+            <a href="{% url 'dashboard:week_calendar' %}?year={{ next_week.year }}&month={{ next_week.month }}&day={{ next_week.day }}" 
+               class="btn btn-secondary">
+                次週 →
+            </a>
+        </div>
+        
+        <div style="text-align: center; margin-top: 1rem;">
+            <a href="{% url 'dashboard:week_calendar' %}" class="btn btn-primary">今週に戻る</a>
+            <a href="{% url 'dashboard:calendar' %}" class="btn btn-secondary">月表示</a>
+        </div>
+    </div>
+</div>
+
+<!-- 週カレンダー -->
+<div class="card">
+    <div class="card-body" style="padding: 0;">
+        <div class="week-calendar">
+            <!-- 時間軸 -->
+            <div class="time-column">
+                <div class="time-header">時間</div>
+                <div class="time-slot">09:00</div>
+                <div class="time-slot">10:00</div>
+                <div class="time-slot">11:00</div>
+                <div class="time-slot">12:00</div>
+                <div class="time-slot">13:00</div>
+                <div class="time-slot">14:00</div>
+                <div class="time-slot">15:00</div>
+                <div class="time-slot">16:00</div>
+                <div class="time-slot">17:00</div>
+                <div class="time-slot">18:00</div>
+                <div class="time-slot">19:00</div>
+                <div class="time-slot">20:00</div>
+            </div>
+            
+            <!-- 日付カラム -->
+            {% for day_data in week_data %}
+                <div class="day-column {% if day_data.is_today %}today-column{% endif %}">
+                    <div class="day-header {% if day_data.date.weekday == 5 %}saturday{% elif day_data.date.weekday == 6 %}sunday{% endif %}">
+                        <div class="day-name">{{ day_data.day_name }}</div>
+                        <div class="day-date">{{ day_data.date|date:"m/d" }}</div>
+                        {% if day_data.is_today %}
+                            <span class="today-badge-small">今日</span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="day-schedule">
+                        {% for positioned_booking in day_data.positioned_bookings %}
+                            <a href="{% url 'dashboard:booking_detail' positioned_booking.booking.id %}" class="week-booking-link">
+                                <div class="week-booking-item status-{{ positioned_booking.booking.status }}" 
+                                     style="top: {{ positioned_booking.top_position }}px;">
+                                    <div class="week-booking-time">{{ positioned_booking.booking.booking_time|date:"H:i" }}</div>
+                                    <div class="week-booking-customer">{{ positioned_booking.booking.customer.name }}</div>
+                                    <div class="week-booking-service">{{ positioned_booking.booking.service.name }}</div>
+                                    <div class="week-booking-duration">{{ positioned_booking.booking.service.duration_minutes }}分</div>
+                                </div>
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- 週の予約リスト -->
+<div class="card">
+    <div class="card-header">
+        <h3>今週の予約一覧</h3>
+    </div>
+    <div class="card-body">
+        {% if bookings_by_date %}
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>日時</th>
+                        <th>お客様</th>
+                        <th>サービス</th>
+                        <th>ステータス</th>
+                        <th>料金</th>
+                        <th>アクション</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for day_data in week_data %}
+                        {% for booking in day_data.bookings %}
+                            <tr>
+                                <td>
+                                    <strong>{{ booking.booking_date|date:"m/d (D)" }}</strong><br>
+                                    {{ booking.booking_time }}
+                                </td>
+                                <td>
+                                    {{ booking.customer.name }}<br>
+                                    <small>{{ booking.customer.phone }}</small>
+                                </td>
+                                <td>{{ booking.service.name }}</td>
+                                <td>
+                                    {% if booking.status == 'pending' %}
+                                        <span class="badge badge-pending">申込中</span>
+                                    {% elif booking.status == 'confirmed' %}
+                                        <span class="badge badge-confirmed">確定</span>
+                                    {% elif booking.status == 'completed' %}
+                                        <span class="badge badge-completed">完了</span>
+                                    {% elif booking.status == 'cancelled' %}
+                                        <span class="badge badge-cancelled">キャンセル</span>
+                                    {% endif %}
+                                </td>
+                                <td>¥{{ booking.service.price|floatformat:0 }}</td>
+                                <td>
+                                    <a href="{% url 'dashboard:booking_detail' booking.id %}" class="btn btn-primary btn-sm">詳細</a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p style="text-align: center; color: #666; padding: 2rem;">
+                今週の予約はありません
+            </p>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.week-calendar {
+    display: grid;
+    grid-template-columns: 80px repeat(7, 1fr);
+    min-height: 720px;
+    background: white;
+    border: 1px solid #e9ecef;
+}
+
+.time-column {
+    border-right: 2px solid #8b7355;
+    background: #f8f9fa;
+}
+
+.time-header {
+    height: 80px;
+    padding: 1rem;
+    font-weight: bold;
+    color: #8b7355;
+    border-bottom: 1px solid #e9ecef;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.time-slot {
+    height: 60px;
+    padding: 0.5rem;
+    border-bottom: 1px solid #e9ecef;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.day-column {
+    border-right: 1px solid #e9ecef;
+    position: relative;
+}
+
+.day-column.today-column {
+    background: linear-gradient(135deg, #fff9e6 0%, #ffeaa7 50%);
+}
+
+.day-header {
+    height: 80px;
+    padding: 1rem;
+    border-bottom: 1px solid #e9ecef;
+    text-align: center;
+    background: #f8f9fa;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.day-header.saturday {
+    color: #0066cc;
+    background: #f0f8ff;
+}
+
+.day-header.sunday {
+    color: #cc0000;
+    background: #fff5f5;
+}
+
+.day-name {
+    font-weight: bold;
+    font-size: 1rem;
+    margin-bottom: 0.25rem;
+}
+
+.day-date {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.today-badge-small {
+    background: #8b7355;
+    color: white;
+    font-size: 0.7rem;
+    padding: 0.2rem 0.4rem;
+    border-radius: 10px;
+    margin-top: 0.25rem;
+}
+
+.day-schedule {
+    position: relative;
+    height: 720px;
+    padding: 0;
+    overflow: hidden;
+}
+
+.week-booking-link {
+    text-decoration: none;
+    color: inherit;
+}
+
+.week-booking-item {
+    position: absolute;
+    left: 4px;
+    right: 4px;
+    padding: 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    line-height: 1.2;
+    cursor: pointer;
+    transition: transform 0.2s;
+    min-height: 50px;
+    height: auto;
+    z-index: 1;
+    box-sizing: border-box;
+}
+
+.week-booking-item:hover {
+    transform: scale(1.02);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    z-index: 10;
+}
+
+.week-booking-item.status-pending {
+    background: #fff3cd;
+    border: 2px solid #ffc107;
+    color: #856404;
+}
+
+.week-booking-item.status-confirmed {
+    background: #d4edda;
+    border: 2px solid #28a745;
+    color: #155724;
+}
+
+.week-booking-item.status-completed {
+    background: #d1ecf1;
+    border: 2px solid #17a2b8;
+    color: #0c5460;
+}
+
+.week-booking-item.status-cancelled {
+    background: #f8d7da;
+    border: 2px solid #dc3545;
+    color: #721c24;
+}
+
+.week-booking-time {
+    font-weight: bold;
+    font-size: 0.9rem;
+    margin-bottom: 0.25rem;
+}
+
+.week-booking-customer {
+    font-weight: bold;
+    margin-bottom: 0.25rem;
+}
+
+.week-booking-service {
+    font-size: 0.75rem;
+    opacity: 0.9;
+    margin-bottom: 0.25rem;
+}
+
+.week-booking-duration {
+    font-size: 0.7rem;
+    opacity: 0.8;
+}
+
+.day-schedule::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 100%;
+    background-image: repeating-linear-gradient(
+        to bottom,
+        transparent 0px,
+        transparent 59px,
+        #e9ecef 59px,
+        #e9ecef 60px
+    );
+    pointer-events: none;
+    z-index: 0;
+}
+
+@media (max-width: 768px) {
+    .week-calendar {
+        grid-template-columns: 60px repeat(7, 1fr);
+        overflow-x: auto;
+    }
+
+    .time-header,
+    .day-header {
+        height: 60px;
+        padding: 0.5rem;
+        font-size: 0.9rem;
+    }
+
+    .time-slot {
+        height: 40px;
+        font-size: 0.8rem;
+    }
+
+    .day-schedule {
+        height: 480px;
+    }
+
+    .week-booking-item {
+        font-size: 0.7rem;
+        min-height: 35px;
+        padding: 0.25rem;
+    }
+
+    .week-booking-customer,
+    .week-booking-service {
+        display: none;
+    }
+}
+</style>
+{% endblock %}

@@ -1,0 +1,132 @@
+{% extends 'dashboard/base_dashboard.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}ダッシュボード{% endblock %}
+
+{% block content %}
+<!-- 統計情報 -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-number">{{ stats.today_bookings }}</div>
+        <div class="stat-label">今日の予約</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ stats.pending_bookings }}</div>
+        <div class="stat-label">承認待ち</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ stats.total_customers }}</div>
+        <div class="stat-label">総顧客数</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ stats.this_month_bookings }}</div>
+        <div class="stat-label">今月の予約</div>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+    <!-- 今日の予約 -->
+    <div class="card">
+        <div class="card-header">
+            <h3>今日の予約 ({{ today|date:"Y年m月d日" }})</h3>
+        </div>
+        <div class="card-body">
+            {% if today_bookings %}
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>時間</th>
+                            <th>お客様</th>
+                            <th>サービス</th>
+                            <th>ステータス</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for booking in today_bookings %}
+                        <tr>
+                            <td>{{ booking.booking_time }}</td>
+                            <td>
+                                <a href="{% url 'dashboard:booking_detail' booking.id %}">
+                                    {{ booking.customer.name }}
+                                </a>
+                            </td>
+                            <td>{{ booking.service.name }}</td>
+                            <td>
+                                {% if booking.status == 'pending' %}
+                                    <span class="badge badge-pending">申込中</span>
+                                {% elif booking.status == 'confirmed' %}
+                                    <span class="badge badge-confirmed">確定</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p style="text-align: center; color: #666; padding: 2rem;">今日の予約はありません</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- 今後の予約 -->
+    <div class="card">
+        <div class="card-header">
+            <h3>今後の予約</h3>
+        </div>
+        <div class="card-body">
+            {% if upcoming_bookings %}
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>日時</th>
+                            <th>お客様</th>
+                            <th>サービス</th>
+                            <th>ステータス</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for booking in upcoming_bookings %}
+                        <tr>
+                            <td>{{ booking.booking_date|date:"m/d" }}<br>{{ booking.booking_time }}</td>
+                            <td>
+                                <a href="{% url 'dashboard:booking_detail' booking.id %}">
+                                    {{ booking.customer.name }}
+                                </a>
+                            </td>
+                            <td>{{ booking.service.name }}</td>
+                            <td>
+                                {% if booking.status == 'pending' %}
+                                    <span class="badge badge-pending">申込中</span>
+                                {% elif booking.status == 'confirmed' %}
+                                    <span class="badge badge-confirmed">確定</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <div style="text-align: center; margin-top: 1rem;">
+                    <a href="{% url 'dashboard:booking_list' %}" class="btn btn-primary">全ての予約を見る</a>
+                </div>
+            {% else %}
+                <p style="text-align: center; color: #666; padding: 2rem;">今後の予約はありません</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- クイックアクション -->
+<div class="card">
+    <div class="card-header">
+        <h3>クイックアクション</h3>
+    </div>
+    <div class="card-body">
+        <div style="display: flex; gap: 1rem; justify-content: center;">
+            <a href="{% url 'dashboard:calendar' %}" class="btn btn-primary">📅 カレンダー表示</a>
+            <a href="{% url 'dashboard:booking_list' %}?status=pending" class="btn btn-warning">⏳ 承認待ち一覧</a>
+            <a href="{% url 'dashboard:customer_list' %}" class="btn btn-secondary">👥 顧客管理</a>
+            <a href="/admin/" class="btn btn-secondary">⚙️ システム設定</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}GRACE SPA{% endblock %}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            line-height: 1.6;
+            color: #3a3a3a;
+            background-color: #faf8f5;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #8b7355 0%, #a68b5b 100%);
+            color: white;
+            padding: 1rem 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 2rem;
+        }
+
+        .logo {
+            font-size: 2rem;
+            font-weight: bold;
+            letter-spacing: 3px;
+        }
+
+        .nav-menu {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+        }
+
+        .nav-menu a {
+            color: white;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .nav-menu a:hover {
+            color: #f4e4bc;
+        }
+
+        .nav-booking-btn {
+            background: linear-gradient(135deg, #f4e4bc 0%, #d4c4a8 100%) !important;
+            color: #8b7355 !important;
+            padding: 0.5rem 1rem !important;
+            border-radius: 25px !important;
+            font-weight: bold !important;
+            transition: all 0.3s !important;
+        }
+
+        .nav-booking-btn:hover {
+            background: linear-gradient(135deg, #d4c4a8 0%, #b8a082 100%) !important;
+            color: #8b7355 !important;
+            transform: translateY(-2px);
+        }
+
+        .main-content {
+            min-height: calc(100vh - 200px);
+        }
+
+        .footer {
+            background: #3a3a3a;
+            color: white;
+            text-align: center;
+            padding: 2rem;
+            margin-top: 3rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="nav-container">
+            <div class="logo">GRACE SPA</div>
+            <nav>
+                <ul class="nav-menu">
+                    <li><a href="{% url 'website:home' %}">ホーム</a></li>
+                    <li><a href="{% url 'website:therapists' %}">セラピスト紹介</a></li>
+                    <li><a href="#">メニュー</a></li>
+                    <li><a href="#">アクセス</a></li>
+                    <li><a href="{% url 'bookings:booking_create' %}" class="nav-booking-btn">予約する</a></li>
+                    {% if user.is_staff %}
+                        <li><a href="{% url 'dashboard:home' %}" style="color: #f4e4bc;">管理画面</a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main-content">
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <h3>GRACE SPA</h3>
+            <p>完全予約制プライベートサロン</p>
+            <p>&copy; 2025 GRACE SPA. All rights reserved.</p>
+        </div>
+    </footer>
+</body>
+</html>

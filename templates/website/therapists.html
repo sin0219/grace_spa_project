@@ -1,0 +1,318 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="therapists-page">
+    <div class="container">
+        <!-- ページヘッダー -->
+        <div class="page-header">
+            <h1>セラピスト紹介</h1>
+            <p class="page-description">
+                GRACE SPAの経験豊富なセラピストをご紹介いたします。<br>
+                お客様のご希望に合わせて、施術者をお選びいただけます。
+            </p>
+        </div>
+
+        <!-- 施術者一覧 -->
+        {% if therapists %}
+            <div class="therapists-grid">
+                {% for therapist in therapists %}
+                <div class="therapist-card {% if therapist.is_featured %}featured{% endif %}">
+                    <!-- 施術者写真 -->
+                    <div class="therapist-photo">
+                        {% if therapist.photo %}
+                            <img src="{{ therapist.photo.url }}" alt="{{ therapist.display_name }}">
+                        {% else %}
+                            <div class="photo-placeholder">
+                                <span class="icon">👤</span>
+                            </div>
+                        {% endif %}
+                        {% if therapist.is_featured %}
+                            <span class="featured-badge">おすすめ</span>
+                        {% endif %}
+                    </div>
+
+                    <!-- 施術者情報 -->
+                    <div class="therapist-info">
+                        <h2>{{ therapist.display_name }}</h2>
+                        
+                        {% if therapist.experience_years > 0 %}
+                            <div class="experience">
+                                <span class="label">経験年数:</span>
+                                <span class="value">{{ therapist.experience_years }}年</span>
+                            </div>
+                        {% endif %}
+                        
+                        {% if therapist.specialties %}
+                            <div class="specialties">
+                                <span class="label">得意な施術:</span>
+                                <p>{{ therapist.specialties }}</p>
+                            </div>
+                        {% endif %}
+                        
+                        {% if therapist.introduction %}
+                            <div class="introduction">
+                                <span class="label">プロフィール:</span>
+                                <p>{{ therapist.introduction|linebreaks }}</p>
+                            </div>
+                        {% endif %}
+                        
+                        <!-- 予約ボタン -->
+                        <div class="therapist-actions">
+                            <a href="{% url 'bookings:booking_create' %}?therapist={{ therapist.id }}" class="btn-book-therapist">
+                                {{ therapist.display_name }}さんを指名予約
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- 全体の予約ボタン -->
+            <div class="general-booking">
+                <h3>施術者を指定せずに予約する</h3>
+                <p>特にご希望の施術者がない場合は、こちらからご予約ください。</p>
+                <a href="{% url 'bookings:booking_create' %}" class="btn-general-booking">施術者指定なしで予約</a>
+            </div>
+            
+        {% else %}
+            <div class="no-therapists">
+                <h2>施術者情報準備中</h2>
+                <p>現在、施術者の詳細情報を準備しております。しばらくお待ちください。</p>
+                <a href="{% url 'bookings:booking_create' %}" class="btn-general-booking">ご予約はこちら</a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    .therapists-page {
+        padding: 2rem 0;
+        min-height: 80vh;
+        background: #faf8f5;
+    }
+
+    .page-header {
+        text-align: center;
+        margin-bottom: 3rem;
+        padding: 2rem 0;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    .page-header h1 {
+        color: #8b7355;
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .page-description {
+        font-size: 1.1rem;
+        color: #666;
+        line-height: 1.6;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .therapists-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        gap: 2rem;
+        margin-bottom: 3rem;
+    }
+
+    .therapist-card {
+        background: white;
+        border-radius: 15px;
+        padding: 2rem;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        transition: transform 0.3s;
+        position: relative;
+    }
+
+    .therapist-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .therapist-card.featured {
+        border: 3px solid #8b7355;
+        background: linear-gradient(135deg, #fff9e6 0%, #ffeaa7 100%);
+    }
+
+    .therapist-photo {
+        position: relative;
+        text-align: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .therapist-photo img {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid #8b7355;
+    }
+
+    .photo-placeholder {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        background: #e9ecef;
+        border: 3px solid #8b7355;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+    }
+
+    .photo-placeholder .icon {
+        font-size: 4rem;
+        color: #6c757d;
+    }
+
+    .featured-badge {
+        position: absolute;
+        top: -10px;
+        right: 20px;
+        background: #8b7355;
+        color: white;
+        padding: 0.3rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: bold;
+    }
+
+    .therapist-info h2 {
+        color: #8b7355;
+        text-align: center;
+        margin-bottom: 1.5rem;
+        font-size: 1.5rem;
+    }
+
+    .experience,
+    .specialties,
+    .introduction {
+        margin-bottom: 1.5rem;
+    }
+
+    .label {
+        display: inline-block;
+        font-weight: bold;
+        color: #8b7355;
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+    }
+
+    .value {
+        color: #a68b5b;
+        font-weight: bold;
+        font-size: 1.1rem;
+    }
+
+    .specialties p,
+    .introduction p {
+        color: #555;
+        line-height: 1.6;
+        margin-top: 0.5rem;
+    }
+
+    .therapist-actions {
+        text-align: center;
+        margin-top: 2rem;
+    }
+
+    .btn-book-therapist {
+        background: linear-gradient(135deg, #8b7355 0%, #a68b5b 100%);
+        color: white;
+        padding: 1rem 1.5rem;
+        border-radius: 50px;
+        text-decoration: none;
+        font-weight: bold;
+        transition: all 0.3s;
+        display: inline-block;
+    }
+
+    .btn-book-therapist:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        color: white;
+        text-decoration: none;
+    }
+
+    .general-booking {
+        background: white;
+        padding: 2rem;
+        border-radius: 15px;
+        text-align: center;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        margin-bottom: 2rem;
+    }
+
+    .general-booking h3 {
+        color: #8b7355;
+        margin-bottom: 1rem;
+    }
+
+    .general-booking p {
+        color: #666;
+        margin-bottom: 1.5rem;
+    }
+
+    .btn-general-booking {
+        background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+        color: white;
+        padding: 1rem 2rem;
+        border-radius: 50px;
+        text-decoration: none;
+        font-weight: bold;
+        transition: all 0.3s;
+        display: inline-block;
+    }
+
+    .btn-general-booking:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        color: white;
+        text-decoration: none;
+    }
+
+    .no-therapists {
+        text-align: center;
+        padding: 3rem;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    .no-therapists h2 {
+        color: #8b7355;
+        margin-bottom: 1rem;
+    }
+
+    .no-therapists p {
+        color: #666;
+        margin-bottom: 2rem;
+    }
+
+    /* レスポンシブ対応 */
+    @media (max-width: 768px) {
+        .therapists-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .page-header {
+            padding: 1.5rem;
+        }
+
+        .page-header h1 {
+            font-size: 2rem;
+        }
+
+        .therapist-card {
+            padding: 1.5rem;
+        }
+    }
+</style>
+{% endblock %}
