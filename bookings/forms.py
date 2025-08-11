@@ -2,7 +2,7 @@ from django import forms
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.conf import settings
-from .models import Booking, Service, Customer, Therapist
+from .models import Booking, Service, Customer, Therapist, BookingSettings
 import datetime
 
 # ===== 3ステップ予約フォーム =====
@@ -42,6 +42,18 @@ class DateTimeTherapistForm(forms.Form):
         }),
         required=False
     )
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        booking_date = cleaned_data.get('booking_date')
+        booking_time = cleaned_data.get('booking_time')
+        therapist = cleaned_data.get('therapist')
+        
+        if booking_date and booking_time:
+            # セッションからサービス情報を取得（リクエストオブジェクトが必要なため、ビューで処理）
+            pass
+        
+        return cleaned_data
 
 class CustomerInfoForm(forms.Form):
     """ステップ3: お客様情報入力フォーム"""
@@ -106,3 +118,50 @@ class CustomerInfoForm(forms.Form):
             )
         
         return phone
+
+def validate_booking_time_slot(service, booking_date, booking_time, therapist=None):
+    """
+    予約時間の妥当性をチェックする関数
+    サービス時間 + インターバル時間を考慮して重複チェック
+    """
+    try:
+        booking_settings = BookingSettings.get_current_settings()
+        buffer_minutes = booking_settings.treatment_buffer_minutes
+        interval_minutes = booking_settings.booking_interval_minutes
+    except:
+        buffer_minutes = 15   # デフォルト15分インターバル
+        interval_minutes = 10  # デフォルト10分刻み
+    
+    # 指定日の既存予約を取得
+    existing_bookings = Booking.objects.filter(
+        booking_date=booking_date,
+        status__in=['pending', 'confirmed']
+    )
+    
+    # 施術者が指定されている場合は、その施術者の予約をチェック
+    if therapist:
+        existing_bookings = existing_bookings.filter(therapist=therapist)
+    else:
+        # 施術者指定なしの場合は、指定なしの予約のみチェック
+        existing_bookings = existing_bookings.filter(therapist__isnull=True)
+    
+    # 新しい予約の時間帯を計算
+    new_booking_start = datetime.datetime.combine(booking_date, booking_time)
+    new_booking_end = new_booking_start + datetime.timedelta(minutes=service.duration_minutes + buffer_minutes)
+    
+    # 既存予約との重複チェック
+    for existing_booking in existing_bookings:
+        existing_start = datetime.datetime.combine(booking_date, existing_booking.booking_time)
+        existing_end = existing_start + datetime.timedelta(
+            minutes=existing_booking.service.duration_minutes + buffer_minutes
+        )
+        
+        # 時間帯が重複するかチェック
+        if (new_booking_start < existing_end and new_booking_end > existing_start):
+            therapist_name = therapist.display_name if therapist else "指名なし"
+            raise ValidationError(
+                f'申し訳ございません。{therapist_name}の{booking_time}は既に予約が入っているか、'
+                f'前後の施術時間と重複しています。別の時間をお選びください。'
+            )
+    
+    return True

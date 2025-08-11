@@ -5,6 +5,7 @@ from django.conf import settings
 from django.http import JsonResponse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
+from django.core.exceptions import ValidationError  # 追加
 from .forms import ServiceSelectionForm, DateTimeTherapistForm, CustomerInfoForm
 from .models import Service, Booking, Customer, Therapist, BusinessHours
 import datetime
@@ -160,6 +161,10 @@ def booking_confirm(request):
     if request.method == 'POST':
         # 予約を確定
         try:
+            # 最終的な重複チェック（フォームバリデーション）
+            from .forms import validate_booking_time_slot
+            validate_booking_time_slot(service, booking_date, booking_time, therapist)
+            
             # 顧客情報を取得または作成
             customer, created = Customer.objects.get_or_create(
                 email=session_data['customer_email'],
@@ -208,6 +213,8 @@ def booking_confirm(request):
             
             return redirect('bookings:booking_complete')
             
+        except ValidationError as e:
+            messages.error(request, str(e))
         except Exception as e:
             messages.error(request, f'予約の作成中にエラーが発生しました: {str(e)}')
     
@@ -253,6 +260,47 @@ def get_available_times(request):
     except BusinessHours.DoesNotExist:
         return JsonResponse({'available_times': []})
     
+    # 予約設定を取得
+    from .models import BookingSettings
+    try:
+        booking_settings = BookingSettings.get_current_settings()
+        interval_minutes = booking_settings.booking_interval_minutes
+        buffer_minutes = booking_settings.treatment_buffer_minutes
+    except:
+        interval_minutes = 10  # デフォルト10分刻み
+        buffer_minutes = 15   # デフォルト15分インターバル
+    
+    # 指定日の既存予約を取得
+    existing_bookings = Booking.objects.filter(
+        booking_date=date,
+        status__in=['pending', 'confirmed']
+    )
+    
+    # 施術者が指定されている場合は、その施術者の予約をチェック
+    if therapist_id:
+        existing_bookings = existing_bookings.filter(therapist_id=therapist_id)
+    else:
+        # 施術者指定なしの場合は、指定なしの予約のみチェック
+        existing_bookings = existing_bookings.filter(therapist__isnull=True)
+    
+    # 予約不可時間帯を計算
+    blocked_times = set()
+    for booking in existing_bookings:
+        # 予約開始時間
+        booking_start = datetime.datetime.combine(date, booking.booking_time)
+        
+        # 施術終了時間 + インターバル
+        service_duration = booking.service.duration_minutes
+        total_blocked_duration = service_duration + buffer_minutes
+        
+        # ブロックされる時間帯を10分刻みで計算
+        current_time = booking_start
+        end_time = booking_start + datetime.timedelta(minutes=total_blocked_duration)
+        
+        while current_time < end_time:
+            blocked_times.add(current_time.time())
+            current_time += datetime.timedelta(minutes=interval_minutes)
+    
     # 10分刻みの時間スロットを生成
     available_times = []
     current_time = datetime.datetime.combine(date, business_hour.open_time)
@@ -260,29 +308,14 @@ def get_available_times(request):
     
     while current_time <= end_time:
         time_str = current_time.strftime('%H:%M')
-        
-        # 既存の予約をチェック
-        existing_booking = Booking.objects.filter(
-            booking_date=date,
-            booking_time=current_time.time(),
-            status__in=['pending', 'confirmed']
-        )
-        
-        # 施術者が指定されている場合は、その施術者の予約をチェック
-        if therapist_id:
-            existing_booking = existing_booking.filter(therapist_id=therapist_id)
-        else:
-            # 施術者指定なしの場合は、指定なしの予約のみチェック
-            existing_booking = existing_booking.filter(therapist__isnull=True)
-        
-        is_available = not existing_booking.exists()
+        is_available = current_time.time() not in blocked_times
         
         available_times.append({
             'time': time_str,
             'available': is_available
         })
         
-        current_time += datetime.timedelta(minutes=10)
+        current_time += datetime.timedelta(minutes=interval_minutes)
     
     return JsonResponse({'available_times': available_times})
 
