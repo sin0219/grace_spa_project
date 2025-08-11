@@ -1,153 +1,321 @@
 {% extends 'dashboard/base_dashboard.html' %}
 
 {% block title %}{{ title }}{% endblock %}
-{% block page_title %}予定削除確認{% endblock %}
+{% block page_title %}予定詳細 - {{ schedule.title }}{% endblock %}
 
 {% block content %}
-<div class="card" style="max-width: 600px; margin: 0 auto;">
-    <div class="card-header" style="background: #f8d7da; color: #721c24;">
-        <h3>⚠️ 予定削除の確認</h3>
-    </div>
-    <div class="card-body">
-        <div class="delete-warning">
-            <p>以下の予定を削除しようとしています。この操作は元に戻せません。</p>
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem;">
+    <!-- 予定詳細情報 -->
+    <div class="card">
+        <div class="card-header">
+            <h3>予定情報の編集</h3>
         </div>
+        <div class="card-body">
+            <form method="post" class="schedule-form" id="scheduleEditForm">
+                {% csrf_token %}
+                
+                {% if form.non_field_errors %}
+                    <div class="alert alert-warning">
+                        {% for error in form.non_field_errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
 
-        <!-- 削除対象の予定情報 -->
-        <div class="schedule-info">
-            <h4>削除対象の予定</h4>
-            <table style="width: 100%; border-collapse: collapse; margin: 1rem 0;">
-                <tr style="border-bottom: 1px solid #e9ecef;">
-                    <td style="padding: 0.75rem; font-weight: bold; background: #f8f9fa; width: 30%;">タイトル</td>
-                    <td style="padding: 0.75rem;">{{ schedule.title }}</td>
-                </tr>
-                <tr style="border-bottom: 1px solid #e9ecef;">
-                    <td style="padding: 0.75rem; font-weight: bold; background: #f8f9fa;">種別</td>
-                    <td style="padding: 0.75rem;">
-                        <span class="schedule-type-badge type-{{ schedule.schedule_type }}">
-                            {{ schedule.get_schedule_type_display }}
-                        </span>
-                    </td>
-                </tr>
-                <tr style="border-bottom: 1px solid #e9ecef;">
-                    <td style="padding: 0.75rem; font-weight: bold; background: #f8f9fa;">担当者</td>
-                    <td style="padding: 0.75rem;">
-                        {% if schedule.therapist %}
-                            {{ schedule.therapist.display_name }}
-                        {% else %}
-                            全体（担当者なし）
+                <!-- 基本情報セクション -->
+                <div class="form-section">
+                    <h4>基本情報</h4>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="{{ form.title.id_for_label }}">{{ form.title.label }}</label>
+                            {{ form.title }}
+                            {% if form.title.errors %}
+                                <div class="field-error">{{ form.title.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="{{ form.schedule_type.id_for_label }}">{{ form.schedule_type.label }}</label>
+                            {{ form.schedule_type }}
+                            {% if form.schedule_type.errors %}
+                                <div class="field-error">{{ form.schedule_type.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="{{ form.therapist.id_for_label }}">{{ form.therapist.label }}</label>
+                        {{ form.therapist }}
+                        {% if form.therapist.errors %}
+                            <div class="field-error">{{ form.therapist.errors }}</div>
                         {% endif %}
-                    </td>
-                </tr>
-                <tr style="border-bottom: 1px solid #e9ecef;">
-                    <td style="padding: 0.75rem; font-weight: bold; background: #f8f9fa;">日時</td>
-                    <td style="padding: 0.75rem;">
-                        <strong>{{ schedule.schedule_date|date:"Y年m月d日 (D)" }}</strong><br>
-                        {{ schedule.start_time }} - {{ schedule.end_time }} ({{ schedule.duration_minutes }}分)
-                    </td>
-                </tr>
-                {% if schedule.is_recurring %}
-                <tr style="border-bottom: 1px solid #e9ecef;">
-                    <td style="padding: 0.75rem; font-weight: bold; background: #f8f9fa;">繰り返し</td>
-                    <td style="padding: 0.75rem;">
-                        <span class="badge" style="background: #17a2b8; color: white;">毎週繰り返し</span>
-                    </td>
-                </tr>
-                {% endif %}
-                {% if schedule.description %}
-                <tr style="border-bottom: 1px solid #e9ecef;">
-                    <td style="padding: 0.75rem; font-weight: bold; background: #f8f9fa;">詳細</td>
-                    <td style="padding: 0.75rem;">{{ schedule.description|linebreaks }}</td>
-                </tr>
-                {% endif %}
-                <tr>
-                    <td style="padding: 0.75rem; font-weight: bold; background: #f8f9fa;">作成者</td>
-                    <td style="padding: 0.75rem;">{{ schedule.created_by }} ({{ schedule.created_at|date:"Y/m/d H:i" }})</td>
-                </tr>
-            </table>
+                    </div>
+                </div>
+
+                <!-- 日時設定セクション -->
+                <div class="form-section">
+                    <h4>日時設定</h4>
+                    
+                    <!-- 日付選択 -->
+                    <div class="date-time-section">
+                        <h5>日付・時間選択</h5>
+                        
+                        <!-- 日付選択 -->
+                        <div class="date-selection">
+                            <label>予定日</label>
+                            <div class="calendar-container">
+                                <div class="calendar-header">
+                                    <button type="button" class="calendar-nav" id="prevMonth">‹</button>
+                                    <h4 id="currentMonth"></h4>
+                                    <button type="button" class="calendar-nav" id="nextMonth">›</button>
+                                </div>
+                                <div class="calendar-weekdays">
+                                    <div>日</div><div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div>土</div>
+                                </div>
+                                <div class="calendar-days" id="calendarDays">
+                                    <!-- JavaScriptで動的に生成 -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 時間選択 -->
+                        <div class="time-range-selection">
+                            <label>開始時間</label>
+                            <div class="time-slots" id="startTimeSlots">
+                                <p class="no-date-selected">まず日付をお選びください</p>
+                            </div>
+                            
+                            <label>終了時間</label>
+                            <div class="time-slots" id="endTimeSlots">
+                                <p class="no-start-time">まず開始時間をお選びください</p>
+                            </div>
+                        </div>
+
+                        <!-- 隠しフィールド -->
+                        {{ form.schedule_date }}
+                        {{ form.start_time }}
+                        {{ form.end_time }}
+                        
+                        <!-- エラー表示 -->
+                        {% if form.schedule_date.errors %}
+                            <div class="field-error">{{ form.schedule_date.errors }}</div>
+                        {% endif %}
+                        {% if form.start_time.errors %}
+                            <div class="field-error">{{ form.start_time.errors }}</div>
+                        {% endif %}
+                        {% if form.end_time.errors %}
+                            <div class="field-error">{{ form.end_time.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-check-container">
+                        <div class="form-check">
+                            {{ form.is_recurring }}
+                            <label for="{{ form.is_recurring.id_for_label }}" class="form-check-label">
+                                {{ form.is_recurring.label }}
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 詳細情報セクション -->
+                <div class="form-section">
+                    <h4>詳細情報</h4>
+                    <div class="form-group">
+                        <label for="{{ form.description.id_for_label }}">{{ form.description.label }}</label>
+                        {{ form.description }}
+                        {% if form.description.errors %}
+                            <div class="field-error">{{ form.description.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <a href="{% url 'dashboard:schedule_list' %}" class="btn btn-secondary">戻る</a>
+                    <button type="submit" class="btn btn-primary" id="updateBtn">更新</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- サイドパネル -->
+    <div>
+        <!-- 予定情報表示 -->
+        <div class="card">
+            <div class="card-header">
+                <h3>予定情報</h3>
+            </div>
+            <div class="card-body">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <tr style="border-bottom: 1px solid #e9ecef;">
+                        <td style="padding: 0.5rem;">{{ schedule.title }}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #e9ecef;">
+                        <td style="padding: 0.5rem; font-weight: bold; background: #f8f9fa;">種別</td>
+                        <td style="padding: 0.5rem;">
+                            <span class="schedule-type-badge type-{{ schedule.schedule_type }}">
+                                {{ schedule.get_schedule_type_display }}
+                            </span>
+                        </td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #e9ecef;">
+                        <td style="padding: 0.5rem; font-weight: bold; background: #f8f9fa;">担当者</td>
+                        <td style="padding: 0.5rem;">
+                            {% if schedule.therapist %}
+                                {{ schedule.therapist.display_name }}
+                            {% else %}
+                                全体（担当者なし）
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #e9ecef;">
+                        <td style="padding: 0.5rem; font-weight: bold; background: #f8f9fa;">日時</td>
+                        <td style="padding: 0.5rem;">
+                            <strong>{{ schedule.schedule_date|date:"Y年m月d日 (D)" }}</strong><br>
+                            {{ schedule.start_time }} - {{ schedule.end_time }}
+                        </td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #e9ecef;">
+                        <td style="padding: 0.5rem; font-weight: bold; background: #f8f9fa;">時間</td>
+                        <td style="padding: 0.5rem;">{{ schedule.duration_minutes }}分</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #e9ecef;">
+                        <td style="padding: 0.5rem; font-weight: bold; background: #f8f9fa;">繰り返し</td>
+                        <td style="padding: 0.5rem;">
+                            {% if schedule.is_recurring %}
+                                <span class="badge" style="background: #17a2b8; color: white;">有効</span>
+                            {% else %}
+                                <span class="badge" style="background: #6c757d; color: white;">無効</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #e9ecef;">
+                        <td style="padding: 0.5rem; font-weight: bold; background: #f8f9fa;">作成者</td>
+                        <td style="padding: 0.5rem;">{{ schedule.created_by }}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 0.5rem; font-weight: bold; background: #f8f9fa;">作成日</td>
+                        <td style="padding: 0.5rem;">{{ schedule.created_at|date:"Y年m月d日 H:i" }}</td>
+                    </tr>
+                </table>
+            </div>
         </div>
 
-        <!-- 警告メッセージ -->
-        <div class="warning-messages">
-            {% if schedule.is_recurring %}
-            <div class="alert alert-warning">
-                <strong>⚠️ 繰り返し予定について:</strong><br>
-                この予定は繰り返し設定されています。削除すると今後の繰り返し予定もすべて無効になります。
+        <!-- 重複チェック -->
+        {% if conflicting_bookings %}
+        <div class="card">
+            <div class="card-header" style="background: #f8d7da; color: #721c24;">
+                <h3>⚠️ 予約との重複</h3>
             </div>
-            {% endif %}
-
-            <div class="alert alert-danger">
-                <strong>🚨 重要な注意事項:</strong>
-                <ul style="margin: 0.5rem 0; padding-left: 1.5rem;">
-                    <li>削除した予定は復元できません</li>
-                    <li>この時間帯が再び予約可能になります</li>
-                    <li>既存の予約には影響しません</li>
-                </ul>
+            <div class="card-body">
+                <p>この予定時間に以下の予約があります：</p>
+                {% for booking in conflicting_bookings %}
+                <div style="padding: 0.5rem; margin: 0.5rem 0; background: #fff5f5; border-left: 3px solid #dc3545;">
+                    <strong>{{ booking.customer.name }}</strong><br>
+                    <small>{{ booking.booking_time }} - {{ booking.service.name }}</small>
+                </div>
+                {% endfor %}
             </div>
         </div>
+        {% else %}
+        <div class="card">
+            <div class="card-header" style="background: #d4edda; color: #155724;">
+                <h3>✓ 重複なし</h3>
+            </div>
+            <div class="card-body">
+                <p>この予定時間に予約の重複はありません。</p>
+            </div>
+        </div>
+        {% endif %}
 
-        <!-- 削除確認フォーム -->
-        <form method="post" style="margin-top: 2rem;">
-            {% csrf_token %}
-            <div class="form-actions">
-                <a href="{% url 'dashboard:schedule_detail' schedule.id %}" class="btn btn-secondary">
-                    キャンセル（戻る）
+        <!-- アクション -->
+        <div class="card">
+            <div class="card-body">
+                <a href="{% url 'dashboard:schedule_delete' schedule.id %}" 
+                   class="btn btn-danger" style="width: 100%;"
+                   onclick="return confirm('予定「{{ schedule.title }}」を削除しますか？')">
+                    予定を削除
                 </a>
-                <button type="submit" class="btn btn-danger">
-                    🗑️ 予定を削除する
-                </button>
             </div>
-        </form>
+        </div>
     </div>
 </div>
 
 <style>
-    .delete-warning {
-        background: #fff3cd;
-        border: 1px solid #ffeaa7;
-        color: #856404;
-        padding: 1rem;
-        border-radius: 5px;
-        margin-bottom: 1.5rem;
-        text-align: center;
-        font-weight: bold;
-    }
-    
-    .schedule-info {
-        background: #f8f9fa;
+    .form-section {
+        margin-bottom: 2rem;
+        padding: 1.5rem;
         border: 1px solid #e9ecef;
         border-radius: 8px;
-        padding: 1.5rem;
-        margin-bottom: 1.5rem;
+        background: #f8f9fa;
     }
     
-    .schedule-info h4 {
+    .form-section h4 {
         color: #8b7355;
         margin-bottom: 1rem;
         border-bottom: 2px solid #d4c4a8;
         padding-bottom: 0.5rem;
     }
     
-    .warning-messages {
-        margin-bottom: 1.5rem;
+    .form-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1rem;
     }
     
-    .alert {
+    .form-group {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .form-group label {
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+        color: #555;
+    }
+    
+    .form-check-container {
+        margin-top: 1rem;
+    }
+    
+    .form-check {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
         padding: 1rem;
+        background: white;
         border-radius: 5px;
-        margin-bottom: 1rem;
+        border: 1px solid #ddd;
+    }
+    
+    .form-check-label {
+        font-weight: bold;
+        color: #555;
+        margin-bottom: 0;
+    }
+    
+    .field-error {
+        color: #dc3545;
+        font-size: 0.9rem;
+        margin-top: 0.25rem;
+    }
+    
+    .form-actions {
+        text-align: center;
+        margin-top: 2rem;
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
     }
     
     .alert-warning {
         background-color: #fff3cd;
         border: 1px solid #ffeaa7;
         color: #856404;
-    }
-    
-    .alert-danger {
-        background-color: #f8d7da;
-        border: 1px solid #f5c6cb;
-        color: #721c24;
+        padding: 1rem;
+        border-radius: 5px;
+        margin-bottom: 1rem;
     }
     
     .schedule-type-badge {
@@ -165,23 +333,455 @@
     .type-preparation { background: #6f42c1; }
     .type-admin { background: #fd7e14; }
     .type-other { background: #6c757d; }
-    
-    .form-actions {
+
+    /* 日時選択スタイル */
+    .date-time-section {
+        margin: 1.5rem 0;
+        padding: 1.5rem;
+        background: white;
+        border-radius: 8px;
+        border: 2px solid #8b7355;
+    }
+
+    .date-time-section h5 {
+        color: #8b7355;
+        margin-bottom: 1.5rem;
+        font-size: 1.2rem;
         text-align: center;
+    }
+
+    .date-selection {
+        margin-bottom: 2rem;
+    }
+
+    .date-selection label {
+        display: block;
+        font-weight: bold;
+        color: #8b7355;
+        margin-bottom: 1rem;
+        text-align: center;
+    }
+
+    .calendar-container {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 1.5rem;
+        max-width: 400px;
+        margin: 0 auto;
+    }
+
+    .calendar-header {
         display: flex;
-        gap: 1rem;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .calendar-nav {
+        background: #8b7355;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 35px;
+        height: 35px;
+        cursor: pointer;
+        font-size: 1.2rem;
+    }
+
+    .calendar-nav:hover {
+        background: #a68b5b;
+    }
+
+    .calendar-weekdays {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .calendar-weekdays div {
+        text-align: center;
+        font-weight: bold;
+        color: #8b7355;
+        padding: 0.5rem;
+    }
+
+    .calendar-days {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 0.5rem;
+    }
+
+    .calendar-day {
+        aspect-ratio: 1;
+        display: flex;
+        align-items: center;
         justify-content: center;
-        padding-top: 1rem;
-        border-top: 2px solid #e9ecef;
+        border-radius: 50%;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-weight: bold;
     }
-    
-    .btn-danger {
-        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+
+    .calendar-day:hover:not(.disabled):not(.other-month) {
+        background: #d4c4a8;
+        color: white;
     }
-    
-    .btn-danger:hover {
-        background: linear-gradient(135deg, #c82333 0%, #a71e2a 100%);
-        transform: translateY(-1px);
+
+    .calendar-day.selected {
+        background: #8b7355;
+        color: white;
+    }
+
+    .calendar-day.disabled {
+        color: #ccc;
+        cursor: not-allowed;
+    }
+
+    .calendar-day.other-month {
+        color: #ccc;
+        cursor: default;
+    }
+
+    .calendar-day.today {
+        background: #ffeaa7;
+        font-weight: bold;
+    }
+
+    .time-range-selection {
+        margin-bottom: 1rem;
+    }
+
+    .time-range-selection label {
+        display: block;
+        font-weight: bold;
+        color: #8b7355;
+        margin: 1rem 0 0.5rem 0;
+        text-align: center;
+    }
+
+    .time-slots {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+        gap: 0.8rem;
+        max-height: 200px;
+        overflow-y: auto;
+        padding: 1rem;
+        background: #f8f9fa;
+        border-radius: 10px;
+        margin-bottom: 1rem;
+    }
+
+    .time-slot {
+        padding: 0.8rem 0.5rem;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s;
+        background: white;
+        font-weight: bold;
+        font-size: 0.9rem;
+    }
+
+    .time-slot:hover:not(.unavailable) {
+        border-color: #8b7355;
+        background: #f8f5f0;
+    }
+
+    .time-slot.selected {
+        background: #8b7355;
+        color: white;
+        border-color: #8b7355;
+    }
+
+    .time-slot.disabled {
+        background: #f8d7da;
+        color: #721c24;
+        border-color: #f5c6cb;
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
+
+    .no-date-selected,
+    .no-start-time {
+        text-align: center;
+        color: #666;
+        font-style: italic;
+        padding: 2rem;
+        grid-column: 1 / -1;
     }
 </style>
-{% endblock %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let currentDate = new Date();
+    let selectedDate = null;
+    let selectedStartTime = null;
+    let selectedEndTime = null;
+    
+    // 既存の値を取得
+    const existingDate = document.getElementById('id_schedule_date').value;
+    const existingStartTime = document.getElementById('id_start_time').value;
+    const existingEndTime = document.getElementById('id_end_time').value;
+    
+    // 既存の値がある場合は設定
+    if (existingDate) {
+        selectedDate = new Date(existingDate);
+        currentDate = new Date(selectedDate);
+    }
+    if (existingStartTime) {
+        selectedStartTime = existingStartTime;
+    }
+    if (existingEndTime) {
+        selectedEndTime = existingEndTime;
+    }
+    
+    // カレンダー初期化
+    updateCalendar();
+    
+    // 既存の値がある場合は時間スロットも初期化
+    if (selectedDate) {
+        loadTimeSlots();
+        if (selectedStartTime) {
+            updateEndTimeSlots();
+        }
+    }
+    
+    // イベントリスナー
+    document.getElementById('prevMonth').addEventListener('click', () => {
+        currentDate.setMonth(currentDate.getMonth() - 1);
+        updateCalendar();
+    });
+    
+    document.getElementById('nextMonth').addEventListener('click', () => {
+        currentDate.setMonth(currentDate.getMonth() + 1);
+        updateCalendar();
+    });
+    
+    function updateCalendar() {
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+        
+        // 月名を更新
+        const monthNames = ['1月', '2月', '3月', '4月', '5月', '6月', 
+                           '7月', '8月', '9月', '10月', '11月', '12月'];
+        document.getElementById('currentMonth').textContent = `${year}年${monthNames[month]}`;
+        
+        // カレンダーの日付を生成
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+        const startDate = new Date(firstDay);
+        startDate.setDate(startDate.getDate() - firstDay.getDay());
+        
+        const calendarDays = document.getElementById('calendarDays');
+        calendarDays.innerHTML = '';
+        
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        for (let i = 0; i < 42; i++) {
+            const date = new Date(startDate);
+            date.setDate(startDate.getDate() + i);
+            
+            const dayElement = document.createElement('div');
+            dayElement.className = 'calendar-day';
+            dayElement.textContent = date.getDate();
+            
+            // クラスの設定
+            if (date.getMonth() !== month) {
+                dayElement.classList.add('other-month');
+            } else if (date.getTime() === today.getTime()) {
+                dayElement.classList.add('today');
+            }
+            
+            // 既存の選択状態を復元
+            if (selectedDate && date.toDateString() === selectedDate.toDateString()) {
+                dayElement.classList.add('selected');
+            }
+            
+            // クリックイベント（過去の日付も選択可能にする）
+            if (!dayElement.classList.contains('other-month')) {
+                dayElement.addEventListener('click', () => selectDate(date, dayElement));
+            }
+            
+            calendarDays.appendChild(dayElement);
+        }
+    }
+    
+    function selectDate(date, element) {
+        // 前の選択をクリア
+        document.querySelectorAll('.calendar-day.selected').forEach(el => {
+            el.classList.remove('selected');
+        });
+        
+        // 新しい選択を設定
+        element.classList.add('selected');
+        selectedDate = date;
+        
+        // 隠しフィールドに設定
+        document.getElementById('id_schedule_date').value = date.toISOString().split('T')[0];
+        
+        // 時間選択を初期化
+        loadTimeSlots();
+        
+        // 時間の選択をリセット（日付が変更された場合）
+        if (!existingStartTime || !existingEndTime) {
+            selectedStartTime = null;
+            selectedEndTime = null;
+            document.getElementById('id_start_time').value = '';
+            document.getElementById('id_end_time').value = '';
+            updateEndTimeSlots();
+        }
+        updateSubmitButton();
+    }
+    
+    function loadTimeSlots() {
+        const startTimeSlotsContainer = document.getElementById('startTimeSlots');
+        startTimeSlotsContainer.innerHTML = '';
+        
+        // 6:00から22:00まで30分刻みで時間を生成
+        const startHour = 6;
+        const endHour = 22;
+        
+        for (let hour = startHour; hour < endHour; hour++) {
+            for (let minute = 0; minute < 60; minute += 30) {
+                const timeStr = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+                
+                const timeSlot = document.createElement('div');
+                timeSlot.className = 'time-slot';
+                timeSlot.textContent = timeStr;
+                
+                // 既存の選択状態を復元
+                if (selectedStartTime === timeStr) {
+                    timeSlot.classList.add('selected');
+                }
+                
+                timeSlot.addEventListener('click', () => selectStartTime(timeStr, timeSlot));
+                
+                startTimeSlotsContainer.appendChild(timeSlot);
+            }
+        }
+    }
+    
+    function selectStartTime(time, element) {
+        // 前の選択をクリア
+        document.querySelectorAll('#startTimeSlots .time-slot.selected').forEach(el => {
+            el.classList.remove('selected');
+        });
+        
+        // 新しい選択を設定
+        element.classList.add('selected');
+        selectedStartTime = time;
+        
+        // 隠しフィールドに設定
+        document.getElementById('id_start_time').value = time;
+        
+        // 終了時間の選択肢を更新
+        updateEndTimeSlots();
+        
+        // 終了時間の選択をリセット（開始時間が変更された場合）
+        if (!existingEndTime) {
+            selectedEndTime = null;
+            document.getElementById('id_end_time').value = '';
+        }
+        updateSubmitButton();
+    }
+    
+    function updateEndTimeSlots() {
+        const endTimeSlotsContainer = document.getElementById('endTimeSlots');
+        endTimeSlotsContainer.innerHTML = '';
+        
+        if (!selectedStartTime) {
+            const noStartTimeMessage = document.createElement('p');
+            noStartTimeMessage.className = 'no-start-time';
+            noStartTimeMessage.textContent = 'まず開始時間をお選びください';
+            endTimeSlotsContainer.appendChild(noStartTimeMessage);
+            return;
+        }
+        
+        // 開始時間より後の時間を生成
+        const [startHour, startMinute] = selectedStartTime.split(':').map(Number);
+        const startTimeMinutes = startHour * 60 + startMinute;
+        
+        const endHour = 22;
+        
+        for (let hour = 6; hour <= endHour; hour++) {
+            for (let minute = 0; minute < 60; minute += 30) {
+                const currentTimeMinutes = hour * 60 + minute;
+                
+                // 開始時間より後の時間のみ表示
+                if (currentTimeMinutes > startTimeMinutes) {
+                    const timeStr = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+                    
+                    const timeSlot = document.createElement('div');
+                    timeSlot.className = 'time-slot';
+                    timeSlot.textContent = timeStr;
+                    
+                    // 既存の選択状態を復元
+                    if (selectedEndTime === timeStr) {
+                        timeSlot.classList.add('selected');
+                    }
+                    
+                    timeSlot.addEventListener('click', () => selectEndTime(timeStr, timeSlot));
+                    
+                    endTimeSlotsContainer.appendChild(timeSlot);
+                }
+            }
+        }
+    }
+    
+    function selectEndTime(time, element) {
+        // 前の選択をクリア
+        document.querySelectorAll('#endTimeSlots .time-slot.selected').forEach(el => {
+            el.classList.remove('selected');
+        });
+        
+        // 新しい選択を設定
+        element.classList.add('selected');
+        selectedEndTime = time;
+        
+        // 隠しフィールドに設定
+        document.getElementById('id_end_time').value = time;
+        
+        // 送信ボタンを有効化
+        updateSubmitButton();
+    }
+    
+    function updateSubmitButton() {
+        const updateBtn = document.getElementById('updateBtn');
+        // 日付、開始時間、終了時間がすべて選択されているかチェック
+        if (selectedDate && selectedStartTime && selectedEndTime) {
+            updateBtn.disabled = false;
+        } else {
+            updateBtn.disabled = true;
+        }
+    }
+    
+    // フォーム送信時のバリデーション
+    document.getElementById('scheduleEditForm').addEventListener('submit', function(e) {
+        if (!selectedDate || !selectedStartTime || !selectedEndTime) {
+            e.preventDefault();
+            alert('日付、開始時間、終了時間をすべて選択してください。');
+            return false;
+        }
+        
+        // 時間の妥当性チェック
+        const [startHour, startMinute] = selectedStartTime.split(':').map(Number);
+        const [endHour, endMinute] = selectedEndTime.split(':').map(Number);
+        const startMinutes = startHour * 60 + startMinute;
+        const endMinutes = endHour * 60 + endMinute;
+        
+        if (startMinutes >= endMinutes) {
+            e.preventDefault();
+            alert('終了時間は開始時間より後に設定してください。');
+            return false;
+        }
+    });
+    
+    // 初期状態での送信ボタン状態を設定
+    updateSubmitButton();
+});
+</script>
+{% endblock %}.5rem; font-weight: bold; background: #f8f9fa;">タイトル</td>
+                        <td style="padding: 0

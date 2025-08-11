@@ -32,6 +32,16 @@ class DashboardBookingForm(forms.ModelForm):
         })
     )
     
+    # 日時フィールドを隠しフィールドに変更
+    booking_date = forms.DateField(
+        label='予約日',
+        widget=forms.HiddenInput()
+    )
+    booking_time = forms.TimeField(
+        label='予約時間',
+        widget=forms.HiddenInput()
+    )
+    
     class Meta:
         model = Booking
         fields = ['service', 'therapist', 'booking_date', 'booking_time', 'status', 'notes']
@@ -46,14 +56,6 @@ class DashboardBookingForm(forms.ModelForm):
         widgets = {
             'service': forms.Select(attrs={'class': 'form-control'}),
             'therapist': forms.Select(attrs={'class': 'form-control'}),
-            'booking_date': forms.DateInput(attrs={
-                'class': 'form-control',
-                'type': 'date'
-            }),
-            'booking_time': forms.TimeInput(attrs={
-                'class': 'form-control',
-                'type': 'time'
-            }),
             'status': forms.Select(attrs={'class': 'form-control'}),
             'notes': forms.Textarea(attrs={
                 'class': 'form-control',
@@ -85,6 +87,12 @@ class DashboardBookingForm(forms.ModelForm):
         booking_time = cleaned_data.get('booking_time')
         therapist = cleaned_data.get('therapist')
         service = cleaned_data.get('service')
+        
+        # 必須フィールドチェック
+        if not booking_date:
+            raise ValidationError('予約日を選択してください。')
+        if not booking_time:
+            raise ValidationError('予約時間を選択してください。')
         
         # 重複チェック（管理者登録なので既存予約との重複チェックは警告のみ）
         if booking_date and booking_time and service:
@@ -125,6 +133,20 @@ class DashboardBookingForm(forms.ModelForm):
 class ScheduleForm(forms.ModelForm):
     """予定登録フォーム"""
     
+    # 日時フィールドを隠しフィールドに変更
+    schedule_date = forms.DateField(
+        label='予定日',
+        widget=forms.HiddenInput()
+    )
+    start_time = forms.TimeField(
+        label='開始時間',
+        widget=forms.HiddenInput()
+    )
+    end_time = forms.TimeField(
+        label='終了時間',
+        widget=forms.HiddenInput()
+    )
+    
     class Meta:
         model = Schedule
         fields = ['title', 'schedule_type', 'therapist', 'schedule_date', 'start_time', 'end_time', 'description', 'is_recurring']
@@ -145,18 +167,6 @@ class ScheduleForm(forms.ModelForm):
             }),
             'schedule_type': forms.Select(attrs={'class': 'form-control'}),
             'therapist': forms.Select(attrs={'class': 'form-control'}),
-            'schedule_date': forms.DateInput(attrs={
-                'class': 'form-control',
-                'type': 'date'
-            }),
-            'start_time': forms.TimeInput(attrs={
-                'class': 'form-control',
-                'type': 'time'
-            }),
-            'end_time': forms.TimeInput(attrs={
-                'class': 'form-control',
-                'type': 'time'
-            }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
@@ -181,6 +191,14 @@ class ScheduleForm(forms.ModelForm):
         schedule_date = cleaned_data.get('schedule_date')
         start_time = cleaned_data.get('start_time')
         end_time = cleaned_data.get('end_time')
+        
+        # 必須フィールドチェック
+        if not schedule_date:
+            raise ValidationError('予定日を選択してください。')
+        if not start_time:
+            raise ValidationError('開始時間を選択してください。')
+        if not end_time:
+            raise ValidationError('終了時間を選択してください。')
         
         # 開始時間と終了時間のチェック
         if start_time and end_time:

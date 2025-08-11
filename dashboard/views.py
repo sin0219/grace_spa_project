@@ -3,7 +3,8 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib import messages
 from django.utils import timezone
 from django.db.models import Count, Q
-from bookings.models import Booking, Customer, Service, Schedule
+from django.http import JsonResponse
+from bookings.models import Booking, Customer, Service, Schedule, BusinessHours, Therapist
 from datetime import datetime, timedelta
 import calendar
 
@@ -521,3 +522,180 @@ def schedule_delete(request, schedule_id):
     except:
         messages.error(request, '予定が見つかりません。')
         return redirect('dashboard:schedule_list')
+
+# ===== API エンドポイント =====
+
+@staff_member_required
+def get_available_times_api(request):
+    """管理者用：利用可能時間取得API"""
+    date_str = request.GET.get('date')
+    therapist_id = request.GET.get('therapist_id')
+    service_id = request.GET.get('service_id')
+    
+    if not date_str:
+        return JsonResponse({'error': 'Date is required'}, status=400)
+    
+    try:
+        date = datetime.strptime(date_str, '%Y-%m-%d').date()
+    except ValueError:
+        return JsonResponse({'error': 'Invalid date format'}, status=400)
+    
+    # 営業時間を取得
+    weekday = date.weekday()
+    try:
+        business_hour = BusinessHours.objects.get(weekday=weekday)
+        if not business_hour.is_open:
+            return JsonResponse({'time_slots': []})
+    except BusinessHours.DoesNotExist:
+        # デフォルト営業時間
+        business_hour = type('', (), {
+            'is_open': True,
+            'open_time': datetime.strptime('09:00', '%H:%M').time(),
+            'close_time': datetime.strptime('20:00', '%H:%M').time(),
+            'last_booking_time': datetime.strptime('19:00', '%H:%M').time(),
+        })()
+    
+    # 既存予約を取得
+    existing_bookings = Booking.objects.filter(
+        booking_date=date,
+        status__in=['pending', 'confirmed']
+    )
+    
+    if therapist_id:
+        existing_bookings = existing_bookings.filter(therapist_id=therapist_id)
+    else:
+        existing_bookings = existing_bookings.filter(therapist__isnull=True)
+    
+    # 既存予定を取得
+    try:
+        existing_schedules = Schedule.objects.filter(
+            schedule_date=date,
+            is_active=True
+        )
+        
+        if therapist_id:
+            existing_schedules = existing_schedules.filter(
+                Q(therapist_id=therapist_id) | Q(therapist__isnull=True)
+            )
+    except:
+        existing_schedules = []
+    
+    # 時間スロットを10分刻みで生成
+    time_slots = []
+    current_time = datetime.combine(date, business_hour.open_time)
+    end_time = datetime.combine(date, business_hour.last_booking_time)
+    
+    while current_time <= end_time:
+        time_str = current_time.strftime('%H:%M')
+        status = 'available'
+        conflict_info = ''
+        
+        # 予約との重複チェック
+        for booking in existing_bookings:
+            booking_start = datetime.combine(date, booking.booking_time)
+            service_duration = booking.service.duration_minutes
+            booking_end = booking_start + timedelta(minutes=service_duration + 15)  # バッファ込み
+            
+            if booking_start <= current_time < booking_end:
+                status = 'booking_conflict'
+                conflict_info = f'{booking.customer.name} - {booking.service.name}'
+                break
+        
+        # 予定との重複チェック
+        if status == 'available':
+            for schedule in existing_schedules:
+                schedule_start = datetime.combine(date, schedule.start_time)
+                schedule_end = datetime.combine(date, schedule.end_time)
+                
+                if schedule_start <= current_time < schedule_end:
+                    status = 'schedule_conflict'
+                    conflict_info = f'{schedule.title}'
+                    break
+        
+        time_slots.append({
+            'time': time_str,
+            'status': status,
+            'conflict_info': conflict_info
+        })
+        
+        current_time += timedelta(minutes=10)  # 10分刻み
+    
+    return JsonResponse({'time_slots': time_slots})
+
+@staff_member_required
+def get_schedule_times_api(request):
+    """予定作成用：時間スロット取得API"""
+    date_str = request.GET.get('date')
+    therapist_id = request.GET.get('therapist_id')
+    start_time_str = request.GET.get('start_time')
+    
+    if not date_str:
+        return JsonResponse({'error': 'Date is required'}, status=400)
+    
+    try:
+        date = datetime.strptime(date_str, '%Y-%m-%d').date()
+    except ValueError:
+        return JsonResponse({'error': 'Invalid date format'}, status=400)
+    
+    # 既存予約を取得
+    existing_bookings = Booking.objects.filter(
+        booking_date=date,
+        status__in=['pending', 'confirmed']
+    )
+    
+    if therapist_id:
+        existing_bookings = existing_bookings.filter(therapist_id=therapist_id)
+    
+    # 既存予定を取得
+    try:
+        existing_schedules = Schedule.objects.filter(
+            schedule_date=date,
+            is_active=True
+        )
+        
+        if therapist_id:
+            existing_schedules = existing_schedules.filter(therapist_id=therapist_id)
+    except:
+        existing_schedules = []
+    
+    # 時間スロットを10分刻みで生成（6:00-22:00）
+    time_slots = []
+    start_hour = 6
+    end_hour = 22
+    
+    for hour in range(start_hour, end_hour):
+        for minute in range(0, 60, 10):
+            current_time = datetime.combine(date, datetime.strptime(f'{hour:02d}:{minute:02d}', '%H:%M').time())
+            time_str = current_time.strftime('%H:%M')
+            status = 'available'
+            conflict_info = ''
+            
+            # 予約との重複チェック
+            for booking in existing_bookings:
+                booking_start = datetime.combine(date, booking.booking_time)
+                service_duration = booking.service.duration_minutes
+                booking_end = booking_start + timedelta(minutes=service_duration + 15)  # バッファ込み
+                
+                if booking_start <= current_time < booking_end:
+                    status = 'booking_conflict'
+                    conflict_info = f'{booking.customer.name} - {booking.service.name}'
+                    break
+            
+            # 予定との重複チェック
+            if status == 'available':
+                for schedule in existing_schedules:
+                    schedule_start = datetime.combine(date, schedule.start_time)
+                    schedule_end = datetime.combine(date, schedule.end_time)
+                    
+                    if schedule_start <= current_time < schedule_end:
+                        status = 'schedule_conflict'
+                        conflict_info = f'{schedule.title}'
+                        break
+            
+            time_slots.append({
+                'time': time_str,
+                'status': status,
+                'conflict_info': conflict_info
+            })
+    
+    return JsonResponse({'time_slots': time_slots})

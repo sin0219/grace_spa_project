@@ -2,7 +2,8 @@ from django import forms
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.conf import settings
-from .models import Booking, Service, Customer, Therapist, BookingSettings
+from django.db.models import Q
+from .models import Booking, Service, Customer, Therapist, BookingSettings, Schedule
 import datetime
 
 # ===== 3ステップ予約フォーム =====
@@ -121,7 +122,7 @@ class CustomerInfoForm(forms.Form):
 
 def validate_booking_time_slot(service, booking_date, booking_time, therapist=None):
     """
-    予約時間の妥当性をチェックする関数
+    予約時間の妥当性をチェックする関数（予定も含む）
     サービス時間 + インターバル時間を考慮して重複チェック
     """
     try:
@@ -145,6 +146,24 @@ def validate_booking_time_slot(service, booking_date, booking_time, therapist=No
         # 施術者指定なしの場合は、指定なしの予約のみチェック
         existing_bookings = existing_bookings.filter(therapist__isnull=True)
     
+    # 指定日の既存予定を取得（新規追加）
+    try:
+        existing_schedules = Schedule.objects.filter(
+            schedule_date=booking_date,
+            is_active=True
+        )
+        
+        # 施術者が指定されている場合は、その施術者の予定または全体予定をチェック
+        if therapist:
+            existing_schedules = existing_schedules.filter(
+                Q(therapist=therapist) | Q(therapist__isnull=True)
+            )
+        # 施術者指定なしの場合は、全体予定のみチェック
+        else:
+            existing_schedules = existing_schedules.filter(therapist__isnull=True)
+    except:
+        existing_schedules = []
+    
     # 新しい予約の時間帯を計算
     new_booking_start = datetime.datetime.combine(booking_date, booking_time)
     new_booking_end = new_booking_start + datetime.timedelta(minutes=service.duration_minutes + buffer_minutes)
@@ -162,6 +181,20 @@ def validate_booking_time_slot(service, booking_date, booking_time, therapist=No
             raise ValidationError(
                 f'申し訳ございません。{therapist_name}の{booking_time}は既に予約が入っているか、'
                 f'前後の施術時間と重複しています。別の時間をお選びください。'
+            )
+    
+    # 既存予定との重複チェック（新規追加）
+    for existing_schedule in existing_schedules:
+        schedule_start = datetime.datetime.combine(booking_date, existing_schedule.start_time)
+        schedule_end = datetime.datetime.combine(booking_date, existing_schedule.end_time)
+        
+        # 予約時間が予定時間と重複するかチェック
+        if (new_booking_start < schedule_end and new_booking_end > schedule_start):
+            therapist_name = therapist.display_name if therapist else "指名なし"
+            schedule_info = f"{existing_schedule.title}（{existing_schedule.get_schedule_type_display()}）"
+            raise ValidationError(
+                f'申し訳ございません。{therapist_name}の{booking_time}は予定「{schedule_info}」と'
+                f'重複しています。別の時間をお選びください。'
             )
     
     return True

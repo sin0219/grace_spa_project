@@ -6,8 +6,9 @@ from django.http import JsonResponse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import ValidationError  # 追加
+from django.db.models import Q  # 追加
 from .forms import ServiceSelectionForm, DateTimeTherapistForm, CustomerInfoForm
-from .models import Service, Booking, Customer, Therapist, BusinessHours
+from .models import Service, Booking, Customer, Therapist, BusinessHours, Schedule
 import datetime
 import json
 
@@ -253,7 +254,7 @@ def booking_complete(request):
     return render(request, 'bookings/complete.html', context)
 
 def get_available_times(request):
-    """AJAX: 指定された日付の利用可能時間を取得"""
+    """AJAX: 指定された日付の利用可能時間を取得（予定も含む）"""
     date_str = request.GET.get('date')
     therapist_id = request.GET.get('therapist_id')
     
@@ -297,8 +298,28 @@ def get_available_times(request):
         # 施術者指定なしの場合は、指定なしの予約のみチェック
         existing_bookings = existing_bookings.filter(therapist__isnull=True)
     
+    # 指定日の既存予定を取得（新規追加）
+    try:
+        existing_schedules = Schedule.objects.filter(
+            schedule_date=date,
+            is_active=True
+        )
+        
+        # 施術者が指定されている場合は、その施術者の予定または全体予定をチェック
+        if therapist_id:
+            existing_schedules = existing_schedules.filter(
+                Q(therapist_id=therapist_id) | Q(therapist__isnull=True)
+            )
+        # 施術者指定なしの場合は、全体予定のみチェック
+        else:
+            existing_schedules = existing_schedules.filter(therapist__isnull=True)
+    except:
+        existing_schedules = []
+    
     # 予約不可時間帯を計算
     blocked_times = set()
+    
+    # 既存予約による不可時間
     for booking in existing_bookings:
         # 予約開始時間
         booking_start = datetime.datetime.combine(date, booking.booking_time)
@@ -312,6 +333,19 @@ def get_available_times(request):
         end_time = booking_start + datetime.timedelta(minutes=total_blocked_duration)
         
         while current_time < end_time:
+            blocked_times.add(current_time.time())
+            current_time += datetime.timedelta(minutes=interval_minutes)
+    
+    # 既存予定による不可時間（新規追加）
+    for schedule in existing_schedules:
+        # 予定開始時間から終了時間まで
+        schedule_start = datetime.datetime.combine(date, schedule.start_time)
+        schedule_end = datetime.datetime.combine(date, schedule.end_time)
+        
+        # ブロックされる時間帯を10分刻みで計算
+        current_time = schedule_start
+        
+        while current_time < schedule_end:
             blocked_times.add(current_time.time())
             current_time += datetime.timedelta(minutes=interval_minutes)
     
