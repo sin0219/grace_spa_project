@@ -2,6 +2,7 @@ from django.db import models
 from django.core.validators import RegexValidator
 from django.utils import timezone
 from django.core.exceptions import ValidationError
+import datetime
 
 class BusinessHours(models.Model):
     """営業時間・基本設定"""
@@ -63,6 +64,10 @@ class BookingSettings(models.Model):
     allow_same_time_bookings = models.BooleanField('同時刻複数予約許可', default=False,
                                                  help_text='複数の施術者がいる場合、同じ時刻の予約を許可するか')
     
+    # 新規追加: 施術者指名機能
+    enable_therapist_selection = models.BooleanField('施術者指名機能', default=True,
+                                                   help_text='お客様が施術者を指名できるかどうか（OFFにすると指名なしの選択肢が非表示になります）')
+    
     created_at = models.DateTimeField('作成日時', auto_now_add=True)
     updated_at = models.DateTimeField('更新日時', auto_now=True)
     
@@ -85,6 +90,7 @@ class BookingSettings(models.Model):
                 'same_day_booking_cutoff': '12:00',
                 'default_treatment_duration': 90,
                 'allow_same_time_bookings': False,
+                'enable_therapist_selection': True,  # 新規追加
             }
         )
         return settings
@@ -196,3 +202,64 @@ class Booking(models.Model):
             timezone.datetime.combine(self.booking_date, self.booking_time)
         )
         return booking_datetime < timezone.now()
+
+class Schedule(models.Model):
+    """予定管理（管理者用）"""
+    SCHEDULE_TYPE_CHOICES = [
+        ('break', '休憩'),
+        ('meeting', '会議・打ち合わせ'),
+        ('training', '研修・勉強'),
+        ('maintenance', '設備メンテナンス'),
+        ('preparation', '準備時間'),
+        ('admin', '事務作業'),
+        ('other', 'その他'),
+    ]
+    
+    title = models.CharField('予定タイトル', max_length=100)
+    schedule_type = models.CharField('予定種別', max_length=20, choices=SCHEDULE_TYPE_CHOICES, default='other')
+    therapist = models.ForeignKey(Therapist, on_delete=models.CASCADE, verbose_name='担当者', 
+                                blank=True, null=True, help_text='特定の施術者に関連する予定の場合')
+    schedule_date = models.DateField('予定日')
+    start_time = models.TimeField('開始時間')
+    end_time = models.TimeField('終了時間')
+    description = models.TextField('詳細・備考', blank=True)
+    is_recurring = models.BooleanField('繰り返し予定', default=False, 
+                                     help_text='毎週同じ曜日・時間に繰り返す予定')
+    is_active = models.BooleanField('有効', default=True)
+    created_by = models.CharField('作成者', max_length=100, default='管理者')
+    created_at = models.DateTimeField('作成日時', auto_now_add=True)
+    updated_at = models.DateTimeField('更新日時', auto_now=True)
+    
+    class Meta:
+        verbose_name = '予定'
+        verbose_name_plural = '予定'
+        ordering = ['schedule_date', 'start_time']
+    
+    def clean(self):
+        if self.start_time >= self.end_time:
+            raise ValidationError('開始時間は終了時間より前に設定してください。')
+    
+    def __str__(self):
+        therapist_name = f" ({self.therapist.display_name})" if self.therapist else ""
+        return f"{self.title}{therapist_name} - {self.schedule_date} {self.start_time}-{self.end_time}"
+    
+    @property
+    def duration_minutes(self):
+        """予定の時間（分）"""
+        start_datetime = datetime.datetime.combine(datetime.date.today(), self.start_time)
+        end_datetime = datetime.datetime.combine(datetime.date.today(), self.end_time)
+        return int((end_datetime - start_datetime).total_seconds() / 60)
+    
+    def conflicts_with_bookings(self):
+        """この予定が既存の予約と重複するかチェック"""
+        conflicting_bookings = Booking.objects.filter(
+            booking_date=self.schedule_date,
+            status__in=['pending', 'confirmed'],
+            booking_time__gte=self.start_time,
+            booking_time__lt=self.end_time
+        )
+        
+        if self.therapist:
+            conflicting_bookings = conflicting_bookings.filter(therapist=self.therapist)
+        
+        return conflicting_bookings

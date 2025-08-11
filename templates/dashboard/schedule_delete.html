@@ -1,0 +1,187 @@
+{% extends 'dashboard/base_dashboard.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}予定削除確認{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 600px; margin: 0 auto;">
+    <div class="card-header" style="background: #f8d7da; color: #721c24;">
+        <h3>⚠️ 予定削除の確認</h3>
+    </div>
+    <div class="card-body">
+        <div class="delete-warning">
+            <p>以下の予定を削除しようとしています。この操作は元に戻せません。</p>
+        </div>
+
+        <!-- 削除対象の予定情報 -->
+        <div class="schedule-info">
+            <h4>削除対象の予定</h4>
+            <table style="width: 100%; border-collapse: collapse; margin: 1rem 0;">
+                <tr style="border-bottom: 1px solid #e9ecef;">
+                    <td style="padding: 0.75rem; font-weight: bold; background: #f8f9fa; width: 30%;">タイトル</td>
+                    <td style="padding: 0.75rem;">{{ schedule.title }}</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #e9ecef;">
+                    <td style="padding: 0.75rem; font-weight: bold; background: #f8f9fa;">種別</td>
+                    <td style="padding: 0.75rem;">
+                        <span class="schedule-type-badge type-{{ schedule.schedule_type }}">
+                            {{ schedule.get_schedule_type_display }}
+                        </span>
+                    </td>
+                </tr>
+                <tr style="border-bottom: 1px solid #e9ecef;">
+                    <td style="padding: 0.75rem; font-weight: bold; background: #f8f9fa;">担当者</td>
+                    <td style="padding: 0.75rem;">
+                        {% if schedule.therapist %}
+                            {{ schedule.therapist.display_name }}
+                        {% else %}
+                            全体（担当者なし）
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr style="border-bottom: 1px solid #e9ecef;">
+                    <td style="padding: 0.75rem; font-weight: bold; background: #f8f9fa;">日時</td>
+                    <td style="padding: 0.75rem;">
+                        <strong>{{ schedule.schedule_date|date:"Y年m月d日 (D)" }}</strong><br>
+                        {{ schedule.start_time }} - {{ schedule.end_time }} ({{ schedule.duration_minutes }}分)
+                    </td>
+                </tr>
+                {% if schedule.is_recurring %}
+                <tr style="border-bottom: 1px solid #e9ecef;">
+                    <td style="padding: 0.75rem; font-weight: bold; background: #f8f9fa;">繰り返し</td>
+                    <td style="padding: 0.75rem;">
+                        <span class="badge" style="background: #17a2b8; color: white;">毎週繰り返し</span>
+                    </td>
+                </tr>
+                {% endif %}
+                {% if schedule.description %}
+                <tr style="border-bottom: 1px solid #e9ecef;">
+                    <td style="padding: 0.75rem; font-weight: bold; background: #f8f9fa;">詳細</td>
+                    <td style="padding: 0.75rem;">{{ schedule.description|linebreaks }}</td>
+                </tr>
+                {% endif %}
+                <tr>
+                    <td style="padding: 0.75rem; font-weight: bold; background: #f8f9fa;">作成者</td>
+                    <td style="padding: 0.75rem;">{{ schedule.created_by }} ({{ schedule.created_at|date:"Y/m/d H:i" }})</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- 警告メッセージ -->
+        <div class="warning-messages">
+            {% if schedule.is_recurring %}
+            <div class="alert alert-warning">
+                <strong>⚠️ 繰り返し予定について:</strong><br>
+                この予定は繰り返し設定されています。削除すると今後の繰り返し予定もすべて無効になります。
+            </div>
+            {% endif %}
+
+            <div class="alert alert-danger">
+                <strong>🚨 重要な注意事項:</strong>
+                <ul style="margin: 0.5rem 0; padding-left: 1.5rem;">
+                    <li>削除した予定は復元できません</li>
+                    <li>この時間帯が再び予約可能になります</li>
+                    <li>既存の予約には影響しません</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 削除確認フォーム -->
+        <form method="post" style="margin-top: 2rem;">
+            {% csrf_token %}
+            <div class="form-actions">
+                <a href="{% url 'dashboard:schedule_detail' schedule.id %}" class="btn btn-secondary">
+                    キャンセル（戻る）
+                </a>
+                <button type="submit" class="btn btn-danger">
+                    🗑️ 予定を削除する
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .delete-warning {
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        color: #856404;
+        padding: 1rem;
+        border-radius: 5px;
+        margin-bottom: 1.5rem;
+        text-align: center;
+        font-weight: bold;
+    }
+    
+    .schedule-info {
+        background: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .schedule-info h4 {
+        color: #8b7355;
+        margin-bottom: 1rem;
+        border-bottom: 2px solid #d4c4a8;
+        padding-bottom: 0.5rem;
+    }
+    
+    .warning-messages {
+        margin-bottom: 1.5rem;
+    }
+    
+    .alert {
+        padding: 1rem;
+        border-radius: 5px;
+        margin-bottom: 1rem;
+    }
+    
+    .alert-warning {
+        background-color: #fff3cd;
+        border: 1px solid #ffeaa7;
+        color: #856404;
+    }
+    
+    .alert-danger {
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+    }
+    
+    .schedule-type-badge {
+        padding: 0.25rem 0.5rem;
+        border-radius: 15px;
+        font-size: 0.8rem;
+        font-weight: bold;
+        color: white;
+    }
+    
+    .type-break { background: #28a745; }
+    .type-meeting { background: #007bff; }
+    .type-training { background: #ffc107; color: #212529; }
+    .type-maintenance { background: #dc3545; }
+    .type-preparation { background: #6f42c1; }
+    .type-admin { background: #fd7e14; }
+    .type-other { background: #6c757d; }
+    
+    .form-actions {
+        text-align: center;
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        padding-top: 1rem;
+        border-top: 2px solid #e9ecef;
+    }
+    
+    .btn-danger {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    }
+    
+    .btn-danger:hover {
+        background: linear-gradient(135deg, #c82333 0%, #a71e2a 100%);
+        transform: translateY(-1px);
+    }
+</style>
+{% endblock %}

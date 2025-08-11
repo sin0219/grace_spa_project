@@ -1,0 +1,313 @@
+{% extends 'dashboard/base_dashboard.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}予定詳細 - {{ schedule.title }}{% endblock %}
+
+{% block content %}
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem;">
+    <!-- 予定詳細情報 -->
+    <div class="card">
+        <div class="card-header">
+            <h3>予定情報の編集</h3>
+        </div>
+        <div class="card-body">
+            <form method="post" class="schedule-form">
+                {% csrf_token %}
+                
+                {% if form.non_field_errors %}
+                    <div class="alert alert-warning">
+                        {% for error in form.non_field_errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <!-- 基本情報セクション -->
+                <div class="form-section">
+                    <h4>基本情報</h4>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="{{ form.title.id_for_label }}">{{ form.title.label }}</label>
+                            {{ form.title }}
+                            {% if form.title.errors %}
+                                <div class="field-error">{{ form.title.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="{{ form.schedule_type.id_for_label }}">{{ form.schedule_type.label }}</label>
+                            {{ form.schedule_type }}
+                            {% if form.schedule_type.errors %}
+                                <div class="field-error">{{ form.schedule_type.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="{{ form.therapist.id_for_label }}">{{ form.therapist.label }}</label>
+                        {{ form.therapist }}
+                        {% if form.therapist.errors %}
+                            <div class="field-error">{{ form.therapist.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- 日時設定セクション -->
+                <div class="form-section">
+                    <h4>日時設定</h4>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="{{ form.schedule_date.id_for_label }}">{{ form.schedule_date.label }}</label>
+                            {{ form.schedule_date }}
+                            {% if form.schedule_date.errors %}
+                                <div class="field-error">{{ form.schedule_date.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="{{ form.start_time.id_for_label }}">{{ form.start_time.label }}</label>
+                            {{ form.start_time }}
+                            {% if form.start_time.errors %}
+                                <div class="field-error">{{ form.start_time.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="{{ form.end_time.id_for_label }}">{{ form.end_time.label }}</label>
+                            {{ form.end_time }}
+                            {% if form.end_time.errors %}
+                                <div class="field-error">{{ form.end_time.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="form-check-container">
+                        <div class="form-check">
+                            {{ form.is_recurring }}
+                            <label for="{{ form.is_recurring.id_for_label }}" class="form-check-label">
+                                {{ form.is_recurring.label }}
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 詳細情報セクション -->
+                <div class="form-section">
+                    <h4>詳細情報</h4>
+                    <div class="form-group">
+                        <label for="{{ form.description.id_for_label }}">{{ form.description.label }}</label>
+                        {{ form.description }}
+                        {% if form.description.errors %}
+                            <div class="field-error">{{ form.description.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <a href="{% url 'dashboard:schedule_list' %}" class="btn btn-secondary">戻る</a>
+                    <button type="submit" class="btn btn-primary">更新</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- サイドパネル -->
+    <div>
+        <!-- 予定情報表示 -->
+        <div class="card">
+            <div class="card-header">
+                <h3>予定情報</h3>
+            </div>
+            <div class="card-body">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <tr style="border-bottom: 1px solid #e9ecef;">
+                        <td style="padding: 0.5rem; font-weight: bold; background: #f8f9fa;">タイトル</td>
+                        <td style="padding: 0.5rem;">{{ schedule.title }}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #e9ecef;">
+                        <td style="padding: 0.5rem; font-weight: bold; background: #f8f9fa;">種別</td>
+                        <td style="padding: 0.5rem;">
+                            <span class="schedule-type-badge type-{{ schedule.schedule_type }}">
+                                {{ schedule.get_schedule_type_display }}
+                            </span>
+                        </td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #e9ecef;">
+                        <td style="padding: 0.5rem; font-weight: bold; background: #f8f9fa;">担当者</td>
+                        <td style="padding: 0.5rem;">
+                            {% if schedule.therapist %}
+                                {{ schedule.therapist.display_name }}
+                            {% else %}
+                                全体（担当者なし）
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #e9ecef;">
+                        <td style="padding: 0.5rem; font-weight: bold; background: #f8f9fa;">日時</td>
+                        <td style="padding: 0.5rem;">
+                            <strong>{{ schedule.schedule_date|date:"Y年m月d日 (D)" }}</strong><br>
+                            {{ schedule.start_time }} - {{ schedule.end_time }}
+                        </td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #e9ecef;">
+                        <td style="padding: 0.5rem; font-weight: bold; background: #f8f9fa;">時間</td>
+                        <td style="padding: 0.5rem;">{{ schedule.duration_minutes }}分</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #e9ecef;">
+                        <td style="padding: 0.5rem; font-weight: bold; background: #f8f9fa;">繰り返し</td>
+                        <td style="padding: 0.5rem;">
+                            {% if schedule.is_recurring %}
+                                <span class="badge" style="background: #17a2b8; color: white;">有効</span>
+                            {% else %}
+                                <span class="badge" style="background: #6c757d; color: white;">無効</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #e9ecef;">
+                        <td style="padding: 0.5rem; font-weight: bold; background: #f8f9fa;">作成者</td>
+                        <td style="padding: 0.5rem;">{{ schedule.created_by }}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 0.5rem; font-weight: bold; background: #f8f9fa;">作成日</td>
+                        <td style="padding: 0.5rem;">{{ schedule.created_at|date:"Y年m月d日 H:i" }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- 重複チェック -->
+        {% if conflicting_bookings %}
+        <div class="card">
+            <div class="card-header" style="background: #f8d7da; color: #721c24;">
+                <h3>⚠️ 予約との重複</h3>
+            </div>
+            <div class="card-body">
+                <p>この予定時間に以下の予約があります：</p>
+                {% for booking in conflicting_bookings %}
+                <div style="padding: 0.5rem; margin: 0.5rem 0; background: #fff5f5; border-left: 3px solid #dc3545;">
+                    <strong>{{ booking.customer.name }}</strong><br>
+                    <small>{{ booking.booking_time }} - {{ booking.service.name }}</small>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% else %}
+        <div class="card">
+            <div class="card-header" style="background: #d4edda; color: #155724;">
+                <h3>✓ 重複なし</h3>
+            </div>
+            <div class="card-body">
+                <p>この予定時間に予約の重複はありません。</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- アクション -->
+        <div class="card">
+            <div class="card-body">
+                <a href="{% url 'dashboard:schedule_delete' schedule.id %}" 
+                   class="btn btn-danger" style="width: 100%;"
+                   onclick="return confirm('予定「{{ schedule.title }}」を削除しますか？')">
+                    予定を削除
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .form-section {
+        margin-bottom: 2rem;
+        padding: 1.5rem;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        background: #f8f9fa;
+    }
+    
+    .form-section h4 {
+        color: #8b7355;
+        margin-bottom: 1rem;
+        border-bottom: 2px solid #d4c4a8;
+        padding-bottom: 0.5rem;
+    }
+    
+    .form-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .form-group {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .form-group label {
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+        color: #555;
+    }
+    
+    .form-check-container {
+        margin-top: 1rem;
+    }
+    
+    .form-check {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 1rem;
+        background: white;
+        border-radius: 5px;
+        border: 1px solid #ddd;
+    }
+    
+    .form-check-label {
+        font-weight: bold;
+        color: #555;
+        margin-bottom: 0;
+    }
+    
+    .field-error {
+        color: #dc3545;
+        font-size: 0.9rem;
+        margin-top: 0.25rem;
+    }
+    
+    .form-actions {
+        text-align: center;
+        margin-top: 2rem;
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+    }
+    
+    .alert-warning {
+        background-color: #fff3cd;
+        border: 1px solid #ffeaa7;
+        color: #856404;
+        padding: 1rem;
+        border-radius: 5px;
+        margin-bottom: 1rem;
+    }
+    
+    .schedule-type-badge {
+        padding: 0.25rem 0.5rem;
+        border-radius: 15px;
+        font-size: 0.8rem;
+        font-weight: bold;
+        color: white;
+    }
+    
+    .type-break { background: #28a745; }
+    .type-meeting { background: #007bff; }
+    .type-training { background: #ffc107; color: #212529; }
+    .type-maintenance { background: #dc3545; }
+    .type-preparation { background: #6f42c1; }
+    .type-admin { background: #fd7e14; }
+    .type-other { background: #6c757d; }
+</style>
+{% endblock %}

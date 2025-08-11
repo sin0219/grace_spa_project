@@ -3,7 +3,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib import messages
 from django.utils import timezone
 from django.db.models import Count, Q
-from bookings.models import Booking, Customer, Service
+from bookings.models import Booking, Customer, Service, Schedule
 from datetime import datetime, timedelta
 import calendar
 
@@ -18,9 +18,19 @@ def dashboard_home(request):
         status__in=['pending', 'confirmed']
     ).order_by('booking_time')
     
+    # 今日の予定
+    try:
+        today_schedules = Schedule.objects.filter(
+            schedule_date=today,
+            is_active=True
+        ).order_by('start_time')
+    except:
+        today_schedules = []
+    
     # 統計情報
     stats = {
         'today_bookings': today_bookings.count(),
+        'today_schedules': len(today_schedules),
         'pending_bookings': Booking.objects.filter(status='pending').count(),
         'total_customers': Customer.objects.count(),
         'this_month_bookings': Booking.objects.filter(
@@ -40,6 +50,7 @@ def dashboard_home(request):
         'title': 'ダッシュボード - GRACE SPA管理画面',
         'today': today,
         'today_bookings': today_bookings,
+        'today_schedules': today_schedules,
         'upcoming_bookings': upcoming_bookings,
         'stats': stats,
     }
@@ -161,6 +172,16 @@ def calendar_view(request):
         status__in=['pending', 'confirmed']
     ).order_by('booking_date', 'booking_time')
     
+    # その月の予定を取得
+    try:
+        schedules = Schedule.objects.filter(
+            schedule_date__gte=first_day,
+            schedule_date__lte=last_day,
+            is_active=True
+        ).order_by('schedule_date', 'start_time')
+    except:
+        schedules = []
+    
     # 日付ごとに予約をグループ化
     bookings_by_date = {}
     for booking in bookings:
@@ -169,20 +190,29 @@ def calendar_view(request):
             bookings_by_date[date_str] = []
         bookings_by_date[date_str].append(booking)
     
+    # 日付ごとに予定をグループ化
+    schedules_by_date = {}
+    for schedule in schedules:
+        date_str = schedule.schedule_date.strftime('%Y-%m-%d')
+        if date_str not in schedules_by_date:
+            schedules_by_date[date_str] = []
+        schedules_by_date[date_str].append(schedule)
+    
     # カレンダーのデータを作成
     cal = calendar.monthcalendar(year, month)
     
-    # カレンダーデータに予約情報を追加
+    # カレンダーデータに予約・予定情報を追加
     calendar_data = []
     for week in cal:
         week_data = []
         for day in week:
             if day == 0:
-                week_data.append({'day': 0, 'bookings': []})
+                week_data.append({'day': 0, 'bookings': [], 'schedules': []})
             else:
                 day_date = datetime(year, month, day).date()
                 day_str = day_date.strftime('%Y-%m-%d')
                 day_bookings = bookings_by_date.get(day_str, [])
+                day_schedules = schedules_by_date.get(day_str, [])
                 is_today = day_date == timezone.now().date()
                 
                 week_data.append({
@@ -190,6 +220,7 @@ def calendar_view(request):
                     'date': day_date,
                     'date_str': day_str,
                     'bookings': day_bookings,
+                    'schedules': day_schedules,
                     'is_today': is_today
                 })
         calendar_data.append(week_data)
@@ -212,6 +243,7 @@ def calendar_view(request):
         'month': month,
         'month_name': calendar.month_name[month],
         'bookings_by_date': bookings_by_date,
+        'schedules_by_date': schedules_by_date,
         'prev_year': prev_year,
         'prev_month': prev_month,
         'next_year': next_year,
@@ -250,6 +282,16 @@ def week_view(request):
         status__in=['pending', 'confirmed', 'completed']
     ).order_by('booking_date', 'booking_time')
     
+    # その週の予定を取得
+    try:
+        schedules = Schedule.objects.filter(
+            schedule_date__gte=week_start,
+            schedule_date__lte=week_end,
+            is_active=True
+        ).order_by('schedule_date', 'start_time')
+    except:
+        schedules = []
+    
     # 日付ごとに予約をグループ化
     bookings_by_date = {}
     for booking in bookings:
@@ -258,12 +300,21 @@ def week_view(request):
             bookings_by_date[date_str] = []
         bookings_by_date[date_str].append(booking)
     
+    # 日付ごとに予定をグループ化
+    schedules_by_date = {}
+    for schedule in schedules:
+        date_str = schedule.schedule_date.strftime('%Y-%m-%d')
+        if date_str not in schedules_by_date:
+            schedules_by_date[date_str] = []
+        schedules_by_date[date_str].append(schedule)
+    
     # 週のデータを作成
     week_data = []
     for i in range(7):
         day_date = week_start + timedelta(days=i)
         day_str = day_date.strftime('%Y-%m-%d')
         day_bookings = bookings_by_date.get(day_str, [])
+        day_schedules = schedules_by_date.get(day_str, [])
         is_today = day_date == timezone.now().date()
         
         # 予約の位置を計算
@@ -281,11 +332,35 @@ def week_view(request):
                 'top_position': top_position
             })
         
+        # 予定の位置を計算
+        positioned_schedules = []
+        for schedule in day_schedules:
+            hour = schedule.start_time.hour
+            minute = schedule.start_time.minute
+            top_position = (hour - 9) * 60 + minute
+            if top_position < 0:
+                top_position = 0
+            
+            # 予定の高さを計算
+            try:
+                duration = schedule.duration_minutes
+                height = duration  # 1分 = 1px
+            except:
+                height = 60  # デフォルト60分
+            
+            positioned_schedules.append({
+                'schedule': schedule,
+                'top_position': top_position,
+                'height': height
+            })
+        
         week_data.append({
             'date': day_date,
             'date_str': day_str,
             'bookings': day_bookings,
+            'schedules': day_schedules,
             'positioned_bookings': positioned_bookings,
+            'positioned_schedules': positioned_schedules,
             'is_today': is_today,
             'day_name': ['月', '火', '水', '木', '金', '土', '日'][i]
         })
@@ -300,5 +375,149 @@ def week_view(request):
         'next_week': next_week_start,
         'today': timezone.now().date(),
         'bookings_by_date': bookings_by_date,
+        'schedules_by_date': schedules_by_date,
     }
     return render(request, 'dashboard/week_calendar.html', context)
+
+# ===== 新規追加: 予約・予定管理機能 =====
+
+@staff_member_required
+def booking_create_dashboard(request):
+    """ダッシュボードから予約登録"""
+    # dashboard/forms.py が未作成の場合はシンプルなメッセージを表示
+    try:
+        from .forms import DashboardBookingForm
+        
+        if request.method == 'POST':
+            form = DashboardBookingForm(request.POST)
+            if form.is_valid():
+                booking = form.save()
+                messages.success(request, f'{booking.customer.name}様の予約を登録しました。')
+                return redirect('dashboard:booking_detail', booking_id=booking.id)
+        else:
+            form = DashboardBookingForm()
+        
+        context = {
+            'title': '新規予約登録 - GRACE SPA管理画面',
+            'form': form,
+        }
+        return render(request, 'dashboard/booking_create.html', context)
+        
+    except ImportError:
+        messages.error(request, 'dashboard/forms.py が作成されていません。管理画面から予約登録を行ってください。')
+        return redirect('dashboard:booking_list')
+
+@staff_member_required
+def schedule_list(request):
+    """予定一覧"""
+    try:
+        date_filter = request.GET.get('date', '')
+        type_filter = request.GET.get('type', '')
+        
+        schedules = Schedule.objects.filter(is_active=True)
+        
+        if date_filter:
+            try:
+                filter_date = datetime.strptime(date_filter, '%Y-%m-%d').date()
+                schedules = schedules.filter(schedule_date=filter_date)
+            except ValueError:
+                pass
+        
+        if type_filter:
+            schedules = schedules.filter(schedule_type=type_filter)
+        
+        schedules = schedules.order_by('-schedule_date', 'start_time')
+        
+        context = {
+            'title': '予定一覧 - GRACE SPA管理画面',
+            'schedules': schedules,
+            'type_choices': Schedule.SCHEDULE_TYPE_CHOICES,
+            'current_date': date_filter,
+            'current_type': type_filter,
+        }
+        return render(request, 'dashboard/schedule_list.html', context)
+        
+    except:
+        messages.error(request, 'Scheduleモデルがマイグレーションされていません。まずマイグレーションを実行してください。')
+        return redirect('dashboard:home')
+
+@staff_member_required
+def schedule_create(request):
+    """予定登録"""
+    try:
+        from .forms import ScheduleForm
+        
+        if request.method == 'POST':
+            form = ScheduleForm(request.POST)
+            if form.is_valid():
+                schedule = form.save(commit=False)
+                schedule.created_by = request.user.username
+                schedule.save()
+                messages.success(request, f'予定「{schedule.title}」を登録しました。')
+                return redirect('dashboard:schedule_list')
+        else:
+            form = ScheduleForm()
+        
+        context = {
+            'title': '新規予定登録 - GRACE SPA管理画面',
+            'form': form,
+        }
+        return render(request, 'dashboard/schedule_create.html', context)
+        
+    except ImportError:
+        messages.error(request, 'dashboard/forms.py が作成されていません。')
+        return redirect('dashboard:schedule_list')
+
+@staff_member_required
+def schedule_detail(request, schedule_id):
+    """予定詳細・編集"""
+    try:
+        from .forms import ScheduleForm
+        
+        schedule = get_object_or_404(Schedule, id=schedule_id)
+        
+        if request.method == 'POST':
+            form = ScheduleForm(request.POST, instance=schedule)
+            if form.is_valid():
+                form.save()
+                messages.success(request, f'予定「{schedule.title}」を更新しました。')
+                return redirect('dashboard:schedule_list')
+        else:
+            form = ScheduleForm(instance=schedule)
+        
+        # この予定と重複する予約があるかチェック
+        conflicting_bookings = schedule.conflicts_with_bookings()
+        
+        context = {
+            'title': f'予定詳細 - {schedule.title}',
+            'schedule': schedule,
+            'form': form,
+            'conflicting_bookings': conflicting_bookings,
+        }
+        return render(request, 'dashboard/schedule_detail.html', context)
+        
+    except ImportError:
+        messages.error(request, 'dashboard/forms.py が作成されていません。')
+        return redirect('dashboard:schedule_list')
+
+@staff_member_required
+def schedule_delete(request, schedule_id):
+    """予定削除"""
+    try:
+        schedule = get_object_or_404(Schedule, id=schedule_id)
+        
+        if request.method == 'POST':
+            title = schedule.title
+            schedule.delete()
+            messages.success(request, f'予定「{title}」を削除しました。')
+            return redirect('dashboard:schedule_list')
+        
+        context = {
+            'title': f'予定削除 - {schedule.title}',
+            'schedule': schedule,
+        }
+        return render(request, 'dashboard/schedule_delete.html', context)
+        
+    except:
+        messages.error(request, '予定が見つかりません。')
+        return redirect('dashboard:schedule_list')

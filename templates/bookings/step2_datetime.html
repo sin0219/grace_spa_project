@@ -41,6 +41,7 @@
                 {% csrf_token %}
                 
                 <!-- 施術者選択 -->
+                {% if enable_therapist_selection and therapists %}
                 <div class="therapist-selection">
                     <h3>施術者のご希望</h3>
                     <div class="therapist-options">
@@ -74,6 +75,7 @@
                         {% endfor %}
                     </div>
                 </div>
+                {% endif %}
 
                 <!-- 日付選択 -->
                 <div class="date-selection">

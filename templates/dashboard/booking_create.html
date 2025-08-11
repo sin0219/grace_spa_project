@@ -1,0 +1,177 @@
+{% extends 'dashboard/base_dashboard.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}新規予約登録{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h3>新規予約登録</h3>
+        <p>管理者権限で新しい予約を登録します。重複チェックは警告のみで、強制登録が可能です。</p>
+    </div>
+    <div class="card-body">
+        <form method="post" class="booking-form">
+            {% csrf_token %}
+            
+            {% if form.non_field_errors %}
+                <div class="alert alert-warning">
+                    {% for error in form.non_field_errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <!-- 顧客情報セクション -->
+            <div class="form-section">
+                <h4>顧客情報</h4>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="{{ form.customer_name.id_for_label }}">{{ form.customer_name.label }}</label>
+                        {{ form.customer_name }}
+                        {% if form.customer_name.errors %}
+                            <div class="field-error">{{ form.customer_name.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="{{ form.customer_email.id_for_label }}">{{ form.customer_email.label }}</label>
+                        {{ form.customer_email }}
+                        {% if form.customer_email.errors %}
+                            <div class="field-error">{{ form.customer_email.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="{{ form.customer_phone.id_for_label }}">{{ form.customer_phone.label }}</label>
+                        {{ form.customer_phone }}
+                        {% if form.customer_phone.errors %}
+                            <div class="field-error">{{ form.customer_phone.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- 予約情報セクション -->
+            <div class="form-section">
+                <h4>予約内容</h4>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="{{ form.service.id_for_label }}">{{ form.service.label }}</label>
+                        {{ form.service }}
+                        {% if form.service.errors %}
+                            <div class="field-error">{{ form.service.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="{{ form.therapist.id_for_label }}">{{ form.therapist.label }}</label>
+                        {{ form.therapist }}
+                        {% if form.therapist.errors %}
+                            <div class="field-error">{{ form.therapist.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="{{ form.booking_date.id_for_label }}">{{ form.booking_date.label }}</label>
+                        {{ form.booking_date }}
+                        {% if form.booking_date.errors %}
+                            <div class="field-error">{{ form.booking_date.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="{{ form.booking_time.id_for_label }}">{{ form.booking_time.label }}</label>
+                        {{ form.booking_time }}
+                        {% if form.booking_time.errors %}
+                            <div class="field-error">{{ form.booking_time.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="{{ form.status.id_for_label }}">{{ form.status.label }}</label>
+                        {{ form.status }}
+                        {% if form.status.errors %}
+                            <div class="field-error">{{ form.status.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.notes.id_for_label }}">{{ form.notes.label }}</label>
+                    {{ form.notes }}
+                    {% if form.notes.errors %}
+                        <div class="field-error">{{ form.notes.errors }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <a href="{% url 'dashboard:booking_list' %}" class="btn btn-secondary">キャンセル</a>
+                <button type="submit" class="btn btn-primary">予約を登録</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .form-section {
+        margin-bottom: 2rem;
+        padding: 1.5rem;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        background: #f8f9fa;
+    }
+    
+    .form-section h4 {
+        color: #8b7355;
+        margin-bottom: 1rem;
+        border-bottom: 2px solid #d4c4a8;
+        padding-bottom: 0.5rem;
+    }
+    
+    .form-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .form-group {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .form-group label {
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+        color: #555;
+    }
+    
+    .field-error {
+        color: #dc3545;
+        font-size: 0.9rem;
+        margin-top: 0.25rem;
+    }
+    
+    .form-actions {
+        text-align: center;
+        margin-top: 2rem;
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+    }
+    
+    .alert-warning {
+        background-color: #fff3cd;
+        border: 1px solid #ffeaa7;
+        color: #856404;
+        padding: 1rem;
+        border-radius: 5px;
+        margin-bottom: 1rem;
+    }
+</style>
+{% endblock %}

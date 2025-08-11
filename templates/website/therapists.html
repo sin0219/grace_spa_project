@@ -59,22 +59,32 @@
                         {% endif %}
                         
                         <!-- 予約ボタン -->
+                        {% if enable_therapist_selection %}
                         <div class="therapist-actions">
                             <a href="{% url 'bookings:booking_step1' %}?therapist={{ therapist.id }}" class="btn-book-therapist">
                                 {{ therapist.display_name }}さんを指名予約
                             </a>
                         </div>
+                        {% endif %}
                     </div>
                 </div>
                 {% endfor %}
             </div>
             
             <!-- 全体の予約ボタン -->
+            {% if enable_therapist_selection %}
             <div class="general-booking">
                 <h3>施術者を指定せずに予約する</h3>
                 <p>特にご希望の施術者がない場合は、こちらからご予約ください。</p>
                 <a href="{% url 'bookings:booking_step1' %}" class="btn-general-booking">施術者指定なしで予約</a>
             </div>
+            {% else %}
+            <div class="general-booking">
+                <h3>ご予約はこちら</h3>
+                <p>下記ボタンからご予約ください。</p>
+                <a href="{% url 'bookings:booking_step1' %}" class="btn-general-booking">予約する</a>
+            </div>
+            {% endif %}
             
         {% else %}
             <div class="no-therapists">

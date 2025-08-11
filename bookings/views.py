@@ -49,11 +49,24 @@ def booking_step2(request):
         messages.error(request, '選択されたサービスが見つかりません。')
         return redirect('bookings:booking_step1')
     
+    # 予約設定を取得
+    from .models import BookingSettings
+    try:
+        booking_settings = BookingSettings.get_current_settings()
+        enable_therapist_selection = booking_settings.enable_therapist_selection
+    except:
+        enable_therapist_selection = True  # デフォルトは有効
+    
     if request.method == 'POST':
         form = DateTimeTherapistForm(request.POST)
         if form.is_valid():
             # セッションに情報を保存
-            request.session['booking_therapist_id'] = form.cleaned_data['therapist'].id if form.cleaned_data['therapist'] else None
+            therapist_value = form.cleaned_data['therapist']
+            if enable_therapist_selection and therapist_value:
+                request.session['booking_therapist_id'] = therapist_value.id
+            else:
+                request.session['booking_therapist_id'] = None
+            
             request.session['booking_date'] = form.cleaned_data['booking_date'].isoformat()
             request.session['booking_time'] = form.cleaned_data['booking_time'].strftime('%H:%M')
             request.session['booking_notes'] = form.cleaned_data['notes']
@@ -61,8 +74,8 @@ def booking_step2(request):
     else:
         form = DateTimeTherapistForm()
     
-    # 施術者一覧
-    therapists = Therapist.objects.filter(is_active=True).order_by('sort_order', 'name')
+    # 施術者一覧（設定が有効な場合のみ）
+    therapists = Therapist.objects.filter(is_active=True).order_by('sort_order', 'name') if enable_therapist_selection else []
     
     # 営業時間を取得
     business_hours = {}
@@ -78,6 +91,7 @@ def booking_step2(request):
         'form': form,
         'service': service,
         'therapists': therapists,
+        'enable_therapist_selection': enable_therapist_selection,  # 新規追加
         'business_hours': json.dumps(business_hours, default=str),
         'title': 'ステップ2: 日時選択 - GRACE SPA',
         'step': 2,

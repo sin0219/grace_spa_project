@@ -1,0 +1,166 @@
+{% extends 'dashboard/base_dashboard.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}予定一覧{% endblock %}
+
+{% block content %}
+<!-- フィルター -->
+<div class="card">
+    <div class="card-header">
+        <h3>検索・フィルター</h3>
+    </div>
+    <div class="card-body">
+        <form method="get" style="display: flex; gap: 1rem; align-items: end; flex-wrap: wrap;">
+            <div class="form-group" style="margin-bottom: 0;">
+                <label for="date">日付</label>
+                <input type="date" name="date" id="date" value="{{ current_date }}" class="form-control" style="width: 150px;">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <label for="type">予定種別</label>
+                <select name="type" id="type" class="form-control" style="width: 150px;">
+                    <option value="">全て</option>
+                    {% for value, label in type_choices %}
+                        <option value="{{ value }}" {% if current_type == value %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">検索</button>
+            <a href="{% url 'dashboard:schedule_list' %}" class="btn btn-secondary">リセット</a>
+            <a href="{% url 'dashboard:schedule_create' %}" class="btn btn-success">+ 新規予定登録</a>
+        </form>
+    </div>
+</div>
+
+<!-- 予定一覧 -->
+<div class="card">
+    <div class="card-header">
+        <h3>予定一覧 ({{ schedules.count }}件)</h3>
+    </div>
+    <div class="card-body">
+        {% if schedules %}
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>日時</th>
+                        <th>タイトル</th>
+                        <th>種別</th>
+                        <th>担当者</th>
+                        <th>時間</th>
+                        <th>作成者</th>
+                        <th>アクション</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for schedule in schedules %}
+                    <tr>
+                        <td>
+                            <strong>{{ schedule.schedule_date|date:"Y/m/d (D)" }}</strong><br>
+                            {{ schedule.start_time }} - {{ schedule.end_time }}
+                        </td>
+                        <td>
+                            <strong>{{ schedule.title }}</strong>
+                            {% if schedule.is_recurring %}
+                                <span class="badge" style="background: #17a2b8; color: white; font-size: 0.7rem;">繰返</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="schedule-type-badge type-{{ schedule.schedule_type }}">
+                                {{ schedule.get_schedule_type_display }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if schedule.therapist %}
+                                {{ schedule.therapist.display_name }}
+                            {% else %}
+                                <span style="color: #666;">全体</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ schedule.duration_minutes }}分</td>
+                        <td>{{ schedule.created_by }}</td>
+                        <td>
+                            <a href="{% url 'dashboard:schedule_detail' schedule.id %}" class="btn btn-primary btn-sm">詳細</a>
+                            <a href="{% url 'dashboard:schedule_delete' schedule.id %}" class="btn btn-danger btn-sm" 
+                               onclick="return confirm('予定「{{ schedule.title }}」を削除しますか？')">削除</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p style="text-align: center; color: #666; padding: 3rem;">
+                条件に合う予定が見つかりません。
+            </p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- 予定種別の説明 -->
+<div class="card">
+    <div class="card-header">
+        <h3>予定種別について</h3>
+    </div>
+    <div class="card-body">
+        <div class="schedule-types-grid">
+            <div class="type-explanation">
+                <span class="schedule-type-badge type-break">休憩</span>
+                <span>昼休み、小休憩など</span>
+            </div>
+            <div class="type-explanation">
+                <span class="schedule-type-badge type-meeting">会議・打ち合わせ</span>
+                <span>ミーティング、打ち合わせ</span>
+            </div>
+            <div class="type-explanation">
+                <span class="schedule-type-badge type-training">研修・勉強</span>
+                <span>スキルアップ、勉強会</span>
+            </div>
+            <div class="type-explanation">
+                <span class="schedule-type-badge type-maintenance">設備メンテナンス</span>
+                <span>機器点検、清掃作業</span>
+            </div>
+            <div class="type-explanation">
+                <span class="schedule-type-badge type-preparation">準備時間</span>
+                <span>開店・閉店準備</span>
+            </div>
+            <div class="type-explanation">
+                <span class="schedule-type-badge type-admin">事務作業</span>
+                <span>経理、資料作成</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .schedule-type-badge {
+        padding: 0.25rem 0.5rem;
+        border-radius: 15px;
+        font-size: 0.8rem;
+        font-weight: bold;
+        color: white;
+    }
+    
+    .type-break { background: #28a745; }
+    .type-meeting { background: #007bff; }
+    .type-training { background: #ffc107; color: #212529; }
+    .type-maintenance { background: #dc3545; }
+    .type-preparation { background: #6f42c1; }
+    .type-admin { background: #fd7e14; }
+    .type-other { background: #6c757d; }
+    
+    .schedule-types-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+    
+    .type-explanation {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem;
+        background: #f8f9fa;
+        border-radius: 5px;
+    }
+</style>
+{% endblock %}

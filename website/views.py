@@ -14,12 +14,20 @@ def home(request):
 
 def therapists(request):
     """施術者紹介ページのビュー"""
-    from bookings.models import Therapist
+    from bookings.models import Therapist, BookingSettings
+    
+    # 予約設定を取得
+    try:
+        booking_settings = BookingSettings.get_current_settings()
+        enable_therapist_selection = booking_settings.enable_therapist_selection
+    except:
+        enable_therapist_selection = True  # デフォルトは有効
     
     therapists = Therapist.objects.filter(is_active=True).order_by('sort_order', 'name')
     
     context = {
         'title': 'セラピスト紹介 - GRACE SPA',
-        'therapists': therapists
+        'therapists': therapists,
+        'enable_therapist_selection': enable_therapist_selection  # 新規追加
     }
     return render(request, 'website/therapists.html', context)
