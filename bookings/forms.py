@@ -44,15 +44,28 @@ class DateTimeTherapistForm(forms.Form):
         required=False
     )
     
+    def __init__(self, *args, **kwargs):
+        self.enable_therapist_selection = kwargs.pop('enable_therapist_selection', True)
+        self.service = kwargs.pop('service', None)
+        super().__init__(*args, **kwargs)
+        
+        if not self.enable_therapist_selection:
+            self.fields['therapist'].widget = forms.HiddenInput()
+            self.fields['therapist'].required = False
+    
     def clean(self):
         cleaned_data = super().clean()
         booking_date = cleaned_data.get('booking_date')
         booking_time = cleaned_data.get('booking_time')
         therapist = cleaned_data.get('therapist')
         
-        if booking_date and booking_time:
-            # セッションからサービス情報を取得（リクエストオブジェクトが必要なため、ビューで処理）
-            pass
+        if booking_date and booking_time and self.service:
+            # 時間重複チェック（フォームレベルではバリデーションのみ、実際のチェックはビューで処理）
+            try:
+                validate_booking_time_slot(self.service, booking_date, booking_time, therapist)
+            except ValidationError:
+                # フォームレベルでは詳細なエラーメッセージを表示せず、ビューで処理させる
+                pass
         
         return cleaned_data
 
