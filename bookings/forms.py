@@ -11,11 +11,23 @@ import datetime
 class ServiceSelectionForm(forms.Form):
     """ステップ1: サービス選択フォーム"""
     service = forms.ModelChoiceField(
-        queryset=Service.objects.filter(is_active=True),
+        queryset=Service.objects.filter(is_active=True).order_by('name'),
         label='ご希望のサービスをお選びください',
         widget=forms.RadioSelect(attrs={'class': 'service-radio'}),
-        empty_label=None
+        empty_label=None,
+        to_field_name='id'
     )
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # アクティブなサービスのみを表示
+        self.fields['service'].queryset = Service.objects.filter(is_active=True).order_by('name')
+    
+    def clean_service(self):
+        service = self.cleaned_data['service']
+        if not service.is_active:
+            raise ValidationError('選択されたサービスは現在ご利用いただけません。')
+        return service
 
 class DateTimeTherapistForm(forms.Form):
     """ステップ2: 日時・施術者選択フォーム"""

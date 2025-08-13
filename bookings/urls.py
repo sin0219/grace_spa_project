@@ -11,7 +11,6 @@ urlpatterns = [
     path('booking/confirm/', views.booking_confirm, name='booking_confirm'),  # 確認画面
     path('booking/complete/', views.booking_complete, name='booking_complete'),  # 完了画面
     
-   
     # AJAX API
-    path('api/available-times/', views.get_available_times, name='get_available_times'),
+    path('booking/api/available-times/', views.get_available_times, name='get_available_times'),
 ]

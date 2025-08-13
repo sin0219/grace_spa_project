@@ -17,17 +17,39 @@ logger = logging.getLogger(__name__)
 
 def booking_step1(request):
     """ステップ1: サービス選択"""
+    
+    # デバッグ: サービス情報を確認
+    all_services = Service.objects.all()
+    active_services = Service.objects.filter(is_active=True)
+    
+    print(f"デバッグ: 全サービス数: {all_services.count()}")
+    print(f"デバッグ: アクティブサービス数: {active_services.count()}")
+    
+    for service in all_services:
+        print(f"サービス: {service.name}, アクティブ: {service.is_active}, ID: {service.id}")
+    
     if request.method == 'POST':
         form = ServiceSelectionForm(request.POST)
+        print(f"デバッグ: POSTデータ: {request.POST}")
+        print(f"デバッグ: フォームが有効: {form.is_valid()}")
+        if not form.is_valid():
+            print(f"デバッグ: フォームエラー: {form.errors}")
+            
         if form.is_valid():
             # セッションにサービス情報を保存
-            request.session['booking_service_id'] = form.cleaned_data['service'].id
+            service_id = form.cleaned_data['service'].id
+            print(f"デバッグ: 選択されたサービスID: {service_id}")
+            request.session['booking_service_id'] = service_id
             return redirect('bookings:booking_step2')
     else:
         form = ServiceSelectionForm()
     
+    services = Service.objects.filter(is_active=True).order_by('name')
+    print(f"デバッグ: テンプレートに渡すサービス数: {services.count()}")
+    
     context = {
         'form': form,
+        'services': services,
         'title': 'ステップ1: サービス選択 - GRACE SPA',
         'step': 1,
         'total_steps': 3
@@ -73,7 +95,7 @@ def booking_step2(request):
         form = DateTimeTherapistForm(enable_therapist_selection=enable_therapist_selection, service=service)
     
     # 施術者一覧（設定が有効な場合のみ）
-    therapists = Therapist.objects.filter(is_active=True).order_by('sort_order', 'name') if enable_therapist_selection else []
+    therapists = Therapist.objects.filter(is_active=True).order_by('name') if enable_therapist_selection else []
     
     # 営業時間を取得
     business_hours = {}
