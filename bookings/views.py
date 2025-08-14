@@ -97,6 +97,9 @@ def booking_step2(request):
             else:
                 request.session['booking_therapist_id'] = None
             
+            # ステップ2の備考をセッションに保存
+            request.session['booking_notes'] = form.cleaned_data.get('notes', '')
+            
             return redirect('bookings:booking_step3')
     else:
         form = DateTimeTherapistForm(enable_therapist_selection=enable_therapist_selection)
@@ -147,11 +150,23 @@ def booking_step3(request):
     if request.method == 'POST':
         form = CustomerInfoForm(request.POST)
         if form.is_valid():
-            # セッションに顧客情報を保存
-            request.session['customer_name'] = form.cleaned_data['name']
-            request.session['customer_email'] = form.cleaned_data['email']
-            request.session['customer_phone'] = form.cleaned_data['phone']
-            request.session['booking_notes'] = form.cleaned_data['notes']
+            # セッションに顧客情報を保存（フィールド名を修正）
+            request.session['customer_name'] = form.cleaned_data['customer_name']
+            request.session['customer_email'] = form.cleaned_data['customer_email']
+            request.session['customer_phone'] = form.cleaned_data['customer_phone']
+            
+            # ステップ2とステップ3の備考を統合
+            step2_notes = request.session.get('booking_notes', '')
+            step3_notes = form.cleaned_data.get('notes', '')
+            
+            # 両方に内容がある場合は改行で区切って統合
+            combined_notes = []
+            if step2_notes.strip():
+                combined_notes.append(f"【ご要望】{step2_notes.strip()}")
+            if step3_notes.strip():
+                combined_notes.append(f"【備考】{step3_notes.strip()}")
+            
+            request.session['booking_notes'] = '\n'.join(combined_notes)
             
             return redirect('bookings:booking_confirm')
     else:
@@ -322,27 +337,33 @@ def get_available_times(request):
         
         # 予約設定を取得
         try:
-            booking_settings = BookingSettings.get_current_settings()
-            interval_minutes = booking_settings.booking_interval_minutes
+            settings_obj = BookingSettings.get_current_settings()
+            interval_minutes = settings_obj.booking_interval_minutes
         except:
-            interval_minutes = 10  # デフォルトを10分に変更
+            interval_minutes = 30  # デフォルト30分間隔
         
-        # 利用可能な時間スロットを生成
+        # 利用可能時間のリストを生成
         available_times = []
-        current_time = business_hours.open_time
+        current_time = datetime.datetime.combine(date, business_hours.open_time)
+        end_time = datetime.datetime.combine(date, business_hours.close_time)
         
-        while current_time <= business_hours.last_booking_time:
-            # この時間に予約が可能かチェック
-            try:
-                validate_booking_time_slot(service, date, current_time, therapist)
-                available_times.append(current_time.strftime('%H:%M'))
-            except ValidationError:
-                pass
+        while current_time + datetime.timedelta(minutes=service.duration_minutes) <= end_time:
+            time_str = current_time.strftime('%H:%M')
             
-            # 設定された間隔で次の時間へ
-            current_datetime = datetime.datetime.combine(date, current_time)
-            current_datetime += datetime.timedelta(minutes=interval_minutes)
-            current_time = current_datetime.time()
+            # 既存の予約と重複チェック
+            is_available = True
+            try:
+                validate_booking_time_slot(service, date, current_time.time(), therapist)
+            except ValidationError:
+                is_available = False
+            
+            available_times.append({
+                'time': time_str,
+                'display': time_str,
+                'available': is_available
+            })
+            
+            current_time += datetime.timedelta(minutes=interval_minutes)
         
         return JsonResponse({'available_times': available_times})
         
@@ -350,121 +371,58 @@ def get_available_times(request):
         logger.error(f"利用可能時間取得エラー: {str(e)}")
         return JsonResponse({'error': 'サーバーエラーが発生しました'}, status=500)
 
-
-# ===============================
-# 予約管理機能（キャンセル処理など）
-# ===============================
-
+# 予約管理機能（管理者用）
 def cancel_booking(request, booking_id):
-    """予約キャンセル処理"""
+    """予約キャンセル"""
     booking = get_object_or_404(Booking, id=booking_id)
     
-    # キャンセル可能かチェック（例：予約日の前日まで）
-    if booking.booking_date <= timezone.now().date():
-        messages.error(request, '当日・過去の予約はキャンセルできません。')
-        return redirect('dashboard:booking_list')
-    
     if request.method == 'POST':
-        old_status = booking.status
-        booking.status = 'cancelled'
-        booking.save()
-        
         try:
-            # キャンセル通知メール送信
-            send_booking_cancelled_email(booking, cancelled_by_customer=False)
-            messages.success(request, f'{booking.customer.name}様の予約をキャンセルしました。')
-            logger.info(f"予約キャンセル処理完了: {booking}")
+            booking.status = 'cancelled'
+            booking.save()
+            
+            # キャンセルメール送信
+            try:
+                send_booking_cancelled_email(booking)
+                logger.info(f"予約キャンセル完了: {booking}")
+            except Exception as e:
+                logger.error(f"キャンセルメール送信エラー: {e}")
+            
+            messages.success(request, '予約をキャンセルしました。')
         except Exception as e:
-            logger.error(f"キャンセルメール送信エラー: {e}")
-            messages.success(request, f'{booking.customer.name}様の予約をキャンセルしました。')
-        
-        return redirect('dashboard:booking_list')
+            messages.error(request, 'キャンセル処理中にエラーが発生しました。')
+            logger.error(f"予約キャンセルエラー: {str(e)}")
     
-    context = {
-        'booking': booking,
-        'title': '予約キャンセル確認'
-    }
-    return render(request, 'dashboard/booking_cancel.html', context)
-
+    return redirect('dashboard:booking_detail', booking_id=booking.id)
 
 def confirm_booking(request, booking_id):
-    """予約確定処理"""
+    """予約確定"""
     booking = get_object_or_404(Booking, id=booking_id)
     
-    if booking.status != 'pending':
-        messages.error(request, 'この予約は既に処理済みです。')
-        return redirect('dashboard:booking_list')
-    
     if request.method == 'POST':
-        old_status = booking.status
-        booking.status = 'confirmed'
-        booking.save()
-        
         try:
-            # ステータス変更通知メール送信（確定通知）
-            from emails.utils import send_booking_status_changed_email
-            send_booking_status_changed_email(booking, old_status, 'confirmed')
-            messages.success(request, f'{booking.customer.name}様の予約を確定しました。')
-            logger.info(f"予約確定処理完了: {booking}")
+            booking.status = 'confirmed'
+            booking.save()
+            messages.success(request, '予約を確定しました。')
+            logger.info(f"予約確定完了: {booking}")
         except Exception as e:
-            logger.error(f"確定メール送信エラー: {e}")
-            messages.success(request, f'{booking.customer.name}様の予約を確定しました。')
-        
-        return redirect('dashboard:booking_detail', booking_id=booking.id)
+            messages.error(request, '確定処理中にエラーが発生しました。')
+            logger.error(f"予約確定エラー: {str(e)}")
     
-    context = {
-        'booking': booking,
-        'title': '予約確定確認'
-    }
-    return render(request, 'dashboard/booking_confirm.html', context)
-
+    return redirect('dashboard:booking_detail', booking_id=booking.id)
 
 def complete_booking(request, booking_id):
-    """施術完了処理"""
+    """予約完了"""
     booking = get_object_or_404(Booking, id=booking_id)
     
-    if booking.status not in ['confirmed', 'pending']:
-        messages.error(request, 'この予約は施術完了にできません。')
-        return redirect('dashboard:booking_list')
-    
     if request.method == 'POST':
-        old_status = booking.status
-        booking.status = 'completed'
-        booking.save()
-        
         try:
-            # ステータス変更通知メール送信（完了通知）
-            from emails.utils import send_booking_status_changed_email
-            send_booking_status_changed_email(booking, old_status, 'completed')
-            messages.success(request, f'{booking.customer.name}様の施術を完了にしました。')
-            logger.info(f"施術完了処理: {booking}")
+            booking.status = 'completed'
+            booking.save()
+            messages.success(request, '施術を完了しました。')
+            logger.info(f"予約完了: {booking}")
         except Exception as e:
-            logger.error(f"完了メール送信エラー: {e}")
-            messages.success(request, f'{booking.customer.name}様の施術を完了にしました。')
-        
-        return redirect('dashboard:booking_detail', booking_id=booking.id)
+            messages.error(request, '完了処理中にエラーが発生しました。')
+            logger.error(f"予約完了エラー: {str(e)}")
     
-    context = {
-        'booking': booking,
-        'title': '施術完了確認'
-    }
-    return render(request, 'dashboard/booking_complete.html', context)
-
-
-# ===============================
-# 古い送信メール関数（後方互換性のため残す）
-# ===============================
-
-def send_booking_notification_emails(booking):
-    """
-    後方互換性のための関数
-    新しいメール機能に置き換え
-    """
-    try:
-        # 新しいメール機能を使用
-        send_booking_confirmation_email(booking)
-        send_admin_new_booking_email(booking)
-        return True
-    except Exception as e:
-        logger.error(f"メール送信エラー（互換関数）: {e}")
-        return False
+    return redirect('dashboard:booking_detail', booking_id=booking.id)

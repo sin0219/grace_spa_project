@@ -99,19 +99,36 @@
                             {% endif %}
                         </div>
                     </div>
+
+                    <!-- 備考欄を追加 -->
+                    <div class="form-group">
+                        <label for="{{ form.notes.id_for_label }}">{{ form.notes.label }}</label>
+                        {{ form.notes }}
+                        <small class="form-help">アレルギーや健康上の注意点などをお聞かせください（任意）</small>
+                        {% if form.notes.errors %}
+                            <div class="field-error">{{ form.notes.errors }}</div>
+                        {% endif %}
+                    </div>
                 </div>
 
                 <!-- セキュリティ注意事項 -->
                 <div class="security-notice">
-                    <h4>🔒 個人情報の取り扱いについて</h4>
+                    <h4>個人情報の取り扱いについて</h4>
                     <ul>
-                        <li>お客様の個人情報は予約管理・連絡のためのみに使用いたします</li>
-                        <li>第三者に提供することは一切ございません</li>
-                        <li>同一メールアドレス・電話番号での1日の予約は2件までとさせていただいております</li>
-                        <li>不正な予約と判断される場合、お断りする場合があります</li>
+                        <li>お預かりした個人情報は、サービス提供以外の目的で使用いたしません</li>
+                        <li>第三者への提供は行いません</li>
+                        <li>適切な管理のもと、大切にお取り扱いいたします</li>
                     </ul>
                 </div>
 
+                {% if validation_error %}
+                    <div class="alert alert-error">
+                        <p>{{ validation_error }}</p>
+                        <p>別の日時をお選びください。</p>
+                    </div>
+                {% endif %}
+
+                <!-- フォームアクション -->
                 <div class="form-actions">
                     <a href="{% url 'bookings:booking_step2' %}" class="btn btn-secondary">戻る</a>
                     <button type="submit" class="btn btn-primary">予約内容を確認する</button>
@@ -120,12 +137,14 @@
         </div>
     </div>
 </div>
+{% endblock %}
 
+{% block extra_css %}
 <style>
     .booking-steps-container {
         padding: 2rem 0;
-        min-height: 80vh;
-        background: #faf8f5;
+        background: linear-gradient(135deg, #f8f5f0 0%, #fff 100%);
+        min-height: 100vh;
     }
 
     /* プログレスバー */
@@ -137,53 +156,58 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        gap: 3rem;
-        position: relative;
-    }
-
-    .progress-bar::before {
-        content: '';
-        position: absolute;
-        top: 25px;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 60%;
-        height: 2px;
-        background: #28a745;
-        z-index: 1;
+        gap: 2rem;
+        max-width: 600px;
+        margin: 0 auto;
     }
 
     .step {
         display: flex;
         flex-direction: column;
         align-items: center;
+        gap: 0.5rem;
         position: relative;
-        z-index: 2;
+    }
+
+    .step:not(:last-child)::after {
+        content: '';
+        position: absolute;
+        top: 20px;
+        left: 100%;
+        width: 2rem;
+        height: 2px;
+        background: #ddd;
+        z-index: 1;
+    }
+
+    .step.completed:not(:last-child)::after,
+    .step.active:not(:last-child)::after {
+        background: #8b7355;
     }
 
     .step-number {
-        width: 50px;
-        height: 50px;
+        width: 40px;
+        height: 40px;
         border-radius: 50%;
-        background: #e0e0e0;
+        background: #ddd;
         color: #666;
         display: flex;
         align-items: center;
         justify-content: center;
         font-weight: bold;
-        font-size: 1.2rem;
-        margin-bottom: 0.5rem;
-        transition: all 0.3s;
+        z-index: 2;
+        position: relative;
+    }
+
+    .step.completed .step-number {
+        background: #8b7355;
+        color: white;
     }
 
     .step.active .step-number {
         background: #8b7355;
         color: white;
-    }
-
-    .step.completed .step-number {
-        background: #28a745;
-        color: white;
+        box-shadow: 0 0 0 3px rgba(139, 115, 85, 0.3);
     }
 
     .step-label {

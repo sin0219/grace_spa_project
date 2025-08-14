@@ -106,6 +106,15 @@ class CustomerInfoForm(forms.Form):
             'placeholder': '090-1234-5678'
         })
     )
+    notes = forms.CharField(
+        label='ご要望・備考',
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 3,
+            'placeholder': 'ご質問やご要望があればお書きください'
+        }),
+        required=False
+    )
     
     def clean_customer_email(self):
         email = self.cleaned_data['customer_email']
@@ -117,109 +126,149 @@ class CustomerInfoForm(forms.Form):
             created_at__date=today
         ).count()
         
-        daily_limit = getattr(settings, 'BOOKING_DAILY_LIMIT_PER_EMAIL', 2)
+        daily_limit = getattr(settings, 'BOOKING_DAILY_LIMIT_PER_EMAIL', 3)
         
         if daily_bookings >= daily_limit:
             raise ValidationError(
-                f'申し訳ございません。同一メールアドレスでの1日の予約は{daily_limit}件までとさせていただいております。'
+                f'申し訳ございませんが、同一メールアドレスでの1日の予約は{daily_limit}件までとなっております。'
             )
         
         return email
-    
-    def clean_customer_phone(self):
-        phone = self.cleaned_data['customer_phone']
-        
-        # 本日の同一電話番号での予約数をチェック
-        today = timezone.now().date()
-        daily_bookings = Booking.objects.filter(
-            customer__phone=phone,
-            created_at__date=today
-        ).count()
-        
-        daily_limit = getattr(settings, 'BOOKING_DAILY_LIMIT_PER_PHONE', 2)
-        
-        if daily_bookings >= daily_limit:
-            raise ValidationError(
-                f'申し訳ございません。同一電話番号での1日の予約は{daily_limit}件までとさせていただいております。'
-            )
-        
-        return phone
+
+# ===== バリデーション関数 =====
 
 def validate_booking_time_slot(service, booking_date, booking_time, therapist=None):
     """
-    予約時間の妥当性をチェックする関数（予定も含む）
-    サービス時間 + インターバル時間を考慮して重複チェック
+    予約時間の重複チェック
     """
-    try:
-        booking_settings = BookingSettings.get_current_settings()
-        buffer_minutes = booking_settings.treatment_buffer_minutes
-        interval_minutes = booking_settings.booking_interval_minutes
-    except:
-        buffer_minutes = 15   # デフォルト15分インターバル
-        interval_minutes = 10  # デフォルト10分刻み
+    from django.db import models
     
-    # 指定日の既存予約を取得
-    existing_bookings = Booking.objects.filter(
+    # 予約開始時刻と終了時刻を計算
+    booking_datetime = datetime.datetime.combine(booking_date, booking_time)
+    end_datetime = booking_datetime + datetime.timedelta(minutes=service.duration_minutes)
+    
+    # 既存の予約をチェック
+    overlapping_bookings = Booking.objects.filter(
         booking_date=booking_date,
-        status__in=['pending', 'confirmed']
+        status__in=['pending', 'confirmed']  # キャンセル済みは除外
     )
     
-    # 施術者が指定されている場合は、その施術者の予約をチェック
+    # 施術者が指定されている場合は同じ施術者の予約のみチェック
     if therapist:
-        existing_bookings = existing_bookings.filter(therapist=therapist)
-    else:
-        # 施術者指定なしの場合は、指定なしの予約のみチェック
-        existing_bookings = existing_bookings.filter(therapist__isnull=True)
+        overlapping_bookings = overlapping_bookings.filter(therapist=therapist)
     
-    # 指定日の既存予定を取得（新規追加）
+    # 時間の重複をチェック
+    for booking in overlapping_bookings:
+        existing_start = datetime.datetime.combine(booking.booking_date, booking.booking_time)
+        existing_end = existing_start + datetime.timedelta(minutes=booking.service.duration_minutes)
+        
+        # 時間の重複判定
+        if (booking_datetime < existing_end and end_datetime > existing_start):
+            if therapist:
+                raise ValidationError(f'選択された時間は{therapist.display_name}の予約が重複しています。別の時間をお選びください。')
+            else:
+                raise ValidationError('選択された時間は既に予約が入っています。別の時間をお選びください。')
+    
+    # 予約設定による制限チェック
     try:
-        existing_schedules = Schedule.objects.filter(
-            schedule_date=booking_date,
-            is_active=True
+        booking_settings = BookingSettings.get_current_settings()
+        
+        # 予約可能な最大日数をチェック（正しいフィールド名に修正）
+        max_days_ahead = booking_settings.advance_booking_days
+        if max_days_ahead > 0:
+            max_date = timezone.now().date() + datetime.timedelta(days=max_days_ahead)
+            if booking_date > max_date:
+                raise ValidationError(f'予約は{max_days_ahead}日先まで可能です。')
+        
+        # 当日予約の制限チェック
+        if booking_date == timezone.now().date():
+            cutoff_time = booking_settings.same_day_booking_cutoff
+            current_time = timezone.now().time()
+            if current_time > cutoff_time:
+                raise ValidationError(f'当日の予約は{cutoff_time.strftime("%H:%M")}まで受け付けています。')
+                
+    except BookingSettings.DoesNotExist:
+        pass
+    
+    # 営業時間チェック
+    from .models import BusinessHours
+    try:
+        business_hours = BusinessHours.objects.filter(
+            weekday=booking_date.weekday(),
+            is_open=True
+        ).first()
+        
+        if not business_hours:
+            raise ValidationError('選択された日は休業日です。')
+        
+        if booking_time < business_hours.open_time or end_datetime.time() > business_hours.close_time:
+            raise ValidationError('選択された時間は営業時間外です。')
+            
+    except BusinessHours.DoesNotExist:
+        raise ValidationError('営業時間が設定されていません。')
+
+    # スケジュール（予定）との重複チェック
+    from .models import Schedule
+    conflicting_schedules = Schedule.objects.filter(
+        schedule_date=booking_date,
+        is_active=True
+    )
+    
+    # 施術者が指定されている場合は、その施術者の予定のみチェック
+    if therapist:
+        conflicting_schedules = conflicting_schedules.filter(
+            models.Q(therapist=therapist) | models.Q(therapist__isnull=True)  # 全体予定も含む
         )
-        
-        # 施術者が指定されている場合は、その施術者の予定または全体予定をチェック
-        if therapist:
-            existing_schedules = existing_schedules.filter(
-                Q(therapist=therapist) | Q(therapist__isnull=True)
-            )
-        # 施術者指定なしの場合は、全体予定のみチェック
-        else:
-            existing_schedules = existing_schedules.filter(therapist__isnull=True)
-    except:
-        existing_schedules = []
     
-    # 新しい予約の時間帯を計算
-    new_booking_start = datetime.datetime.combine(booking_date, booking_time)
-    new_booking_end = new_booking_start + datetime.timedelta(minutes=service.duration_minutes + buffer_minutes)
-    
-    # 既存予約との重複チェック
-    for existing_booking in existing_bookings:
-        existing_start = datetime.datetime.combine(booking_date, existing_booking.booking_time)
-        existing_end = existing_start + datetime.timedelta(
-            minutes=existing_booking.service.duration_minutes + buffer_minutes
-        )
+    # 時間の重複チェック
+    for schedule in conflicting_schedules:
+        schedule_start = datetime.datetime.combine(schedule.schedule_date, schedule.start_time)
+        schedule_end = datetime.datetime.combine(schedule.schedule_date, schedule.end_time)
         
-        # 時間帯が重複するかチェック
-        if (new_booking_start < existing_end and new_booking_end > existing_start):
-            therapist_name = therapist.display_name if therapist else "指名なし"
-            raise ValidationError(
-                f'申し訳ございません。{therapist_name}の{booking_time}は既に予約が入っているか、'
-                f'前後の施術時間と重複しています。別の時間をお選びください。'
-            )
-    
-    # 既存予定との重複チェック（新規追加）
-    for existing_schedule in existing_schedules:
-        schedule_start = datetime.datetime.combine(booking_date, existing_schedule.start_time)
-        schedule_end = datetime.datetime.combine(booking_date, existing_schedule.end_time)
-        
-        # 予約時間が予定時間と重複するかチェック
-        if (new_booking_start < schedule_end and new_booking_end > schedule_start):
-            therapist_name = therapist.display_name if therapist else "指名なし"
-            schedule_info = f"{existing_schedule.title}（{existing_schedule.get_schedule_type_display()}）"
-            raise ValidationError(
-                f'申し訳ございません。{therapist_name}の{booking_time}は予定「{schedule_info}」と'
-                f'重複しています。別の時間をお選びください。'
-            )
+        # 時間の重複判定
+        if (booking_datetime < schedule_end and end_datetime > schedule_start):
+            if therapist and schedule.therapist == therapist:
+                raise ValidationError(f'選択された時間は{therapist.display_name}の予定「{schedule.title}」と重複しています。')
+            elif schedule.therapist is None:
+                raise ValidationError(f'選択された時間は予定「{schedule.title}」と重複しています。')
     
     return True
+
+# ===== その他のフォーム =====
+
+class BookingCancelForm(forms.Form):
+    """予約キャンセルフォーム"""
+    reason = forms.CharField(
+        label='キャンセル理由',
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 3,
+            'placeholder': 'キャンセル理由をお書きください（任意）'
+        }),
+        required=False
+    )
+    
+    def __init__(self, *args, **kwargs):
+        self.booking = kwargs.pop('booking', None)
+        super().__init__(*args, **kwargs)
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        
+        if self.booking:
+            # キャンセル可能期限をチェック（設定によっては当日キャンセル制限などを実装）
+            try:
+                booking_settings = BookingSettings.get_current_settings()
+                cutoff_time = booking_settings.same_day_booking_cutoff
+                
+                # 当日キャンセルの制限例
+                if self.booking.booking_date == timezone.now().date():
+                    current_time = timezone.now().time()
+                    if current_time > cutoff_time:
+                        raise ValidationError(
+                            f'当日の{cutoff_time.strftime("%H:%M")}以降はキャンセルできません。お電話でお問い合わせください。'
+                        )
+            except BookingSettings.DoesNotExist:
+                pass
+        
+        return cleaned_data
