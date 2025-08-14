@@ -11,6 +11,11 @@ urlpatterns = [
     path('booking/confirm/', views.booking_confirm, name='booking_confirm'),  # 確認画面
     path('booking/complete/', views.booking_complete, name='booking_complete'),  # 完了画面
     
+    # 予約管理機能（管理者用）
+    path('booking/<int:booking_id>/cancel/', views.cancel_booking, name='cancel_booking'),
+    path('booking/<int:booking_id>/confirm/', views.confirm_booking, name='confirm_booking'),
+    path('booking/<int:booking_id>/complete/', views.complete_booking, name='complete_booking'),
+    
     # AJAX API
     path('booking/api/available-times/', views.get_available_times, name='get_available_times'),
 ]

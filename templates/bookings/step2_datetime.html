@@ -1,162 +1,139 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}{{ title }}{% endblock %}
 
 {% block content %}
-<div class="booking-steps-container">
-    <div class="container">
-        <!-- プログレスバー -->
-        <div class="progress-container">
-            <div class="progress-bar">
-                <div class="step completed">
-                    <div class="step-number">✓</div>
-                    <div class="step-label">サービス選択</div>
-                </div>
-                <div class="step active">
-                    <div class="step-number">2</div>
-                    <div class="step-label">日時選択</div>
-                </div>
-                <div class="step">
-                    <div class="step-number">3</div>
-                    <div class="step-label">お客様情報</div>
-                </div>
+<div class="container">
+    <!-- プログレスバー -->
+    <div class="progress-bar">
+        <div class="step completed">
+            <div class="step-number">1</div>
+            <div class="step-label">サービス選択</div>
+        </div>
+        <div class="step-line completed"></div>
+        <div class="step active">
+            <div class="step-number">2</div>
+            <div class="step-label">日時・施術者選択</div>
+        </div>
+        <div class="step-line"></div>
+        <div class="step">
+            <div class="step-number">3</div>
+            <div class="step-label">お客様情報</div>
+        </div>
+    </div>
+
+    <!-- メインコンテンツ -->
+    <div class="step-content">
+        <h1>ステップ2: 日時・施術者選択</h1>
+
+        <!-- 選択されたサービス表示 -->
+        <div class="selected-service">
+            <h3>選択されたサービス</h3>
+            <div class="service-info">
+                <span class="service-name">{{ service.name }}</span>
+                <span class="service-duration">{{ service.duration_minutes }}分</span>
+                <span class="service-price">¥{{ service.price }}</span>
             </div>
         </div>
 
-        <!-- ステップ2: 日時・施術者選択 -->
-        <div class="step-content">
-            <h1>ステップ2: 日時・施術者選択</h1>
+        <form method="post" id="bookingForm">
+            {% csrf_token %}
             
-            <!-- 選択されたサービス表示 -->
-            <div class="selected-service">
-                <h3>選択されたサービス</h3>
-                <div class="service-info">
-                    <span class="service-name">{{ service.name }}</span>
-                    <span class="service-duration">{{ service.duration_minutes }}分</span>
-                    <span class="service-price">¥{{ service.price|floatformat:0 }}</span>
+            {% if enable_therapist_selection and therapists %}
+            <!-- 施術者選択 -->
+            <div class="therapist-selection">
+                <h3>施術者選択</h3>
+                <div class="therapist-options">
+                    <div class="therapist-option">
+                        <input type="radio" name="therapist" value="" id="therapist_none" class="therapist-radio" checked>
+                        <label for="therapist_none" class="therapist-card">
+                            <div class="therapist-info">
+                                <h4>指名なし</h4>
+                                <p>どの施術者でも構いません</p>
+                            </div>
+                        </label>
+                    </div>
+                    {% for therapist in therapists %}
+                    <div class="therapist-option">
+                        <input type="radio" name="therapist" value="{{ therapist.id }}" id="therapist_{{ therapist.id }}" class="therapist-radio">
+                        <label for="therapist_{{ therapist.id }}" class="therapist-card">
+                            <div class="therapist-info">
+                                <h4>{{ therapist.display_name }}</h4>
+                                {% if therapist.experience_years > 0 %}
+                                    <p>経験{{ therapist.experience_years }}年</p>
+                                {% endif %}
+                                {% if therapist.specialties %}
+                                    <small>{{ therapist.specialties }}</small>
+                                {% endif %}
+                            </div>
+                            {% if therapist.is_featured %}
+                                <span class="featured-badge">おすすめ</span>
+                            {% endif %}
+                        </label>
+                    </div>
+                    {% endfor %}
                 </div>
             </div>
+            {% endif %}
 
-            <form method="post" class="datetime-form" id="datetimeForm">
-                {% csrf_token %}
-                
-                <!-- 施術者選択 -->
-                {% if enable_therapist_selection and therapists %}
-                <div class="therapist-selection">
-                    <h3>施術者のご希望</h3>
-                    <div class="therapist-options">
-                        <div class="therapist-option">
-                            <input type="radio" name="therapist" value="" id="therapist_none" class="therapist-radio" checked>
-                            <label for="therapist_none" class="therapist-card">
-                                <div class="therapist-info">
-                                    <h4>指名なし</h4>
-                                    <p>どなたでも構いません</p>
-                                </div>
-                            </label>
-                        </div>
-                        {% for therapist in therapists %}
-                        <div class="therapist-option">
-                            <input type="radio" name="therapist" value="{{ therapist.id }}" id="therapist_{{ therapist.id }}" class="therapist-radio">
-                            <label for="therapist_{{ therapist.id }}" class="therapist-card">
-                                <div class="therapist-info">
-                                    <h4>{{ therapist.display_name }}</h4>
-                                    {% if therapist.experience_years > 0 %}
-                                        <p>経験{{ therapist.experience_years }}年</p>
-                                    {% endif %}
-                                    {% if therapist.specialties %}
-                                        <small>{{ therapist.specialties }}</small>
-                                    {% endif %}
-                                </div>
-                                {% if therapist.is_featured %}
-                                    <span class="featured-badge">おすすめ</span>
-                                {% endif %}
-                            </label>
-                        </div>
-                        {% endfor %}
+            <!-- 日付選択 -->
+            <div class="date-selection">
+                <h3>ご希望日</h3>
+                <div class="calendar-container">
+                    <div class="calendar-header">
+                        <button type="button" class="calendar-nav" id="prevMonth">‹</button>
+                        <h4 id="currentMonth"></h4>
+                        <button type="button" class="calendar-nav" id="nextMonth">›</button>
+                    </div>
+                    <div class="calendar-weekdays">
+                        <div>日</div><div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div>土</div>
+                    </div>
+                    <div class="calendar-days" id="calendarDays">
+                        <!-- JavaScriptで動的に生成 -->
                     </div>
                 </div>
-                {% endif %}
+                <input type="hidden" name="booking_date" id="bookingDate">
+            </div>
 
-                <!-- 日付選択 -->
-                <div class="date-selection">
-                    <h3>ご希望日</h3>
-                    <div class="calendar-container">
-                        <div class="calendar-header">
-                            <button type="button" class="calendar-nav" id="prevMonth">‹</button>
-                            <h4 id="currentMonth"></h4>
-                            <button type="button" class="calendar-nav" id="nextMonth">›</button>
-                        </div>
-                        <div class="calendar-weekdays">
-                            <div>日</div><div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div>土</div>
-                        </div>
-                        <div class="calendar-days" id="calendarDays">
-                            <!-- JavaScriptで動的に生成 -->
-                        </div>
-                    </div>
+            <!-- 時間選択 -->
+            <div class="time-selection">
+                <h3>ご希望時間</h3>
+                <div class="time-slots-container" id="timeSlotsContainer">
+                    <p class="select-date-first">まずご希望日をお選びください</p>
                 </div>
+                <input type="hidden" name="booking_time" id="bookingTime">
+            </div>
 
-                <!-- 時間選択 -->
-                <div class="time-selection">
-                    <h3>ご希望時間</h3>
-                    <div class="time-slots-container" id="timeSlotsContainer">
-                        <p class="select-date-first">まずご希望日をお選びください</p>
-                    </div>
-                </div>
+            <!-- 備考欄 -->
+            <div class="notes-section">
+                <h3>ご要望・備考（任意）</h3>
+                <textarea name="notes" placeholder="ご質問やご要望があればお書きください"></textarea>
+            </div>
 
-                <!-- 備考欄 -->
-                <div class="notes-section">
-                    <h3>ご要望・備考（任意）</h3>
-                    {{ form.notes }}
-                </div>
-
-                <!-- 隠しフィールド -->
-                {{ form.booking_date }}
-                {{ form.booking_time }}
-
-                <div class="form-actions">
-                    <a href="{% url 'bookings:booking_step1' %}" class="btn btn-secondary">前に戻る</a>
-                    <button type="submit" id="submitBtn" class="btn btn-primary btn-large" disabled>次へ進む</button>
-                </div>
-            </form>
-        </div>
+            <!-- フォームアクション -->
+            <div class="form-actions">
+                <a href="{% url 'bookings:booking_step1' %}" class="btn btn-secondary">戻る</a>
+                <button type="submit" class="btn btn-primary" id="submitBtn" disabled>次へ進む</button>
+            </div>
+        </form>
     </div>
 </div>
 
 <style>
-    .booking-steps-container {
-        padding: 2rem 0;
-        background: linear-gradient(135deg, #f8f9fa 0%, #e3f2fd 100%);
-        min-height: calc(100vh - 200px);
-    }
-
     .container {
         max-width: 1000px;
         margin: 0 auto;
-        padding: 0 1rem;
+        padding: 2rem 1rem;
     }
 
     /* プログレスバー */
-    .progress-container {
-        margin-bottom: 3rem;
-    }
-
     .progress-bar {
         display: flex;
         justify-content: center;
         align-items: center;
-        gap: 3rem;
-        position: relative;
-    }
-
-    .progress-bar::before {
-        content: '';
-        position: absolute;
-        top: 50%;
-        left: 20%;
-        right: 20%;
-        height: 2px;
-        background: #e9ecef;
-        z-index: 1;
+        margin-bottom: 3rem;
+        gap: 1rem;
     }
 
     .step {
@@ -164,44 +141,40 @@
         flex-direction: column;
         align-items: center;
         gap: 0.5rem;
-        position: relative;
-        z-index: 2;
     }
 
     .step-number {
-        width: 50px;
-        height: 50px;
+        width: 40px;
+        height: 40px;
         border-radius: 50%;
         background: #e9ecef;
-        color: #6c757d;
         display: flex;
         align-items: center;
         justify-content: center;
         font-weight: bold;
-        font-size: 1.2rem;
-        transition: all 0.3s;
+        color: #666;
     }
 
+    .step-line {
+        width: 80px;
+        height: 2px;
+        background: #e9ecef;
+    }
+
+    .step.completed .step-number,
     .step.active .step-number {
         background: #8b7355;
         color: white;
     }
 
-    .step.completed .step-number {
-        background: #28a745;
-        color: white;
-    }
-
-    .step-label {
-        font-size: 0.9rem;
-        color: #666;
-        text-align: center;
-    }
-
-    .step.active .step-label,
-    .step.completed .step-label {
+    .step.completed .step-label,
+    .step.active .step-label {
         color: #8b7355;
         font-weight: bold;
+    }
+
+    .step.completed ~ .step-line {
+        background: #8b7355;
     }
 
     /* メインコンテンツ */
@@ -556,111 +529,114 @@
         box-shadow: 0 4px 12px rgba(149, 165, 166, 0.3);
     }
 
-    .btn-large {
-        padding: 1rem 2.5rem;
-        font-size: 1.1rem;
-    }
-
     /* レスポンシブ対応 */
     @media (max-width: 768px) {
         .container {
-            padding: 0 0.5rem;
+            padding: 0.5rem;
         }
         
         .step-content {
-            padding: 2rem 1.5rem;
+            padding: 2rem 1rem;
         }
         
-        .step-content h1 {
-            font-size: 1.5rem;
+        .progress-bar {
+            gap: 0.5rem;
         }
         
         .service-info {
             flex-direction: column;
-            align-items: flex-start;
             gap: 0.5rem;
+            align-items: flex-start;
         }
         
         .therapist-options {
             grid-template-columns: 1fr;
         }
         
-        .calendar-container {
-            padding: 1rem;
-        }
-        
-        .time-slots-grid {
-            grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
-            gap: 0.3rem;
-        }
-        
-        .time-slot {
-            padding: 0.5rem;
-            font-size: 0.9rem;
-        }
-        
         .form-actions {
             flex-direction: column;
-            gap: 0.75rem;
         }
         
         .btn {
             width: 100%;
-            min-width: auto;
         }
     }
 </style>
 
 <script>
-    // 営業時間データをJavaScriptで使用可能にする
-    const businessHours = {{ business_hours|safe }};
-    const serviceId = {{ service.id }};
-    
     // グローバル変数
-    let currentMonth = new Date().getMonth();
     let currentYear = new Date().getFullYear();
+    let currentMonth = new Date().getMonth();
     let selectedDate = null;
     let selectedTime = null;
+    let businessHours = []; // サーバーから取得
 
+    // 初期化
     document.addEventListener('DOMContentLoaded', function() {
-        // 初期カレンダー表示
-        updateCalendar();
+        // 営業時間をサーバーから取得
+        fetchBusinessHours().then(() => {
+            renderCalendar();
+        });
         
-        // カレンダーナビゲーション
-        document.getElementById('prevMonth').addEventListener('click', () => {
+        // ナビゲーションボタンのイベント
+        document.getElementById('prevMonth').addEventListener('click', function() {
             currentMonth--;
             if (currentMonth < 0) {
                 currentMonth = 11;
                 currentYear--;
             }
-            updateCalendar();
+            renderCalendar();
         });
         
-        document.getElementById('nextMonth').addEventListener('click', () => {
+        document.getElementById('nextMonth').addEventListener('click', function() {
             currentMonth++;
             if (currentMonth > 11) {
                 currentMonth = 0;
                 currentYear++;
             }
-            updateCalendar();
+            renderCalendar();
         });
 
-        // 施術者選択が変更された時の処理
+        // 施術者選択変更時
         document.querySelectorAll('input[name="therapist"]').forEach(radio => {
-            radio.addEventListener('change', () => {
+            radio.addEventListener('change', function() {
                 if (selectedDate) {
                     loadAvailableTimes(selectedDate);
                 }
             });
         });
+
+        updateSubmitButton();
     });
 
-    function updateCalendar() {
-        const monthNames = [
-            '1月', '2月', '3月', '4月', '5月', '6月',
-            '7月', '8月', '9月', '10月', '11月', '12月'
-        ];
-        
+    async function fetchBusinessHours() {
+        try {
+            // 一時的にハードコードされた営業時間を使用
+            // 後でAPIエンドポイントを作成して動的取得に変更可能
+            businessHours = [
+                {day: 0, is_open: true, open_time: '09:00', close_time: '20:00'},  // 日曜日
+                {day: 1, is_open: true, open_time: '09:00', close_time: '20:00'},  // 月曜日
+                {day: 2, is_open: true, open_time: '09:00', close_time: '20:00'},  // 火曜日
+                {day: 3, is_open: true, open_time: '09:00', close_time: '20:00'},  // 水曜日
+                {day: 4, is_open: true, open_time: '09:00', close_time: '20:00'},  // 木曜日
+                {day: 5, is_open: true, open_time: '09:00', close_time: '20:00'},  // 金曜日
+                {day: 6, is_open: true, open_time: '09:00', close_time: '20:00'},  // 土曜日
+            ];
+        } catch (error) {
+            console.error('営業時間の取得に失敗しました:', error);
+            // フォールバック：全日営業として扱う
+            businessHours = Array.from({length: 7}, (_, i) => ({
+                day: i,
+                is_open: true,
+                open_time: '09:00',
+                close_time: '20:00'
+            }));
+        }
+    }
+
+    function renderCalendar() {
+        const monthNames = ['1月', '2月', '3月', '4月', '5月', '6月', 
+                           '7月', '8月', '9月', '10月', '11月', '12月'];
         document.getElementById('currentMonth').textContent = `${currentYear}年${monthNames[currentMonth]}`;
         
         const firstDay = new Date(currentYear, currentMonth, 1);
@@ -693,9 +669,14 @@
             
             // 営業日チェック
             const dayOfWeek = date.getDay();
-            const businessHour = businessHours[dayOfWeek];
+            const businessHour = businessHours.find(bh => bh.day === dayOfWeek);
             if (!businessHour || !businessHour.is_open) {
                 dayElement.classList.add('disabled');
+            }
+            
+            // 既存の選択状態を復元
+            if (selectedDate && date.toDateString() === selectedDate.toDateString()) {
+                dayElement.classList.add('selected');
             }
             
             // クリックイベント
@@ -718,49 +699,52 @@
         selectedDate = date;
         
         // 隠しフィールドに設定
-        document.querySelector('input[name="booking_date"]').value = date.toISOString().split('T')[0];
+        document.getElementById('bookingDate').value = date.toISOString().split('T')[0];
+        
+        // 時間選択をリセット
+        selectedTime = null;
+        document.getElementById('bookingTime').value = '';
         
         // 利用可能時間を読み込み
         loadAvailableTimes(date);
+        
+        updateSubmitButton();
     }
     
     function loadAvailableTimes(date) {
         const therapistRadio = document.querySelector('input[name="therapist"]:checked');
         const therapistId = therapistRadio ? therapistRadio.value : '';
+        const serviceId = {{ service.id }};
         
         const timeSlotsContainer = document.getElementById('timeSlotsContainer');
         timeSlotsContainer.innerHTML = '<p class="loading-message">利用可能時間を読み込み中...</p>';
         
-        const url = new URL('/booking/api/available-times/', window.location.origin);
-        url.searchParams.append('date', date.toISOString().split('T')[0]);
-        url.searchParams.append('service_id', serviceId);
-        if (therapistId) {
-            url.searchParams.append('therapist_id', therapistId);
-        }
+        const dateStr = date.toISOString().split('T')[0];
+        const url = `/booking/api/available-times/?date=${dateStr}&service_id=${serviceId}&therapist_id=${therapistId}`;
         
         fetch(url)
             .then(response => response.json())
             .then(data => {
-                displayAvailableTimes(data.available_times || []);
+                displayTimeSlots(data.available_times);
             })
             .catch(error => {
-                console.error('時間取得エラー:', error);
-                timeSlotsContainer.innerHTML = '<p style="color: red;">時間の取得に失敗しました。しばらくしてからもう一度お試しください。</p>';
+                console.error('Error loading times:', error);
+                timeSlotsContainer.innerHTML = '<p class="error-message">時間の読み込みに失敗しました。再度お試しください。</p>';
             });
     }
     
-    function displayAvailableTimes(times) {
+    function displayTimeSlots(availableTimes) {
         const timeSlotsContainer = document.getElementById('timeSlotsContainer');
         
-        if (times.length === 0) {
-            timeSlotsContainer.innerHTML = '<p style="color: #666;">この日は予約可能な時間がございません。</p>';
+        if (availableTimes.length === 0) {
+            timeSlotsContainer.innerHTML = '<p class="no-times">この日は予約可能な時間がありません。</p>';
             return;
         }
         
         const timeSlotsGrid = document.createElement('div');
         timeSlotsGrid.className = 'time-slots-grid';
         
-        times.forEach(time => {
+        availableTimes.forEach(time => {
             const timeSlot = document.createElement('div');
             timeSlot.className = 'time-slot';
             timeSlot.textContent = time;
@@ -783,28 +767,14 @@
         selectedTime = time;
         
         // 隠しフィールドに設定
-        document.querySelector('input[name="booking_time"]').value = time;
+        document.getElementById('bookingTime').value = time;
         
-        // 送信ボタンを有効化
         updateSubmitButton();
     }
     
     function updateSubmitButton() {
         const submitBtn = document.getElementById('submitBtn');
-        if (selectedDate && selectedTime) {
-            submitBtn.disabled = false;
-        } else {
-            submitBtn.disabled = true;
-        }
+        submitBtn.disabled = !(selectedDate && selectedTime);
     }
-    
-    // フォーム送信時のバリデーション
-    document.getElementById('datetimeForm').addEventListener('submit', function(e) {
-        if (!selectedDate || !selectedTime) {
-            e.preventDefault();
-            alert('日付と時間を選択してください。');
-            return false;
-        }
-    });
 </script>
 {% endblock %}

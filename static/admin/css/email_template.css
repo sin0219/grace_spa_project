@@ -1,0 +1,93 @@
+/* メールテンプレート管理画面のスタイル */
+
+.email-template-form {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.email-template-preview {
+    background: white;
+    border: 1px solid #ddd;
+    padding: 15px;
+    border-radius: 5px;
+    margin-top: 10px;
+}
+
+.template-variables {
+    background: #e9ecef;
+    padding: 15px;
+    border-radius: 5px;
+    margin-bottom: 15px;
+}
+
+.template-variables h4 {
+    color: #495057;
+    margin-bottom: 10px;
+}
+
+.variable-list {
+    list-style: none;
+    padding: 0;
+    columns: 2;
+}
+
+.variable-list li {
+    margin-bottom: 5px;
+    font-family: monospace;
+    background: white;
+    padding: 3px 6px;
+    border-radius: 3px;
+    display: inline-block;
+    margin-right: 10px;
+    font-size: 12px;
+}
+
+.email-template-form textarea {
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.email-template-form .field-subject input {
+    width: 100%;
+    max-width: 600px;
+}
+
+.help-text {
+    font-size: 12px;
+    color: #6c757d;
+    margin-top: 5px;
+}
+
+/* 変数ヘルプ */
+.variables-help {
+    position: fixed;
+    top: 100px;
+    right: 20px;
+    width: 300px;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 15px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    z-index: 1000;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.variables-help h4 {
+    margin-top: 0;
+    color: #495057;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 5px;
+}
+
+@media (max-width: 1200px) {
+    .variables-help {
+        position: static;
+        width: auto;
+        margin-bottom: 20px;
+    }
+}

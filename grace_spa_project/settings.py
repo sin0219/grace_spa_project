@@ -1,10 +1,18 @@
 import os
 from pathlib import Path
 
+# .envファイルを読み込むための設定
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    # python-dotenvがインストールされていない場合は環境変数から直接読み込み
+    pass
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-your-secret-key-here-change-in-production'
-DEBUG = True
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-your-secret-key-here-change-in-production')
+DEBUG = os.environ.get('DEBUG', 'True').lower() == 'true'
 ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
 # Application definition
@@ -25,6 +33,7 @@ LOCAL_APPS = [
     'website',
     'bookings',
     'dashboard',
+    'emails',  # メール機能アプリ
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -104,56 +113,50 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Email settings
+# ===========================================
+# メール設定（環境変数から取得）
+# ===========================================
+
+# 本番環境用（Gmail SMTP）
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = ''  # 後で設定
-EMAIL_HOST_PASSWORD = ''  # 後で設定
-DEFAULT_FROM_EMAIL = 'noreply@gracespa.com'
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'your-email@gmail.com')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', 'your-app-password')
 
-# 管理者メールアドレス（予約通知用）
-ADMIN_EMAIL = 'admin@gracespa.com'
+# 開発環境用（コンソール出力）- デバッグ時に使用
+# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
-# 予約セキュリティ設定
-BOOKING_DAILY_LIMIT_PER_EMAIL = 2  # 同一メールアドレスでの1日あたりの予約上限
-BOOKING_DAILY_LIMIT_PER_PHONE = 2  # 同一電話番号での1日あたりの予約上限
-BOOKING_HOURLY_LIMIT_PER_IP = 3    # 同一IPアドレスでの1時間あたりの予約上限
-BOOKING_REQUIRES_APPROVAL = True   # 予約に管理者承認が必要か
+# 送信者情報
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+SERVER_EMAIL = EMAIL_HOST_USER
 
-# キャッシュ設定（開発環境用）
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'grace_spa_cache',
-    }
+# 管理者メールアドレス
+ADMINS = [
+    ('GRACE SPA 管理者', EMAIL_HOST_USER),
+]
+
+# メール設定
+EMAIL_SUBJECT_PREFIX = '[GRACE SPA] '
+EMAIL_TIMEOUT = 30
+
+# 予約関連メール設定
+BOOKING_NOTIFICATION_EMAILS = {
+    'CUSTOMER_BOOKING_CONFIRMATION': True,  # 顧客への予約確認メール
+    'CUSTOMER_BOOKING_REMINDER': True,      # 顧客への予約リマインダー
+    'ADMIN_NEW_BOOKING': True,              # 管理者への新規予約通知
+    'ADMIN_BOOKING_CANCELLED': True,        # 管理者への予約キャンセル通知
 }
 
-# セキュリティ設定
-SECURE_BROWSER_XSS_FILTER = True
-SECURE_CONTENT_TYPE_NOSNIFF = True
-X_FRAME_OPTIONS = 'DENY'
+# リマインダーメール送信タイミング（時間前）
+BOOKING_REMINDER_HOURS = [24, 2]  # 24時間前と2時間前
 
-# CSRFクッキーの設定
-CSRF_COOKIE_SECURE = False  # 本番環境ではTrueに設定
-CSRF_COOKIE_HTTPONLY = True
-CSRF_COOKIE_SAMESITE = 'Strict'
+# その他のメール関連設定
+EMAIL_USE_LOCALTIME = True
 
-# セッションの設定
-SESSION_COOKIE_SECURE = False  # 本番環境ではTrueに設定
-SESSION_COOKIE_HTTPONLY = True
-SESSION_COOKIE_SAMESITE = 'Strict'
-SESSION_COOKIE_AGE = 3600  # 1時間
+# サイト設定
+SITE_URL = os.environ.get('SITE_URL', 'https://gracespa.com')
 
-# REST Framework
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.SessionAuthentication',
-    ],
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
-    ],
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 20
-}
+# 予約設定
+BOOKING_REQUIRES_APPROVAL = os.environ.get('BOOKING_REQUIRES_APPROVAL', 'True').lower() == 'true'

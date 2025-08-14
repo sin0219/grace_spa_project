@@ -73,7 +73,7 @@ class SuspiciousActivityMiddleware:
         self.get_response = get_response
         
     def __call__(self, request):
-        # 不審なパターンを検出
+        # 不審なパターンを検出（APIリクエストは除外）
         if self.detect_suspicious_activity(request):
             self.log_suspicious_activity(request)
         
@@ -82,10 +82,22 @@ class SuspiciousActivityMiddleware:
     
     def detect_suspicious_activity(self, request):
         """不審なアクティビティを検出"""
+        # APIリクエストは除外
+        if request.path.startswith('/booking/api/'):
+            return False
+        
+        # 管理画面のAPIリクエストも除外
+        if request.path.startswith('/dashboard/api/'):
+            return False
+        
+        # AJAXリクエストは除外
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return False
+        
         ip_address = self.get_client_ip(request)
         
-        # 短時間での大量アクセス検出
-        if request.path.startswith('/booking/'):
+        # 短時間での大量アクセス検出（フォーム送信のみ）
+        if request.path.startswith('/booking/') and request.method == 'POST':
             access_key = f"booking_access_{ip_address}"
             current_time = timezone.now().timestamp()
             
@@ -102,8 +114,8 @@ class SuspiciousActivityMiddleware:
             access_history.append(current_time)
             cache.set(access_key, access_history, 300)
             
-            # 5分間に10回以上のアクセスは不審とみなす
-            if len(access_history) > 10:
+            # 5分間に5回以上のフォーム送信は不審とみなす
+            if len(access_history) > 5:
                 return True
         
         return False
