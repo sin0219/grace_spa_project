@@ -328,7 +328,7 @@ def get_available_times(request):
     # 営業時間を取得（weekdayフィールドを使用）
     try:
         business_hours = BusinessHours.objects.filter(
-            weekday=date.weekday(),  # day_of_week → weekday に修正
+            weekday=date.weekday(),
             is_open=True
         ).first()
         
@@ -339,8 +339,20 @@ def get_available_times(request):
         try:
             settings_obj = BookingSettings.get_current_settings()
             interval_minutes = settings_obj.booking_interval_minutes
+            buffer_minutes = settings_obj.treatment_buffer_minutes  # インターバル時間を取得
         except:
             interval_minutes = 30  # デフォルト30分間隔
+            buffer_minutes = 15   # デフォルト15分インターバル
+        
+        # 既存の予約を取得
+        existing_bookings = Booking.objects.filter(
+            booking_date=date,
+            status__in=['pending', 'confirmed']
+        )
+        
+        # 施術者が指定されている場合は、同じ施術者の予約のみチェック
+        if therapist:
+            existing_bookings = existing_bookings.filter(therapist=therapist)
         
         # 利用可能時間のリストを生成
         available_times = []
@@ -349,13 +361,49 @@ def get_available_times(request):
         
         while current_time + datetime.timedelta(minutes=service.duration_minutes) <= end_time:
             time_str = current_time.strftime('%H:%M')
-            
-            # 既存の予約と重複チェック
             is_available = True
-            try:
-                validate_booking_time_slot(service, date, current_time.time(), therapist)
-            except ValidationError:
-                is_available = False
+            
+            # 新しい予約の終了時間（インターバル込み）
+            new_booking_start = current_time
+            new_booking_end = new_booking_start + datetime.timedelta(minutes=service.duration_minutes + buffer_minutes)
+            
+            # 既存の予約との重複チェック
+            for existing_booking in existing_bookings:
+                existing_start = datetime.datetime.combine(date, existing_booking.booking_time)
+                existing_end = existing_start + datetime.timedelta(
+                    minutes=existing_booking.service.duration_minutes + buffer_minutes
+                )
+                
+                # 時間の重複判定（インターバル時間も考慮）
+                if (new_booking_start < existing_end and new_booking_end > existing_start):
+                    is_available = False
+                    break
+            
+            # スケジュール（予定）との重複チェック
+            if is_available:
+                try:
+                    conflicting_schedules = Schedule.objects.filter(
+                        schedule_date=date,
+                        is_active=True
+                    )
+                    
+                    # 施術者が指定されている場合は、その施術者の予定のみチェック
+                    if therapist:
+                        conflicting_schedules = conflicting_schedules.filter(
+                            Q(therapist=therapist) | Q(therapist__isnull=True)  # 全体予定も含む
+                        )
+                    
+                    for schedule in conflicting_schedules:
+                        schedule_start = datetime.datetime.combine(schedule.schedule_date, schedule.start_time)
+                        schedule_end = datetime.datetime.combine(schedule.schedule_date, schedule.end_time)
+                        
+                        # 時間の重複判定
+                        if (new_booking_start < schedule_end and new_booking_end > schedule_start):
+                            is_available = False
+                            break
+                            
+                except Exception as e:
+                    logger.warning(f"スケジュールチェックエラー: {str(e)}")
             
             available_times.append({
                 'time': time_str,

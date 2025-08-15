@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.utils import timezone
 from django.db.models import Count, Q
 from django.http import JsonResponse
-from bookings.models import Booking, Customer, Service, Schedule, BusinessHours, Therapist
+from bookings.models import Booking, Customer, Service, Schedule, BusinessHours, Therapist, BookingSettings
 from datetime import datetime, timedelta
 import calendar
 
@@ -101,7 +101,7 @@ def booking_detail(request, booking_id):
             
             # 予約確定メールを送信
             try:
-                from bookings.views import send_booking_confirmation_email
+                from emails.utils import send_booking_confirmation_email
                 send_booking_confirmation_email(booking)
                 messages.success(request, f'{booking.customer.name}様の予約を確定し、確定メールを送信しました。')
             except Exception as e:
@@ -487,7 +487,10 @@ def schedule_detail(request, schedule_id):
             form = ScheduleForm(instance=schedule)
         
         # この予定と重複する予約があるかチェック
-        conflicting_bookings = schedule.conflicts_with_bookings()
+        try:
+            conflicting_bookings = schedule.conflicts_with_bookings()
+        except:
+            conflicting_bookings = []
         
         context = {
             'title': f'予定詳細 - {schedule.title}',
@@ -547,13 +550,27 @@ def get_available_times_api(request):
         if not business_hour.is_open:
             return JsonResponse({'time_slots': []})
     except BusinessHours.DoesNotExist:
-        # デフォルト営業時間
-        business_hour = type('', (), {
+        # デフォルト営業時間を作成
+        business_hour_data = {
             'is_open': True,
             'open_time': datetime.strptime('09:00', '%H:%M').time(),
             'close_time': datetime.strptime('20:00', '%H:%M').time(),
             'last_booking_time': datetime.strptime('19:00', '%H:%M').time(),
-        })()
+        }
+        
+        class BusinessHourDefault:
+            def __init__(self, data):
+                for key, value in data.items():
+                    setattr(self, key, value)
+        
+        business_hour = BusinessHourDefault(business_hour_data)
+    
+    # 予約設定を取得
+    try:
+        settings_obj = BookingSettings.get_current_settings()
+        buffer_minutes = settings_obj.treatment_buffer_minutes
+    except:
+        buffer_minutes = 15  # デフォルト15分インターバル
     
     # 既存予約を取得
     existing_bookings = Booking.objects.filter(
@@ -590,15 +607,16 @@ def get_available_times_api(request):
         status = 'available'
         conflict_info = ''
         
-        # 予約との重複チェック
+        # 予約との重複チェック（正しいサービス時間とインターバルを使用）
         for booking in existing_bookings:
             booking_start = datetime.combine(date, booking.booking_time)
+            # 実際のサービス時間とインターバルを使用
             service_duration = booking.service.duration_minutes
-            booking_end = booking_start + timedelta(minutes=service_duration + 15)  # バッファ込み
+            booking_end = booking_start + timedelta(minutes=service_duration + buffer_minutes)
             
             if booking_start <= current_time < booking_end:
                 status = 'booking_conflict'
-                conflict_info = f'{booking.customer.name} - {booking.service.name}'
+                conflict_info = f'{booking.customer.name} - {booking.service.name} ({service_duration}分+{buffer_minutes}分)'
                 break
         
         # 予定との重複チェック
@@ -637,6 +655,13 @@ def get_schedule_times_api(request):
     except ValueError:
         return JsonResponse({'error': 'Invalid date format'}, status=400)
     
+    # 予約設定を取得
+    try:
+        settings_obj = BookingSettings.get_current_settings()
+        buffer_minutes = settings_obj.treatment_buffer_minutes
+    except:
+        buffer_minutes = 15  # デフォルト15分インターバル
+    
     # 既存予約を取得
     existing_bookings = Booking.objects.filter(
         booking_date=date,
@@ -670,15 +695,16 @@ def get_schedule_times_api(request):
             status = 'available'
             conflict_info = ''
             
-            # 予約との重複チェック
+            # 予約との重複チェック（正しいサービス時間とインターバルを使用）
             for booking in existing_bookings:
                 booking_start = datetime.combine(date, booking.booking_time)
+                # 実際のサービス時間とインターバルを使用
                 service_duration = booking.service.duration_minutes
-                booking_end = booking_start + timedelta(minutes=service_duration + 15)  # バッファ込み
+                booking_end = booking_start + timedelta(minutes=service_duration + buffer_minutes)
                 
                 if booking_start <= current_time < booking_end:
                     status = 'booking_conflict'
-                    conflict_info = f'{booking.customer.name} - {booking.service.name}'
+                    conflict_info = f'{booking.customer.name} - {booking.service.name} ({service_duration}分+{buffer_minutes}分)'
                     break
             
             # 予定との重複チェック
