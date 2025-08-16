@@ -310,7 +310,7 @@ def booking_complete(request):
     return render(request, 'bookings/complete.html', context)
 
 def get_available_times(request):
-    """AJAX: 指定された日付の利用可能時間を取得（当日時刻チェック修正版）"""
+    """AJAX: 指定された日付の利用可能時間を取得（①当日時刻チェック ②直前予約制限対応）"""
     date_str = request.GET.get('date')
     service_id = request.GET.get('service_id')
     therapist_id = request.GET.get('therapist_id')
@@ -319,16 +319,21 @@ def get_available_times(request):
         return JsonResponse({'error': 'パラメータが不足しています'}, status=400)
     
     try:
-        date = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
+        booking_date = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
         service = Service.objects.get(id=service_id)
         therapist = Therapist.objects.get(id=therapist_id) if therapist_id else None
     except (ValueError, Service.DoesNotExist, Therapist.DoesNotExist):
         return JsonResponse({'error': '無効なパラメータです'}, status=400)
     
+    # 現在時刻を取得（aware datetime）
+    now = timezone.now()
+    current_date = now.date()
+    is_today = booking_date == current_date
+    
     # 営業時間を取得（weekdayフィールドを使用）
     try:
         business_hours = BusinessHours.objects.filter(
-            weekday=date.weekday(),
+            weekday=booking_date.weekday(),
             is_open=True
         ).first()
         
@@ -340,17 +345,31 @@ def get_available_times(request):
             settings_obj = BookingSettings.get_current_settings()
             interval_minutes = settings_obj.booking_interval_minutes
             buffer_minutes = settings_obj.treatment_buffer_minutes  # インターバル時間を取得
+            # ②直前予約制限の設定を取得
+            min_advance_minutes = getattr(settings_obj, 'min_advance_minutes', 20)  # デフォルト20分
         except:
             interval_minutes = 30  # デフォルト30分間隔
             buffer_minutes = 15   # デフォルト15分インターバル
+            min_advance_minutes = 20  # デフォルト20分前まで
         
-        # 現在時刻を取得（当日チェック用）
-        now = timezone.now()
-        is_today = date == now.date()
+        # ①当日の場合の最小予約可能時間を計算
+        min_booking_time = business_hours.open_time
+        if is_today:
+            # ②直前予約制限: 現在時刻 + 制限時間
+            min_datetime = now + datetime.timedelta(minutes=min_advance_minutes)
+            calculated_min_time = min_datetime.time()
+            
+            # 営業開始時間と比較して遅い方を採用
+            if calculated_min_time > min_booking_time:
+                min_booking_time = calculated_min_time
+            
+            # 営業終了時間を超えている場合は空のリストを返す
+            if min_booking_time > business_hours.close_time:
+                return JsonResponse({'available_times': []})
         
         # 既存の予約を取得
         existing_bookings = Booking.objects.filter(
-            booking_date=date,
+            booking_date=booking_date,
             status__in=['pending', 'confirmed']
         )
         
@@ -360,28 +379,27 @@ def get_available_times(request):
         
         # 利用可能時間のリストを生成
         available_times = []
-        current_time = datetime.datetime.combine(date, business_hours.open_time)
-        end_time = datetime.datetime.combine(date, business_hours.close_time)
+        current_time_slot = datetime.datetime.combine(booking_date, business_hours.open_time)
+        end_time = datetime.datetime.combine(booking_date, business_hours.close_time)
         
-        while current_time + datetime.timedelta(minutes=service.duration_minutes) <= end_time:
-            time_str = current_time.strftime('%H:%M')
+        while current_time_slot + datetime.timedelta(minutes=service.duration_minutes) <= end_time:
+            time_str = current_time_slot.strftime('%H:%M')
+            slot_time = current_time_slot.time()
             is_available = True
             
-            # 当日の場合、現在時刻より前の時間は予約不可
-            if is_today:
-                current_time_with_date = timezone.make_aware(current_time)
-                if current_time_with_date <= now:
-                    is_available = False
+            # ①当日の場合は最小予約可能時間をチェック
+            if is_today and slot_time < min_booking_time:
+                is_available = False
             
             # 既存予約・スケジュールとの重複チェック（時刻が有効な場合のみ）
             if is_available:
                 # 新しい予約の終了時間（インターバル込み）
-                new_booking_start = current_time
+                new_booking_start = current_time_slot
                 new_booking_end = new_booking_start + datetime.timedelta(minutes=service.duration_minutes + buffer_minutes)
                 
                 # 既存の予約との重複チェック
                 for existing_booking in existing_bookings:
-                    existing_start = datetime.datetime.combine(date, existing_booking.booking_time)
+                    existing_start = datetime.datetime.combine(booking_date, existing_booking.booking_time)
                     existing_end = existing_start + datetime.timedelta(
                         minutes=existing_booking.service.duration_minutes + buffer_minutes
                     )
@@ -395,7 +413,7 @@ def get_available_times(request):
                 if is_available:
                     try:
                         conflicting_schedules = Schedule.objects.filter(
-                            schedule_date=date,
+                            schedule_date=booking_date,
                             is_active=True
                         )
                         
@@ -423,7 +441,7 @@ def get_available_times(request):
                 'available': is_available
             })
             
-            current_time += datetime.timedelta(minutes=interval_minutes)
+            current_time_slot += datetime.timedelta(minutes=interval_minutes)
         
         return JsonResponse({'available_times': available_times})
         
@@ -485,4 +503,4 @@ def complete_booking(request, booking_id):
             messages.error(request, '完了処理中にエラーが発生しました。')
             logger.error(f"予約完了エラー: {str(e)}")
     
-    return redirect('dashboard:booking_detail', booking_id=booking.id)
+    return redirect('dashboard:booking_detail', booking_id=booking.id)  

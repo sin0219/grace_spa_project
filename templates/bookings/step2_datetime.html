@@ -116,6 +116,7 @@
                         </div>
                     </div>
                     <input type="hidden" name="booking_date" id="bookingDate">
+                    <input type="hidden" id="serviceId" value="{{ service.id }}">
                 </div>
 
                 <!-- 時間選択 -->
@@ -487,6 +488,11 @@
         cursor: not-allowed;
     }
 
+    .calendar-day.business-closed {
+        color: #ccc;
+        cursor: not-allowed;
+    }
+
     /* 時間選択 */
     .time-selection {
         margin-bottom: 3rem;
@@ -699,6 +705,20 @@
     let selectedDate = null;
     let selectedTime = null;
     
+    // 営業時間情報（デフォルト値）
+    const businessHours = {
+        0: { is_open: true, open_time: '09:00:00', close_time: '20:00:00', last_booking_time: '19:00:00' }, // 月
+        1: { is_open: true, open_time: '09:00:00', close_time: '20:00:00', last_booking_time: '19:00:00' }, // 火
+        2: { is_open: true, open_time: '09:00:00', close_time: '20:00:00', last_booking_time: '19:00:00' }, // 水
+        3: { is_open: true, open_time: '09:00:00', close_time: '20:00:00', last_booking_time: '19:00:00' }, // 木
+        4: { is_open: true, open_time: '09:00:00', close_time: '20:00:00', last_booking_time: '19:00:00' }, // 金
+        5: { is_open: true, open_time: '09:00:00', close_time: '20:00:00', last_booking_time: '19:00:00' }, // 土
+        6: { is_open: true, open_time: '09:00:00', close_time: '20:00:00', last_booking_time: '19:00:00' }  // 日
+    };
+    
+    // 直前予約制限時間（分）
+    const minAdvanceMinutes = 20;
+    
     document.addEventListener('DOMContentLoaded', function() {
         generateCalendar();
         
@@ -757,14 +777,55 @@
                 dayElement.classList.add('past');
             } else if (date.getTime() === today.getTime()) {
                 dayElement.classList.add('today');
+                
+                // 当日の営業時間チェック
+                if (!isDateAvailableForBooking(date)) {
+                    dayElement.classList.add('business-closed');
+                    dayElement.title = '本日の営業時間は終了しました';
+                }
             }
             
-            if (!dayElement.classList.contains('other-month') && !dayElement.classList.contains('past')) {
+            // クリックイベント設定
+            if (!dayElement.classList.contains('other-month') && 
+                !dayElement.classList.contains('past') && 
+                !dayElement.classList.contains('business-closed')) {
                 dayElement.addEventListener('click', () => selectDate(date, dayElement));
             }
             
             calendarDays.appendChild(dayElement);
         }
+    }
+    
+    function isDateAvailableForBooking(date) {
+        const now = new Date();
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        // 当日以外は予約可能
+        if (date.getTime() !== today.getTime()) {
+            return true;
+        }
+        
+        // 当日の場合：営業時間外チェック
+        const weekday = date.getDay();
+        const businessHour = businessHours[weekday];
+        
+        // 営業時間外チェック
+        const currentTime = now.getHours() * 60 + now.getMinutes();
+        const lastBookingTime = parseTimeToMinutes(businessHour.last_booking_time);
+        
+        // 最終予約受付時間 + 直前制限時間を過ぎている場合は予約不可
+        if (currentTime >= lastBookingTime - minAdvanceMinutes) {
+            return false;
+        }
+        
+        return true;
+    }
+    
+    function parseTimeToMinutes(timeString) {
+        if (!timeString) return 0;
+        const [hours, minutes] = timeString.split(':').map(Number);
+        return hours * 60 + minutes;
     }
     
     function selectDate(date, element) {
@@ -776,37 +837,6 @@
         // 新しい選択を設定
         element.classList.add('selected');
         selectedDate = date;
-        
-        // タイムゾーンを考慮した日付文字列を作成
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        const dateString = `${year}-${month}-${day}`;
-        
-        // 隠しフィールドに設定
-        document.getElementById('bookingDate').value = dateString;
-        
-        // デバッグ用ログ
-        console.log('選択された日付:', date);
-        console.log('送信される日付文字列:', dateString);
-        
-        // 時間選択をリセット
-        selectedTime = null;
-        document.getElementById('bookingTime').value = '';
-        
-        // 利用可能時間を読み込み
-        loadAvailableTimes(date);
-        
-        updateSubmitButton();
-    }
-    
-    function loadAvailableTimes(date) {
-        const therapistRadio = document.querySelector('input[name="therapist"]:checked');
-        const therapistId = therapistRadio ? therapistRadio.value : '';
-        const serviceId = {{ service.id }};
-        
-        const timeSlotsContainer = document.getElementById('timeSlotsContainer');
-        timeSlotsContainer.innerHTML = '<p class="loading-message">利用可能時間を読み込み中...</p>';
         
         // タイムゾーンを考慮した日付文字列を作成
         const year = date.getFullYear();
@@ -888,4 +918,35 @@
         submitBtn.disabled = !(selectedDate && selectedTime);
     }
 </script>
-{% endblock %}
+{% endblock %} String(date.getDate()).padStart(2, '0');
+        const dateString = `${year}-${month}-${day}`;
+        
+        // 隠しフィールドに設定
+        document.getElementById('bookingDate').value = dateString;
+        
+        // デバッグ用ログ
+        console.log('選択された日付:', date);
+        console.log('送信される日付文字列:', dateString);
+        
+        // 時間選択をリセット
+        selectedTime = null;
+        document.getElementById('bookingTime').value = '';
+        
+        // 利用可能時間を読み込み
+        loadAvailableTimes(date);
+        
+        updateSubmitButton();
+    }
+    
+    function loadAvailableTimes(date) {
+        const therapistRadio = document.querySelector('input[name="therapist"]:checked');
+        const therapistId = therapistRadio ? therapistRadio.value : '';
+        const serviceId = {{ service.id }};
+        
+        const timeSlotsContainer = document.getElementById('timeSlotsContainer');
+        timeSlotsContainer.innerHTML = '<p class="loading-message">利用可能時間を読み込み中...</p>';
+        
+        // タイムゾーンを考慮した日付文字列を作成
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day =

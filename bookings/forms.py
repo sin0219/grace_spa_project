@@ -139,13 +139,44 @@ class CustomerInfoForm(forms.Form):
 
 def validate_booking_time_slot(service, booking_date, booking_time, therapist=None):
     """
-    予約時間の重複チェック
+    予約時間の重複チェック（①当日時刻チェック ②直前予約制限対応）
     """
     from django.db import models
     
-    # 予約開始時刻と終了時刻を計算
-    booking_datetime = datetime.datetime.combine(booking_date, booking_time)
-    end_datetime = booking_datetime + datetime.timedelta(minutes=service.duration_minutes)
+    # 現在時刻を取得（aware datetime）
+    now = timezone.now()
+    current_date = now.date()
+    
+    # 予約設定を取得
+    try:
+        booking_settings = BookingSettings.get_current_settings()
+        # ②直前予約制限の設定を取得
+        min_advance_minutes = getattr(booking_settings, 'min_advance_minutes', 20)  # デフォルト20分
+    except BookingSettings.DoesNotExist:
+        min_advance_minutes = 20  # デフォルト20分前まで
+    
+    # ①当日予約の場合の時刻チェック
+    if booking_date == current_date:
+        # 予約日時をaware datetimeに変換
+        booking_datetime = timezone.make_aware(
+            datetime.datetime.combine(booking_date, booking_time)
+        )
+        
+        # 現在時刻より前の時間は予約不可
+        if booking_datetime <= now:
+            raise ValidationError('過去の時間は予約できません。')
+        
+        # ②直前予約制限チェック
+        min_booking_datetime = now + datetime.timedelta(minutes=min_advance_minutes)
+        
+        if booking_datetime < min_booking_datetime:
+            raise ValidationError(
+                f'申し訳ございませんが、予約は{min_advance_minutes}分前までにお取りください。'
+            )
+    
+    # 予約開始時刻と終了時刻を計算（naive datetimeのまま処理）
+    booking_datetime_naive = datetime.datetime.combine(booking_date, booking_time)
+    end_datetime_naive = booking_datetime_naive + datetime.timedelta(minutes=service.duration_minutes)
     
     # 既存の予約をチェック
     overlapping_bookings = Booking.objects.filter(
@@ -163,7 +194,7 @@ def validate_booking_time_slot(service, booking_date, booking_time, therapist=No
         existing_end = existing_start + datetime.timedelta(minutes=booking.service.duration_minutes)
         
         # 時間の重複判定
-        if (booking_datetime < existing_end and end_datetime > existing_start):
+        if (booking_datetime_naive < existing_end and end_datetime_naive > existing_start):
             if therapist:
                 raise ValidationError(f'選択された時間は{therapist.display_name}の予約が重複しています。別の時間をお選びください。')
             else:
@@ -180,7 +211,7 @@ def validate_booking_time_slot(service, booking_date, booking_time, therapist=No
             if booking_date > max_date:
                 raise ValidationError(f'予約は{max_days_ahead}日先まで可能です。')
         
-        # 当日予約の制限チェック
+        # 当日予約の制限チェック（従来の制限と併用）
         if booking_date == timezone.now().date():
             cutoff_time = booking_settings.same_day_booking_cutoff
             current_time = timezone.now().time()
@@ -201,7 +232,7 @@ def validate_booking_time_slot(service, booking_date, booking_time, therapist=No
         if not business_hours:
             raise ValidationError('選択された日は休業日です。')
         
-        if booking_time < business_hours.open_time or end_datetime.time() > business_hours.close_time:
+        if booking_time < business_hours.open_time or end_datetime_naive.time() > business_hours.close_time:
             raise ValidationError('選択された時間は営業時間外です。')
             
     except BusinessHours.DoesNotExist:
@@ -226,7 +257,7 @@ def validate_booking_time_slot(service, booking_date, booking_time, therapist=No
         schedule_end = datetime.datetime.combine(schedule.schedule_date, schedule.end_time)
         
         # 時間の重複判定
-        if (booking_datetime < schedule_end and end_datetime > schedule_start):
+        if (booking_datetime_naive < schedule_end and end_datetime_naive > schedule_start):
             if therapist and schedule.therapist == therapist:
                 raise ValidationError(f'選択された時間は{therapist.display_name}の予定「{schedule.title}」と重複しています。')
             elif schedule.therapist is None:
@@ -256,19 +287,49 @@ class BookingCancelForm(forms.Form):
         cleaned_data = super().clean()
         
         if self.booking:
-            # キャンセル可能期限をチェック（設定によっては当日キャンセル制限などを実装）
+            # ①当日キャンセルの時刻制限
+            now = timezone.now()
+            current_date = now.date()
+            
+            # キャンセル可能期限をチェック
             try:
                 booking_settings = BookingSettings.get_current_settings()
                 cutoff_time = booking_settings.same_day_booking_cutoff
+                # ②直前キャンセル制限の設定を取得
+                min_advance_minutes = getattr(booking_settings, 'min_advance_minutes', 20)
                 
                 # 当日キャンセルの制限例
-                if self.booking.booking_date == timezone.now().date():
+                if self.booking.booking_date == current_date:
+                    # 従来の制限時間チェック
                     current_time = timezone.now().time()
                     if current_time > cutoff_time:
                         raise ValidationError(
                             f'当日の{cutoff_time.strftime("%H:%M")}以降はキャンセルできません。お電話でお問い合わせください。'
                         )
+                    
+                    # ②直前キャンセル制限チェック
+                    booking_datetime = timezone.make_aware(
+                        datetime.datetime.combine(self.booking.booking_date, self.booking.booking_time)
+                    )
+                    min_cancel_datetime = now + datetime.timedelta(minutes=min_advance_minutes)
+                    
+                    if booking_datetime < min_cancel_datetime:
+                        raise ValidationError(
+                            f'申し訳ございませんが、予約の{min_advance_minutes}分前以降はキャンセルできません。お電話でお問い合わせください。'
+                        )
+                        
             except BookingSettings.DoesNotExist:
-                pass
+                # デフォルトの直前キャンセル制限（20分前）
+                min_advance_minutes = 20
+                if self.booking.booking_date == current_date:
+                    booking_datetime = timezone.make_aware(
+                        datetime.datetime.combine(self.booking.booking_date, self.booking.booking_time)
+                    )
+                    min_cancel_datetime = now + datetime.timedelta(minutes=min_advance_minutes)
+                    
+                    if booking_datetime < min_cancel_datetime:
+                        raise ValidationError(
+                            f'申し訳ございませんが、予約の{min_advance_minutes}分前以降はキャンセルできません。お電話でお問い合わせください。'
+                        )
         
         return cleaned_data

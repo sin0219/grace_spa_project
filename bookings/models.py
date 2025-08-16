@@ -157,6 +157,13 @@ class BookingSettings(models.Model):
         default='12:00',
         help_text='この時間以降は当日予約を受け付けない'
     )
+    # ②直前予約制限の設定を追加
+    min_advance_minutes = models.PositiveIntegerField(
+        '直前予約制限時間（分）',
+        default=20,
+        validators=[MinValueValidator(5), MaxValueValidator(120)],
+        help_text='予約は何分前まで受け付けるか（5-120分）※当日のみ適用'
+    )
     default_treatment_duration = models.PositiveIntegerField(
         'デフォルト施術時間（分）',
         default=90,
@@ -211,7 +218,7 @@ class BookingSettings(models.Model):
         verbose_name_plural = '予約設定'
     
     def __str__(self):
-        return f'予約設定 (間隔: {self.booking_interval_minutes}分, インターバル: {self.treatment_buffer_minutes}分)'
+        return f'予約設定 (間隔: {self.booking_interval_minutes}分, インターバル: {self.treatment_buffer_minutes}分, 直前制限: {self.min_advance_minutes}分)'
     
     @classmethod
     def get_current_settings(cls):

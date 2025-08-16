@@ -530,7 +530,7 @@ def schedule_delete(request, schedule_id):
 
 @staff_member_required
 def get_available_times_api(request):
-    """管理者用：利用可能時間取得API"""
+    """管理者用：利用可能時間取得API（①当日時刻チェック ②直前予約制限対応）"""
     date_str = request.GET.get('date')
     therapist_id = request.GET.get('therapist_id')
     service_id = request.GET.get('service_id')
@@ -539,12 +539,17 @@ def get_available_times_api(request):
         return JsonResponse({'error': 'Date is required'}, status=400)
     
     try:
-        date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        booking_date = datetime.strptime(date_str, '%Y-%m-%d').date()
     except ValueError:
         return JsonResponse({'error': 'Invalid date format'}, status=400)
     
+    # 現在時刻を取得
+    now = timezone.now()
+    current_date = now.date()
+    current_time = now.time()
+    
     # 営業時間を取得
-    weekday = date.weekday()
+    weekday = booking_date.weekday()
     try:
         business_hour = BusinessHours.objects.get(weekday=weekday)
         if not business_hour.is_open:
@@ -569,12 +574,30 @@ def get_available_times_api(request):
     try:
         settings_obj = BookingSettings.get_current_settings()
         buffer_minutes = settings_obj.treatment_buffer_minutes
+        # ②直前予約制限の設定を取得
+        min_advance_minutes = getattr(settings_obj, 'min_advance_minutes', 20)  # デフォルト20分
     except:
         buffer_minutes = 15  # デフォルト15分インターバル
+        min_advance_minutes = 20  # デフォルト20分前まで
+    
+    # ①当日の場合の最小予約可能時間を計算
+    min_booking_time = business_hour.open_time
+    if booking_date == current_date:
+        # 現在時刻 + 直前予約制限時間
+        min_datetime = now + timedelta(minutes=min_advance_minutes)
+        calculated_min_time = min_datetime.time()
+        
+        # 営業開始時間と比較して遅い方を採用
+        if calculated_min_time > min_booking_time:
+            min_booking_time = calculated_min_time
+        
+        # 営業終了時間を超えている場合は空の時間スロットを返す
+        if min_booking_time > business_hour.last_booking_time:
+            return JsonResponse({'time_slots': []})
     
     # 既存予約を取得
     existing_bookings = Booking.objects.filter(
-        booking_date=date,
+        booking_date=booking_date,
         status__in=['pending', 'confirmed']
     )
     
@@ -586,7 +609,7 @@ def get_available_times_api(request):
     # 既存予定を取得
     try:
         existing_schedules = Schedule.objects.filter(
-            schedule_date=date,
+            schedule_date=booking_date,
             is_active=True
         )
         
@@ -599,36 +622,45 @@ def get_available_times_api(request):
     
     # 時間スロットを10分刻みで生成
     time_slots = []
-    current_time = datetime.combine(date, business_hour.open_time)
-    end_time = datetime.combine(date, business_hour.last_booking_time)
+    current_time_slot = datetime.combine(booking_date, business_hour.open_time)
+    end_time = datetime.combine(booking_date, business_hour.last_booking_time)
     
-    while current_time <= end_time:
-        time_str = current_time.strftime('%H:%M')
+    while current_time_slot <= end_time:
+        time_str = current_time_slot.strftime('%H:%M')
+        slot_time = current_time_slot.time()
         status = 'available'
         conflict_info = ''
         
-        # 予約との重複チェック（正しいサービス時間とインターバルを使用）
-        for booking in existing_bookings:
-            booking_start = datetime.combine(date, booking.booking_time)
-            # 実際のサービス時間とインターバルを使用
-            service_duration = booking.service.duration_minutes
-            booking_end = booking_start + timedelta(minutes=service_duration + buffer_minutes)
-            
-            if booking_start <= current_time < booking_end:
-                status = 'booking_conflict'
-                conflict_info = f'{booking.customer.name} - {booking.service.name} ({service_duration}分+{buffer_minutes}分)'
-                break
-        
-        # 予定との重複チェック
-        if status == 'available':
-            for schedule in existing_schedules:
-                schedule_start = datetime.combine(date, schedule.start_time)
-                schedule_end = datetime.combine(date, schedule.end_time)
+        # ①当日の場合は最小予約可能時間をチェック
+        if booking_date == current_date and slot_time < min_booking_time:
+            status = 'past_time'
+            if slot_time < current_time:
+                conflict_info = '過去の時間です'
+            else:
+                conflict_info = f'{min_advance_minutes}分前までの予約は受付できません'
+        else:
+            # 予約との重複チェック（正しいサービス時間とインターバルを使用）
+            for booking in existing_bookings:
+                booking_start = datetime.combine(booking_date, booking.booking_time)
+                # 実際のサービス時間とインターバルを使用
+                service_duration = booking.service.duration_minutes
+                booking_end = booking_start + timedelta(minutes=service_duration + buffer_minutes)
                 
-                if schedule_start <= current_time < schedule_end:
-                    status = 'schedule_conflict'
-                    conflict_info = f'{schedule.title}'
+                if booking_start <= current_time_slot < booking_end:
+                    status = 'booking_conflict'
+                    conflict_info = f'{booking.customer.name} - {booking.service.name} ({service_duration}分+{buffer_minutes}分)'
                     break
+            
+            # 予定との重複チェック
+            if status == 'available':
+                for schedule in existing_schedules:
+                    schedule_start = datetime.combine(booking_date, schedule.start_time)
+                    schedule_end = datetime.combine(booking_date, schedule.end_time)
+                    
+                    if schedule_start <= current_time_slot < schedule_end:
+                        status = 'schedule_conflict'
+                        conflict_info = f'{schedule.title}'
+                        break
         
         time_slots.append({
             'time': time_str,
@@ -636,13 +668,13 @@ def get_available_times_api(request):
             'conflict_info': conflict_info
         })
         
-        current_time += timedelta(minutes=10)  # 10分刻み
+        current_time_slot += timedelta(minutes=10)  # 10分刻み
     
     return JsonResponse({'time_slots': time_slots})
 
 @staff_member_required
 def get_schedule_times_api(request):
-    """予定作成用：時間スロット取得API"""
+    """予定作成用：時間スロット取得API（①当日時刻チェック ②直前予約制限対応）"""
     date_str = request.GET.get('date')
     therapist_id = request.GET.get('therapist_id')
     start_time_str = request.GET.get('start_time')
@@ -651,20 +683,41 @@ def get_schedule_times_api(request):
         return JsonResponse({'error': 'Date is required'}, status=400)
     
     try:
-        date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        target_date = datetime.strptime(date_str, '%Y-%m-%d').date()
     except ValueError:
         return JsonResponse({'error': 'Invalid date format'}, status=400)
+    
+    # 現在時刻を取得
+    now = timezone.now()
+    current_date = now.date()
+    current_time = now.time()
     
     # 予約設定を取得
     try:
         settings_obj = BookingSettings.get_current_settings()
         buffer_minutes = settings_obj.treatment_buffer_minutes
+        # ②直前予約制限の設定を取得（予定作成では制限を緩くする）
+        min_advance_minutes = getattr(settings_obj, 'min_advance_minutes', 20)
+        # 予定作成の場合は制限を半分にする（10分前まで）
+        min_advance_minutes = min_advance_minutes // 2
     except:
         buffer_minutes = 15  # デフォルト15分インターバル
+        min_advance_minutes = 10  # デフォルト10分前まで
+    
+    # ①当日の場合の最小予定作成可能時間を計算
+    min_schedule_time = datetime.strptime('06:00', '%H:%M').time()  # 6:00から
+    if target_date == current_date:
+        # 現在時刻 + 直前制限時間
+        min_datetime = now + timedelta(minutes=min_advance_minutes)
+        calculated_min_time = min_datetime.time()
+        
+        # 6:00と比較して遅い方を採用
+        if calculated_min_time > min_schedule_time:
+            min_schedule_time = calculated_min_time
     
     # 既存予約を取得
     existing_bookings = Booking.objects.filter(
-        booking_date=date,
+        booking_date=target_date,
         status__in=['pending', 'confirmed']
     )
     
@@ -674,7 +727,7 @@ def get_schedule_times_api(request):
     # 既存予定を取得
     try:
         existing_schedules = Schedule.objects.filter(
-            schedule_date=date,
+            schedule_date=target_date,
             is_active=True
         )
         
@@ -690,33 +743,42 @@ def get_schedule_times_api(request):
     
     for hour in range(start_hour, end_hour):
         for minute in range(0, 60, 10):
-            current_time = datetime.combine(date, datetime.strptime(f'{hour:02d}:{minute:02d}', '%H:%M').time())
-            time_str = current_time.strftime('%H:%M')
+            slot_time = datetime.strptime(f'{hour:02d}:{minute:02d}', '%H:%M').time()
+            current_time_slot = datetime.combine(target_date, slot_time)
+            time_str = current_time_slot.strftime('%H:%M')
             status = 'available'
             conflict_info = ''
             
-            # 予約との重複チェック（正しいサービス時間とインターバルを使用）
-            for booking in existing_bookings:
-                booking_start = datetime.combine(date, booking.booking_time)
-                # 実際のサービス時間とインターバルを使用
-                service_duration = booking.service.duration_minutes
-                booking_end = booking_start + timedelta(minutes=service_duration + buffer_minutes)
-                
-                if booking_start <= current_time < booking_end:
-                    status = 'booking_conflict'
-                    conflict_info = f'{booking.customer.name} - {booking.service.name} ({service_duration}分+{buffer_minutes}分)'
-                    break
-            
-            # 予定との重複チェック
-            if status == 'available':
-                for schedule in existing_schedules:
-                    schedule_start = datetime.combine(date, schedule.start_time)
-                    schedule_end = datetime.combine(date, schedule.end_time)
+            # ①当日の場合は最小予定作成可能時間をチェック
+            if target_date == current_date and slot_time < min_schedule_time:
+                status = 'past_time'
+                if slot_time < current_time:
+                    conflict_info = '過去の時間です'
+                else:
+                    conflict_info = f'{min_advance_minutes}分前までの予定作成は制限されています'
+            else:
+                # 予約との重複チェック（正しいサービス時間とインターバルを使用）
+                for booking in existing_bookings:
+                    booking_start = datetime.combine(target_date, booking.booking_time)
+                    # 実際のサービス時間とインターバルを使用
+                    service_duration = booking.service.duration_minutes
+                    booking_end = booking_start + timedelta(minutes=service_duration + buffer_minutes)
                     
-                    if schedule_start <= current_time < schedule_end:
-                        status = 'schedule_conflict'
-                        conflict_info = f'{schedule.title}'
+                    if booking_start <= current_time_slot < booking_end:
+                        status = 'booking_conflict'
+                        conflict_info = f'{booking.customer.name} - {booking.service.name} ({service_duration}分+{buffer_minutes}分)'
                         break
+                
+                # 予定との重複チェック
+                if status == 'available':
+                    for schedule in existing_schedules:
+                        schedule_start = datetime.combine(target_date, schedule.start_time)
+                        schedule_end = datetime.combine(target_date, schedule.end_time)
+                        
+                        if schedule_start <= current_time_slot < schedule_end:
+                            status = 'schedule_conflict'
+                            conflict_info = f'{schedule.title}'
+                            break
             
             time_slots.append({
                 'time': time_str,

@@ -131,6 +131,7 @@ class BookingSettingsAdmin(admin.ModelAdmin):
                 'treatment_buffer_minutes',
                 'advance_booking_days',
                 'same_day_booking_cutoff',
+                'min_advance_minutes',  # ←追加
                 'default_treatment_duration'
             )
         }),
