@@ -213,13 +213,12 @@
     .step.active .step-number {
         background: #8b7355;
         color: white;
-        box-shadow: 0 0 0 3px rgba(139, 115, 85, 0.3);
     }
 
     .step-label {
-        font-size: 0.9rem;
+        font-size: 0.8rem;
         color: #666;
-        text-align: center;
+        font-weight: 500;
     }
 
     .step.active .step-label,
@@ -228,55 +227,43 @@
         font-weight: bold;
     }
 
-    /* メインコンテンツ */
-    .step-content {
-        background: white;
-        padding: 3rem;
-        border-radius: 15px;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-    }
-
-    .step-content h1 {
-        color: #8b7355;
-        text-align: center;
-        margin-bottom: 2rem;
-        font-size: 2rem;
-    }
-
     /* サービス概要 */
     .service-summary {
-        background: #f8f5f0;
+        background: white;
+        border-radius: 15px;
         padding: 2rem;
-        border-radius: 10px;
         margin-bottom: 3rem;
-        border-left: 4px solid #8b7355;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        border-left: 5px solid #8b7355;
     }
 
     .service-summary h3 {
         color: #8b7355;
         margin-bottom: 1rem;
-        font-size: 1.3rem;
+        font-size: 1.2rem;
     }
 
     .service-details h4 {
         color: #333;
         margin-bottom: 0.5rem;
-        font-size: 1.5rem;
+        font-size: 1.4rem;
     }
 
-    .service-duration,
-    .service-price {
-        margin-bottom: 0.5rem;
-        font-weight: bold;
+    .service-duration, .service-price {
+        color: #666;
+        margin-bottom: 0.25rem;
+        font-weight: 500;
     }
 
     .service-price {
         color: #8b7355;
-        font-size: 1.2rem;
+        font-size: 1.1rem;
+        font-weight: bold;
     }
 
     .service-description {
         color: #666;
+        margin-top: 1rem;
         line-height: 1.6;
     }
 
@@ -294,78 +281,92 @@
 
     .therapist-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
         gap: 1.5rem;
     }
 
     .therapist-card {
+        background: white;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        transition: all 0.3s;
         position: relative;
+    }
+
+    .therapist-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.15);
     }
 
     .therapist-card input[type="radio"] {
         display: none;
     }
 
-    .therapist-card label {
-        display: block;
-        padding: 1.5rem;
-        border: 2px solid #e9ecef;
-        border-radius: 15px;
-        cursor: pointer;
-        transition: all 0.3s;
-        background: white;
-        text-align: center;
-    }
-
     .therapist-card input[type="radio"]:checked + label {
-        border-color: #8b7355;
-        background: #f8f5f0;
-        box-shadow: 0 0 10px rgba(139, 115, 85, 0.3);
+        background: linear-gradient(135deg, #8b7355 0%, #a68660 100%);
+        color: white;
     }
 
-    .therapist-card label:hover {
-        border-color: #8b7355;
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    .therapist-card input[type="radio"]:checked + label .therapist-info h4,
+    .therapist-card input[type="radio"]:checked + label .therapist-info p,
+    .therapist-card input[type="radio"]:checked + label .therapist-info small {
+        color: white;
+    }
+
+    .therapist-card label {
+        display: flex;
+        align-items: center;
+        padding: 1.5rem;
+        cursor: pointer;
+        height: 100%;
+        gap: 1rem;
+        transition: all 0.3s;
+        border-radius: 15px;
+    }
+
+    .therapist-card img {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        object-fit: cover;
+        flex-shrink: 0;
     }
 
     .therapist-avatar {
-        width: 80px;
-        height: 80px;
+        width: 60px;
+        height: 60px;
         border-radius: 50%;
         background: #8b7355;
         color: white;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 2rem;
+        font-size: 1.5rem;
         font-weight: bold;
-        margin: 0 auto 1rem;
+        flex-shrink: 0;
     }
 
-    .therapist-card img {
-        width: 80px;
-        height: 80px;
-        border-radius: 50%;
-        object-fit: cover;
-        margin: 0 auto 1rem;
-        display: block;
+    .therapist-info {
+        flex: 1;
     }
 
     .therapist-info h4 {
+        margin: 0 0 0.25rem 0;
         color: #333;
-        margin-bottom: 0.5rem;
-        font-size: 1.2rem;
+        font-size: 1.1rem;
     }
 
     .therapist-info p {
+        margin: 0 0 0.25rem 0;
         color: #666;
-        margin-bottom: 0.25rem;
+        font-size: 0.9rem;
     }
 
     .therapist-info small {
         color: #888;
-        font-size: 0.9rem;
+        font-size: 0.8rem;
+        line-height: 1.4;
     }
 
     .featured-badge {
@@ -375,8 +376,8 @@
         background: #ff6b6b;
         color: white;
         padding: 0.25rem 0.5rem;
-        border-radius: 15px;
-        font-size: 0.8rem;
+        border-radius: 12px;
+        font-size: 0.7rem;
         font-weight: bold;
     }
 
@@ -403,7 +404,7 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 1.5rem;
+        margin-bottom: 2rem;
     }
 
     .calendar-nav {
@@ -413,21 +414,20 @@
         width: 40px;
         height: 40px;
         border-radius: 50%;
+        font-size: 1.2rem;
         cursor: pointer;
-        font-size: 1.5rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: background-color 0.3s;
+        transition: all 0.3s;
     }
 
     .calendar-nav:hover {
-        background: #a68b5b;
+        background: #a68660;
+        transform: scale(1.1);
     }
 
-    .calendar-header h4 {
-        color: #333;
+    #currentMonth {
+        color: #8b7355;
         font-size: 1.3rem;
+        font-weight: bold;
         margin: 0;
     }
 
@@ -441,7 +441,7 @@
     .calendar-weekdays div {
         text-align: center;
         font-weight: bold;
-        color: #666;
+        color: #8b7355;
         padding: 0.5rem;
     }
 
@@ -456,6 +456,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        border: 2px solid transparent;
         border-radius: 10px;
         cursor: pointer;
         transition: all 0.3s;
@@ -598,48 +599,44 @@
 
     .notes-section textarea {
         width: 100%;
+        min-height: 120px;
         padding: 1rem;
         border: 2px solid #e9ecef;
         border-radius: 10px;
+        font-family: inherit;
         font-size: 1rem;
-        line-height: 1.5;
+        line-height: 1.6;
         resize: vertical;
-        min-height: 100px;
+        transition: border-color 0.3s;
     }
 
     .notes-section textarea:focus {
-        outline: none;
         border-color: #8b7355;
-        box-shadow: 0 0 5px rgba(139, 115, 85, 0.3);
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(139, 115, 85, 0.1);
     }
 
     /* フォームアクション */
     .form-actions {
-        text-align: center;
         display: flex;
         justify-content: space-between;
         align-items: center;
+        gap: 1rem;
+        margin-top: 3rem;
     }
 
     .btn {
         padding: 1rem 2rem;
         border: none;
-        border-radius: 50px;
-        font-size: 1.1rem;
+        border-radius: 25px;
+        font-size: 1rem;
+        font-weight: bold;
         text-decoration: none;
+        text-align: center;
         cursor: pointer;
         transition: all 0.3s;
         display: inline-block;
-    }
-
-    .btn-primary {
-        background: linear-gradient(135deg, #8b7355 0%, #a68b5b 100%);
-        color: white;
-    }
-
-    .btn-primary:disabled {
-        background: #ccc;
-        cursor: not-allowed;
+        min-width: 120px;
     }
 
     .btn-secondary {
@@ -647,32 +644,55 @@
         color: white;
     }
 
-    .btn:hover:not(:disabled) {
+    .btn-secondary:hover {
+        background: #5a6268;
         transform: translateY(-2px);
         box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+
+    .btn-primary {
+        background: #8b7355;
+        color: white;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+        background: #a68660;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+
+    .btn-primary:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
     }
 
     /* アラート */
     .alert {
         padding: 1rem;
+        border-radius: 10px;
         margin-bottom: 2rem;
-        border-radius: 8px;
     }
 
     .alert-error {
-        background-color: #f8d7da;
+        background: #f8d7da;
         border: 1px solid #f5c6cb;
         color: #721c24;
     }
 
     /* レスポンシブ */
     @media (max-width: 768px) {
-        .progress-bar {
-            gap: 1.5rem;
+        .booking-steps-container {
+            padding: 1rem 0;
         }
 
-        .step-content {
-            padding: 2rem 1rem;
+        .progress-bar {
+            gap: 1rem;
+        }
+
+        .step-label {
+            display: none;
         }
 
         .therapist-grid {
@@ -685,6 +705,7 @@
 
         .time-slots-grid {
             grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 0.5rem;
         }
 
         .form-actions {
@@ -701,19 +722,20 @@
 
 {% block extra_js %}
 <script>
+    // グローバル変数
     let currentDate = new Date();
     let selectedDate = null;
     let selectedTime = null;
     
-    // 営業時間情報（デフォルト値）
+    // 営業時間設定
     const businessHours = {
-        0: { is_open: true, open_time: '09:00:00', close_time: '20:00:00', last_booking_time: '19:00:00' }, // 月
-        1: { is_open: true, open_time: '09:00:00', close_time: '20:00:00', last_booking_time: '19:00:00' }, // 火
-        2: { is_open: true, open_time: '09:00:00', close_time: '20:00:00', last_booking_time: '19:00:00' }, // 水
-        3: { is_open: true, open_time: '09:00:00', close_time: '20:00:00', last_booking_time: '19:00:00' }, // 木
-        4: { is_open: true, open_time: '09:00:00', close_time: '20:00:00', last_booking_time: '19:00:00' }, // 金
-        5: { is_open: true, open_time: '09:00:00', close_time: '20:00:00', last_booking_time: '19:00:00' }, // 土
-        6: { is_open: true, open_time: '09:00:00', close_time: '20:00:00', last_booking_time: '19:00:00' }  // 日
+        0: { is_open: true, open_time: '09:00:00', close_time: '20:00:00', last_booking_time: '19:00:00' }, // 日
+        1: { is_open: true, open_time: '09:00:00', close_time: '20:00:00', last_booking_time: '19:00:00' }, // 月
+        2: { is_open: true, open_time: '09:00:00', close_time: '20:00:00', last_booking_time: '19:00:00' }, // 火
+        3: { is_open: true, open_time: '09:00:00', close_time: '20:00:00', last_booking_time: '19:00:00' }, // 水
+        4: { is_open: true, open_time: '09:00:00', close_time: '20:00:00', last_booking_time: '19:00:00' }, // 木
+        5: { is_open: true, open_time: '09:00:00', close_time: '20:00:00', last_booking_time: '19:00:00' }, // 金
+        6: { is_open: true, open_time: '09:00:00', close_time: '20:00:00', last_booking_time: '19:00:00' }  // 土
     };
     
     // 直前予約制限時間（分）
@@ -810,6 +832,10 @@
         const weekday = date.getDay();
         const businessHour = businessHours[weekday];
         
+        if (!businessHour || !businessHour.is_open) {
+            return false;
+        }
+        
         // 営業時間外チェック
         const currentTime = now.getHours() * 60 + now.getMinutes();
         const lastBookingTime = parseTimeToMinutes(businessHour.last_booking_time);
@@ -837,6 +863,38 @@
         // 新しい選択を設定
         element.classList.add('selected');
         selectedDate = date;
+        
+        // タイムゾーンを考慮した日付文字列を作成
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const dateString = `${year}-${month}-${day}`;
+        
+        // 隠しフィールドに設定
+        document.getElementById('bookingDate').value = dateString;
+        
+        // デバッグ用ログ
+        console.log('選択された日付:', date);
+        console.log('送信される日付文字列:', dateString);
+        
+        // 時間選択をリセット
+        selectedTime = null;
+        document.getElementById('bookingTime').value = '';
+        
+        // 利用可能時間を読み込み
+        loadAvailableTimes(date);
+        
+        updateSubmitButton();
+    }
+    
+    function loadAvailableTimes(date) {
+        // 施術者IDを取得（関数内で毎回取得することでスコープ問題を解決）
+        const therapistRadio = document.querySelector('input[name="therapist"]:checked');
+        const therapistId = therapistRadio ? therapistRadio.value : '';
+        const serviceId = document.getElementById('serviceId').value;
+        
+        const timeSlotsContainer = document.getElementById('timeSlotsContainer');
+        timeSlotsContainer.innerHTML = '<p class="loading-message">利用可能時間を読み込み中...</p>';
         
         // タイムゾーンを考慮した日付文字列を作成
         const year = date.getFullYear();
@@ -918,35 +976,4 @@
         submitBtn.disabled = !(selectedDate && selectedTime);
     }
 </script>
-{% endblock %} String(date.getDate()).padStart(2, '0');
-        const dateString = `${year}-${month}-${day}`;
-        
-        // 隠しフィールドに設定
-        document.getElementById('bookingDate').value = dateString;
-        
-        // デバッグ用ログ
-        console.log('選択された日付:', date);
-        console.log('送信される日付文字列:', dateString);
-        
-        // 時間選択をリセット
-        selectedTime = null;
-        document.getElementById('bookingTime').value = '';
-        
-        // 利用可能時間を読み込み
-        loadAvailableTimes(date);
-        
-        updateSubmitButton();
-    }
-    
-    function loadAvailableTimes(date) {
-        const therapistRadio = document.querySelector('input[name="therapist"]:checked');
-        const therapistId = therapistRadio ? therapistRadio.value : '';
-        const serviceId = {{ service.id }};
-        
-        const timeSlotsContainer = document.getElementById('timeSlotsContainer');
-        timeSlotsContainer.innerHTML = '<p class="loading-message">利用可能時間を読み込み中...</p>';
-        
-        // タイムゾーンを考慮した日付文字列を作成
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day =
+{% endblock %}
