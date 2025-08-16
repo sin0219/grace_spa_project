@@ -4,10 +4,21 @@
 
 {% block content %}
 <section class="hero">
+    <div class="hero-background">
+        <!-- 施術室の背景画像エリア -->
+        <div class="hero-image">
+            <!-- ここに施術室の画像を配置 -->
+        </div>
+        <div class="hero-overlay"></div>
+    </div>
     <div class="hero-content">
-        <h1>GRACE SPA</h1>
-        <p>歴18年のプロフェッショナルセラピストによる<br>本格オイルマッサージで究極の癒しを</p>
-        <a href="{% url 'bookings:booking_step1' %}" class="cta-button">今すぐ予約する</a>
+        <div class="hero-text">
+            <div class="hero-logo">
+                <img src="/static/images/logo.png" alt="GRACE SPA" class="hero-logo-image">
+            </div>
+            <p>歴18年のプロフェッショナルセラピストによる<br>本格オイルマッサージで究極の癒しを</p>
+            <a href="{% url 'bookings:booking_step1' %}" class="cta-button">今すぐ予約する</a>
+        </div>
     </div>
 </section>
 
@@ -15,8 +26,17 @@
     <div class="container">
         <h2>サロンについて</h2>
         <div class="about-content">
-            <p>GRACE SPAは、18年の経験を持つプロフェッショナルセラピストが運営する完全予約制のプライベートサロンです。</p>
-            <p>ハワイの伝統的なロミロミマッサージを取り入れたオイルセラピーと、タイ政府認定セラピストによるタイ古式マッサージで、お客様一人ひとりに合わせた最高の癒しの時間をご提供いたします。</p>
+            <div class="about-text">
+                <p>GRACE SPAは、18年の経験を持つプロフェッショナルセラピストが運営する完全予約制のプライベートサロンです。</p>
+                <p>ハワイの伝統的なロミロミマッサージを取り入れたオイルセラピーと、タイ政府認定セラピストによるタイ古式マッサージで、お客様一人ひとりに合わせた最高の癒しの時間をご提供いたします。</p>
+            </div>
+            <!-- 施術風景の画像エリア -->
+            <div class="about-images">
+                <div class="treatment-image">
+                    <!-- ここに施術風景の画像を配置 -->
+                    <img src="/static/images/treatment-scene.jpg" alt="施術風景">
+                </div>
+            </div>
         </div>
     </div>
 </section>
@@ -26,12 +46,92 @@
         <h2>メニュー</h2>
         <div class="services-grid">
             {% for service in services %}
-            <div class="service-card">
+            <div class="service-card {% if service.is_combo %}combo-service{% endif %}">
+                {% if service.is_combo %}
+                    <div class="combo-badge">コンボメニュー</div>
+                {% endif %}
                 <h3>{{ service.name }}</h3>
-                <div class="price">¥{{ service.price }}</div>
-                <p>{{ service.duration }}のしっかりとした施術で、疲れた身体を芯からほぐします。</p>
+                <div class="service-duration">{{ service.duration }}</div>
+                <div class="price">￥{{ service.price }}</div>
+                <p>{{ service.description }}</p>
             </div>
             {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- アクセス情報セクション -->
+<section id="access" class="access">
+    <div class="container">
+        <h2>アクセス・店舗情報</h2>
+        <div class="access-content">
+            <div class="access-info">
+                <div class="info-group">
+                    <h3>📍 住所</h3>
+                    <p>〒060-0001<br>北海道札幌市中央区北1条西1丁目1-1<br>グレースビル3F</p>
+                </div>
+                
+                <div class="info-group">
+                    <h3>🚃 アクセス</h3>
+                    <ul>
+                        <li>JR札幌駅南口より徒歩3分</li>
+                        <li>地下鉄南北線「さっぽろ駅」より徒歩5分</li>
+                        <li>地下鉄東豊線「さっぽろ駅」より徒歩5分</li>
+                    </ul>
+                </div>
+                
+                <div class="info-group">
+                    <h3>🕐 営業時間</h3>
+                    <div class="hours-table">
+                        <div class="hours-row">
+                            <span class="day">平日</span>
+                            <span class="time">10:00～22:00（最終受付 20:30）</span>
+                        </div>
+                        <div class="hours-row">
+                            <span class="day">土曜</span>
+                            <span class="time">10:00～20:00（最終受付 18:30）</span>
+                        </div>
+                        <div class="hours-row">
+                            <span class="day">日祝</span>
+                            <span class="time">10:00～18:00（最終受付 16:30）</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="info-group">
+                    <h3>📞 お問い合わせ</h3>
+                    <div class="contact-info">
+                        <p class="phone">
+                            <strong>TEL: <a href="tel:011-123-4567">011-123-4567</a></strong>
+                        </p>
+                        <p class="email">
+                            Email: <a href="mailto:info@grace-spa.com">info@grace-spa.com</a>
+                        </p>
+                        <p class="note">※施術中は電話に出られない場合がございます。<br>お急ぎでない場合はWEB予約をご利用ください。</p>
+                    </div>
+                </div>
+                
+                <div class="info-group">
+                    <h3>🚗 駐車場</h3>
+                    <p>専用駐車場2台完備<br>満車の場合は近隣のコインパーキングをご利用ください<br>（駐車料金の補助はございません）</p>
+                </div>
+            </div>
+            
+            <div class="map-container">
+                <h3>📍 地図</h3>
+                <div class="map-wrapper">
+                    <iframe 
+                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2915.083599816607!2d141.34661121534855!3d43.06422997914559!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x5f0b299b2480405f%3A0x3a10c3e090c6e4e5!2z5pyt5bmM6aeF!5e0!3m2!1sja!2sjp!4v1234567890123" 
+                        width="100%" 
+                        height="400" 
+                        style="border:0; border-radius: 10px;" 
+                        allowfullscreen="" 
+                        loading="lazy" 
+                        referrerpolicy="no-referrer-when-downgrade">
+                    </iframe>
+                </div>
+                <p class="map-note">※こちらは札幌駅の地図です。実際の住所に合わせて調整してください。</p>
+            </div>
         </div>
     </div>
 </section>
@@ -39,47 +139,101 @@
 <style>
     .hero {
         height: 80vh;
-        background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), 
-                    linear-gradient(135deg, #d4c4a8 0%, #b8a082 100%);
+        position: relative;
         display: flex;
         align-items: center;
-        justify-content: center;
-        text-align: center;
+        overflow: hidden;
+    }
+
+    .hero-background {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 1;
+    }
+
+    .hero-image {
+        width: 100%;
+        height: 100%;
+        background: url('/static/images/treatment-room.jpg') center/cover;
+        /* 実際の画像に変更する場合: background: url('/static/images/treatment-room.jpg') center/cover; */
+    }
+
+    .hero-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.2) 100%);
+        z-index: 2;
+    }
+
+    .hero-content {
+        position: relative;
+        z-index: 3;
+        width: 100%;
+        padding: 0 2rem;
+    }
+
+    .hero-text {
+        max-width: 600px;
+        margin-left: 0;
         color: white;
     }
 
+    .hero-logo {
+        margin-bottom: 2rem;
+    }
+
+    .hero-logo-image {
+        height: 120px;
+        width: auto;
+        max-width: 400px;
+        object-fit: contain;
+        filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.7));
+    }
+
     .hero-content h1 {
-        font-size: 3.5rem;
+        font-size: 4rem;
+        font-weight: bold;
         margin-bottom: 1rem;
-        letter-spacing: 5px;
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        letter-spacing: 3px;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
     }
 
     .hero-content p {
-        font-size: 1.2rem;
+        font-size: 1.3rem;
         margin-bottom: 2rem;
-        max-width: 600px;
+        line-height: 1.8;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
     }
 
     .cta-button {
         background: linear-gradient(135deg, #8b7355 0%, #a68b5b 100%);
         color: white;
-        padding: 1rem 2rem;
-        border: none;
+        padding: 1.2rem 3rem;
         border-radius: 50px;
-        font-size: 1.1rem;
         text-decoration: none;
-        display: inline-block;
+        font-size: 1.2rem;
+        font-weight: bold;
         transition: all 0.3s;
+        display: inline-block;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
     }
 
     .cta-button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+        text-decoration: none;
+        color: white;
     }
 
     .section {
         padding: 4rem 0;
+        background: #f8f5f0;
     }
 
     .section h2 {
@@ -102,20 +256,81 @@
     }
 
     .about-content {
-        max-width: 800px;
+        max-width: 1200px;
         margin: 0 auto;
-        font-size: 1.1rem;
-        line-height: 1.8;
-        text-align: center;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 3rem;
+        align-items: center;
     }
 
-    .about-content p {
+    .about-text {
+        line-height: 1.8;
+        font-size: 1.1rem;
+        color: #555;
+    }
+
+    .about-text p {
         margin-bottom: 1.5rem;
     }
 
+    .about-images {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .treatment-image {
+        width: 100%;
+        max-width: 500px;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    }
+
+    .image-placeholder {
+        width: 100%;
+        height: 300px;
+        background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        color: #6c757d;
+        font-size: 1rem;
+        border: 2px dashed #adb5bd;
+    }
+
+    /* 実際の画像を使用する場合のスタイル */
+    .treatment-image img {
+        width: 100%;
+        height: 300px;
+        object-fit: cover;
+        border-radius: 15px;
+    }
+
     .services {
-        background: #f8f5f0;
+        background: white;
         padding: 4rem 0;
+    }
+
+    .services h2 {
+        text-align: center;
+        font-size: 2.5rem;
+        margin-bottom: 3rem;
+        color: #8b7355;
+        position: relative;
+    }
+
+    .services h2::after {
+        content: '';
+        position: absolute;
+        bottom: -10px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 60px;
+        height: 3px;
+        background: linear-gradient(135deg, #8b7355 0%, #a68b5b 100%);
     }
 
     .services-grid {
@@ -132,6 +347,8 @@
         box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         text-align: center;
         transition: transform 0.3s;
+        position: relative;
+        border: 2px solid transparent;
     }
 
     .service-card:hover {
@@ -142,6 +359,14 @@
         color: #8b7355;
         margin-bottom: 1rem;
         font-size: 1.3rem;
+        line-height: 1.4;
+    }
+
+    .service-duration {
+        font-size: 1.1rem;
+        color: #666;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
     }
 
     .price {
@@ -151,12 +376,38 @@
         margin: 1rem 0;
     }
 
-    .therapists {
-        background: white;
+    .service-card p {
+        color: #555;
+        line-height: 1.6;
+        font-size: 0.95rem;
+    }
+
+    /* コンボメニューのスタイル */
+    .combo-service {
+        border-color: #8b7355;
+        background: linear-gradient(135deg, #f8f5f0 0%, #ffffff 100%);
+    }
+
+    .combo-badge {
+        position: absolute;
+        top: -10px;
+        right: 15px;
+        background: linear-gradient(135deg, #8b7355 0%, #a68b5b 100%);
+        color: white;
+        padding: 0.3rem 0.8rem;
+        border-radius: 15px;
+        font-size: 0.8rem;
+        font-weight: bold;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    /* アクセスセクション */
+    .access {
+        background: #f8f5f0;
         padding: 4rem 0;
     }
 
-    .therapists h2 {
+    .access h2 {
         text-align: center;
         font-size: 2.5rem;
         margin-bottom: 3rem;
@@ -164,7 +415,7 @@
         position: relative;
     }
 
-    .therapists h2::after {
+    .access h2::after {
         content: '';
         position: absolute;
         bottom: -10px;
@@ -175,92 +426,203 @@
         background: linear-gradient(135deg, #8b7355 0%, #a68b5b 100%);
     }
 
-    .therapists-grid {
+    .access-content {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 2rem;
-        margin-top: 2rem;
+        grid-template-columns: 1fr 1fr;
+        gap: 3rem;
+        max-width: 1200px;
+        margin: 0 auto;
     }
 
-    .therapist-card {
-        background: #f8f5f0;
+    .access-info {
+        background: white;
         padding: 2rem;
         border-radius: 15px;
         box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        text-align: center;
-        transition: transform 0.3s;
-        position: relative;
     }
 
-    .therapist-card:hover {
-        transform: translateY(-5px);
+    .info-group {
+        margin-bottom: 2rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 1px solid #f0f0f0;
     }
 
-    .therapist-card.featured {
-        background: linear-gradient(135deg, #fff9e6 0%, #ffeaa7 100%);
-        border: 2px solid #8b7355;
+    .info-group:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
     }
 
-    .therapist-photo {
-        width: 120px;
-        height: 120px;
-        border-radius: 50%;
-        margin: 0 auto 1.5rem;
-        overflow: hidden;
-        border: 3px solid #8b7355;
-    }
-
-    .therapist-photo img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-
-    .therapist-photo.placeholder {
-        background: #e9ecef;
+    .info-group h3 {
+        color: #8b7355;
+        font-size: 1.2rem;
+        margin-bottom: 1rem;
         display: flex;
         align-items: center;
-        justify-content: center;
-        font-size: 3rem;
-        color: #6c757d;
+        gap: 0.5rem;
     }
 
-    .therapist-info h3 {
-        color: #8b7355;
-        margin-bottom: 0.5rem;
-        font-size: 1.4rem;
-    }
-
-    .experience {
-        color: #a68b5b;
-        font-weight: bold;
-        margin-bottom: 1rem;
-        font-size: 1rem;
-    }
-
-    .specialties {
-        color: #666;
-        font-weight: bold;
-        margin-bottom: 1rem;
-        font-size: 0.95rem;
-    }
-
-    .introduction {
+    .info-group p, .info-group li {
         color: #555;
         line-height: 1.6;
-        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
     }
 
-    .featured-badge {
-        position: absolute;
-        top: 1rem;
-        right: 1rem;
-        background: #8b7355;
-        color: white;
-        padding: 0.3rem 0.8rem;
-        border-radius: 20px;
-        font-size: 0.8rem;
+    .info-group ul {
+        padding-left: 1rem;
+    }
+
+    .hours-table {
+        background: #f8f9fa;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .hours-row {
+        display: flex;
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .hours-row:last-child {
+        border-bottom: none;
+    }
+
+    .hours-row .day {
         font-weight: bold;
+        width: 80px;
+        color: #8b7355;
+    }
+
+    .hours-row .time {
+        flex: 1;
+        color: #555;
+    }
+
+    .contact-info .phone {
+        font-size: 1.2rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .contact-info .phone a {
+        color: #8b7355;
+        text-decoration: none;
+        font-weight: bold;
+    }
+
+    .contact-info .phone a:hover {
+        text-decoration: underline;
+    }
+
+    .contact-info .email a {
+        color: #8b7355;
+        text-decoration: none;
+    }
+
+    .contact-info .email a:hover {
+        text-decoration: underline;
+    }
+
+    .contact-info .note {
+        font-size: 0.9rem;
+        color: #666;
+        font-style: italic;
+        margin-top: 0.5rem;
+    }
+
+    .map-container {
+        background: white;
+        padding: 2rem;
+        border-radius: 15px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    .map-container h3 {
+        color: #8b7355;
+        font-size: 1.2rem;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .map-wrapper {
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    }
+
+    .map-note {
+        font-size: 0.9rem;
+        color: #666;
+        margin-top: 1rem;
+        font-style: italic;
+    }
+
+    /* レスポンシブ対応 */
+    @media (max-width: 768px) {
+        .hero-logo-image {
+            height: 80px;
+            max-width: 300px;
+        }
+
+        .hero-content h1 {
+            font-size: 2.5rem;
+        }
+
+        .hero-content p {
+            font-size: 1.1rem;
+        }
+
+        .hero-content {
+            padding: 0 1rem;
+        }
+
+        .hero-text {
+            max-width: 100%;
+        }
+
+        .access-content {
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+
+        .about-content {
+            grid-template-columns: 1fr;
+            gap: 2rem;
+            text-align: center;
+        }
+
+        .services-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .hours-row {
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .hours-row .day {
+            width: auto;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .hero-logo-image {
+            height: 60px;
+            max-width: 250px;
+        }
+
+        .hero-content h1 {
+            font-size: 2rem;
+        }
+
+        .section h2, .services h2, .access h2 {
+            font-size: 2rem;
+        }
+
+        .access-info, .map-container {
+            padding: 1.5rem;
+        }
     }
 </style>
 {% endblock %}

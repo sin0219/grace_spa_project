@@ -5,9 +5,31 @@ def home(request):
     context = {
         'title': 'GRACE SPA - プロフェッショナルオイルマッサージサロン',
         'services': [
-            {'name': 'オイルマッサージ 90分', 'price': '9,000円', 'duration': '90分'},
-            {'name': 'オイルマッサージ 120分', 'price': '11,500円', 'duration': '120分'},
-            {'name': 'オイルマッサージ 150分', 'price': '14,500円', 'duration': '150分'},
+            {
+                'name': 'オイルリンパマッサージ',
+                'duration': '90分～',
+                'price': '9,000円～',
+                'description': '凝りをほぐすハワイ式ロミロミを取り組んだオイルリンパマッサージ'
+            },
+            {
+                'name': '高炭酸オイルリンパマッサージ',
+                'duration': '130分～',
+                'price': '14,000円～',
+                'description': '高濃度二酸化炭素配合オイルを用いることで血行促進を促し、筋肉疲労・むくみ・冷えを改善します。'
+            },
+            {
+                'name': 'オイルリンパマッサージ＋タイ古式マッサージ',
+                'duration': '190分～',
+                'price': '18,500円～',
+                'description': '熟練のタイ古式マッサージを併せることで辛い凝り・疲労を解消',
+                'is_combo': True
+            },
+            {
+                'name': 'ヘッドスパ',
+                'duration': '20分～',
+                'price': '2,500円～',
+                'description': '※ヘッドスパはオプションメニューのため、他のメニューと組み合わせてご利用ください。'
+            }
         ]
     }
     return render(request, 'website/home.html', context)
@@ -28,6 +50,6 @@ def therapists(request):
     context = {
         'title': 'セラピスト紹介 - GRACE SPA',
         'therapists': therapists,
-        'enable_therapist_selection': enable_therapist_selection  # 新規追加
+        'enable_therapist_selection': enable_therapist_selection
     }
     return render(request, 'website/therapists.html', context)

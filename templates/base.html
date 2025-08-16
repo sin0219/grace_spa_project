@@ -41,6 +41,16 @@
             font-size: 1.8rem;
             font-weight: bold;
             letter-spacing: 2px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+        }
+
+        .logo-image {
+            height: 100%;
+            width: auto;
+            max-width: 200px;
+            object-fit: contain;
         }
 
         .nav-menu {
@@ -71,6 +81,28 @@
         .nav-booking-btn:hover {
             background: rgba(255,255,255,0.3);
             transform: translateY(-2px);
+        }
+
+        /* 言語切り替えボタン */
+        .language-switch {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .language-switch:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+            color: white;
+            text-decoration: none;
         }
 
         .main-content {
@@ -249,7 +281,11 @@
 
         @media (max-width: 480px) {
             .logo {
-                font-size: 1.4rem;
+                height: 40px;
+            }
+
+            .logo-image {
+                max-width: 150px;
             }
 
             .nav-menu {
@@ -271,14 +307,16 @@
 <body>
     <header class="header">
         <nav class="nav-container">
-            <div class="logo">GRACE SPA</div>
+            <div class="logo">
+                <img src="/static/images/logo.png" alt="GRACE SPA" class="logo-image">
+            </div>
             <ul class="nav-menu">
                 <li><a href="{% url 'website:home' %}">ホーム</a></li>
                 <li><a href="{% url 'website:therapists' %}">セラピスト紹介</a></li>
-                <li><a href="#menu">メニュー</a></li>
+                <li><a href="#services">メニュー</a></li>
                 <li><a href="#access">アクセス</a></li>
                 <li><a href="{% url 'bookings:booking_step1' %}" class="nav-booking-btn">予約する</a></li>
-                <li><a href="/admin/">管理画面</a></li>
+                <li><a href="#" class="language-switch">🌐 ENGLISH</a></li>
             </ul>
         </nav>
     </header>
