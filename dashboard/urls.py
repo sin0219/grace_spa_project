@@ -21,6 +21,10 @@ urlpatterns = [
     path('dashboard/schedule/<int:schedule_id>/', views.schedule_detail, name='schedule_detail'),
     path('dashboard/schedule/<int:schedule_id>/delete/', views.schedule_delete, name='schedule_delete'),
     
+    # メンテナンス管理機能（新規追加）
+    path('dashboard/maintenance/', views.maintenance_settings, name='maintenance_settings'),
+    path('dashboard/api/toggle-maintenance/', views.toggle_maintenance, name='toggle_maintenance'),
+    
     # API エンドポイント
     path('dashboard/api/available-times/', views.get_available_times_api, name='api_available_times'),
     path('dashboard/api/schedule-times/', views.get_schedule_times_api, name='api_schedule_times'),

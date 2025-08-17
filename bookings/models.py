@@ -525,3 +525,59 @@ class GapBlock(models.Model):
             blocks = blocks.filter(therapist__isnull=True)
         
         return blocks.order_by('start_time')
+    # 既存のmodels.pyの最後に以下のモデルを追加してください
+
+class MaintenanceMode(models.Model):
+    """メンテナンスモード設定"""
+    is_enabled = models.BooleanField('メンテナンスモード', default=False)
+    message = models.TextField(
+        'メンテナンスメッセージ',
+        default='メンテナンス中です。予約希望の方は下記までご連絡ください。',
+        help_text='メンテナンス画面に表示されるメッセージ'
+    )
+    contact_email = models.EmailField(
+        '連絡先メールアドレス',
+        default='info@gracespa.com',
+        help_text='メンテナンス中の連絡先として表示されるメールアドレス'
+    )
+    contact_phone = models.CharField(
+        '連絡先電話番号',
+        max_length=20,
+        default='03-1234-5678',
+        help_text='メンテナンス中の連絡先として表示される電話番号'
+    )
+    start_time = models.DateTimeField('開始日時', null=True, blank=True)
+    end_time = models.DateTimeField('終了予定日時', null=True, blank=True)
+    created_at = models.DateTimeField('作成日時', auto_now_add=True)
+    updated_at = models.DateTimeField('更新日時', auto_now=True)
+    
+    class Meta:
+        verbose_name = 'メンテナンスモード'
+        verbose_name_plural = 'メンテナンスモード'
+    
+    def __str__(self):
+        status = "有効" if self.is_enabled else "無効"
+        return f'メンテナンスモード ({status})'
+    
+    @classmethod
+    def get_current_settings(cls):
+        """現在のメンテナンス設定を取得（なければ作成）"""
+        settings, created = cls.objects.get_or_create(
+            id=1,
+            defaults={
+                'is_enabled': False,
+                'message': 'メンテナンス中です。予約希望の方は下記までご連絡ください。',
+                'contact_email': 'info@gracespa.com',
+                'contact_phone': '03-1234-5678'
+            }
+        )
+        return settings
+    
+    def save(self, *args, **kwargs):
+        """シングルトンパターンを保証"""
+        self.pk = 1
+        super().save(*args, **kwargs)
+    
+    def delete(self, *args, **kwargs):
+        """削除を禁止"""
+        pass

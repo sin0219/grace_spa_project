@@ -1,0 +1,404 @@
+{% extends 'dashboard/base_dashboard.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}メンテナンス設定{% endblock %}
+
+{% block content %}
+<!-- 現在の状態表示 -->
+<div class="card">
+    <div class="card-header">
+        <h3>🔧 メンテナンスモード 現在の状態</h3>
+    </div>
+    <div class="card-body">
+        <div class="status-display">
+            <div class="status-indicator {% if maintenance.is_enabled %}status-enabled{% else %}status-disabled{% endif %}">
+                <div class="status-icon">
+                    {% if maintenance.is_enabled %}
+                        🔴
+                    {% else %}
+                        🟢
+                    {% endif %}
+                </div>
+                <div class="status-text">
+                    <h4>
+                        {% if maintenance.is_enabled %}
+                            メンテナンス中
+                        {% else %}
+                            稼働中
+                        {% endif %}
+                    </h4>
+                    <p>
+                        {% if maintenance.is_enabled %}
+                            予約フォームは停止されています
+                        {% else %}
+                            予約フォームは正常に稼働しています
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+            
+            {% if maintenance.start_time or maintenance.end_time %}
+            <div class="status-times">
+                {% if maintenance.start_time %}
+                <div class="time-info">
+                    <span class="time-label">開始日時:</span>
+                    <span class="time-value">{{ maintenance.start_time|date:"Y年m月d日 H:i" }}</span>
+                </div>
+                {% endif %}
+                {% if maintenance.end_time %}
+                <div class="time-info">
+                    <span class="time-label">終了日時:</span>
+                    <span class="time-value">{{ maintenance.end_time|date:"Y年m月d日 H:i" }}</span>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- メンテナンスモード切り替え -->
+<div class="card">
+    <div class="card-header">
+        <h3>⚡ メンテナンスモード 切り替え</h3>
+    </div>
+    <div class="card-body">
+        <div class="toggle-section">
+            <p class="toggle-description">
+                メンテナンスモードを有効にすると、予約フォームが一時停止され、お客様にはメンテナンス画面が表示されます。
+            </p>
+            
+            <div class="toggle-controls">
+                {% if maintenance.is_enabled %}
+                    <form method="post" style="display: inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="disable">
+                        <button type="submit" class="btn btn-success btn-lg" onclick="return confirm('メンテナンスモードを無効にして、予約フォームを再開しますか？')">
+                            🟢 メンテナンス終了 & 予約フォーム再開
+                        </button>
+                    </form>
+                {% else %}
+                    <form method="post" style="display: inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="enable">
+                        <button type="submit" class="btn btn-danger btn-lg" onclick="return confirm('メンテナンスモードを有効にして、予約フォームを停止しますか？')">
+                            🔴 メンテナンス開始 & 予約フォーム停止
+                        </button>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- メンテナンス画面設定 -->
+<div class="card">
+    <div class="card-header">
+        <h3>📝 メンテナンス画面の設定</h3>
+    </div>
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="update_message">
+            
+            <div class="form-group">
+                <label for="message">メンテナンスメッセージ</label>
+                <textarea name="message" id="message" class="form-control" rows="4" placeholder="お客様に表示されるメンテナンスメッセージを入力してください">{{ maintenance.message }}</textarea>
+                <small class="form-help">メンテナンス画面に表示されるメッセージです。お客様への案内文を記載してください。</small>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="contact_email">連絡先メールアドレス</label>
+                    <input type="email" name="contact_email" id="contact_email" class="form-control" value="{{ maintenance.contact_email }}" required>
+                    <small class="form-help">メンテナンス中の連絡先として表示されます</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="contact_phone">連絡先電話番号</label>
+                    <input type="text" name="contact_phone" id="contact_phone" class="form-control" value="{{ maintenance.contact_phone }}" required>
+                    <small class="form-help">メンテナンス中の連絡先として表示されます</small>
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    💾 設定を保存
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- プレビュー -->
+<div class="card">
+    <div class="card-header">
+        <h3>👀 メンテナンス画面プレビュー</h3>
+    </div>
+    <div class="card-body">
+        <div class="preview-container">
+            <div class="preview-maintenance">
+                <div class="preview-icon">🔧</div>
+                <h2 class="preview-title">メンテナンス中</h2>
+                <div class="preview-message">
+                    <p>{{ maintenance.message }}</p>
+                </div>
+                <div class="preview-contact">
+                    <h4>予約・お問い合わせ</h4>
+                    <div class="preview-contact-methods">
+                        <div class="preview-contact-item">
+                            📧 {{ maintenance.contact_email }}
+                        </div>
+                        <div class="preview-contact-item">
+                            📞 {{ maintenance.contact_phone }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <p class="preview-note">
+            <small>※ 実際のメンテナンス画面はより詳細なデザインで表示されます</small>
+        </p>
+    </div>
+</div>
+
+<style>
+    .status-display {
+        text-align: center;
+        padding: 2rem;
+    }
+    
+    .status-indicator {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        padding: 1.5rem;
+        border-radius: 10px;
+    }
+    
+    .status-enabled {
+        background: #f8d7da;
+        border: 2px solid #dc3545;
+        color: #721c24;
+    }
+    
+    .status-disabled {
+        background: #d4edda;
+        border: 2px solid #28a745;
+        color: #155724;
+    }
+    
+    .status-icon {
+        font-size: 2rem;
+    }
+    
+    .status-text h4 {
+        margin: 0 0 0.5rem 0;
+        font-size: 1.5rem;
+    }
+    
+    .status-text p {
+        margin: 0;
+        font-size: 1rem;
+    }
+    
+    .status-times {
+        display: flex;
+        gap: 2rem;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    
+    .time-info {
+        background: #f8f9fa;
+        padding: 0.5rem 1rem;
+        border-radius: 5px;
+        border: 1px solid #e9ecef;
+    }
+    
+    .time-label {
+        font-weight: bold;
+        color: #666;
+        margin-right: 0.5rem;
+    }
+    
+    .time-value {
+        color: #333;
+    }
+    
+    .toggle-section {
+        text-align: center;
+        padding: 1rem;
+    }
+    
+    .toggle-description {
+        margin-bottom: 2rem;
+        color: #666;
+        font-size: 1rem;
+        line-height: 1.6;
+    }
+    
+    .toggle-controls {
+        margin: 1.5rem 0;
+    }
+    
+    .btn-lg {
+        padding: 1rem 2rem;
+        font-size: 1.1rem;
+        border-radius: 50px;
+        font-weight: bold;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+    }
+    
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    
+    .form-group label {
+        display: block;
+        font-weight: bold;
+        color: #555;
+        margin-bottom: 0.5rem;
+    }
+    
+    .form-control {
+        width: 100%;
+        padding: 0.75rem;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: border-color 0.3s;
+    }
+    
+    .form-control:focus {
+        outline: none;
+        border-color: #8b7355;
+        box-shadow: 0 0 5px rgba(139, 115, 85, 0.3);
+    }
+    
+    .form-help {
+        color: #666;
+        font-size: 0.9rem;
+        margin-top: 0.25rem;
+        display: block;
+    }
+    
+    .form-actions {
+        text-align: center;
+        margin-top: 2rem;
+    }
+    
+    .preview-container {
+        background: #f8f9fa;
+        padding: 2rem;
+        border-radius: 10px;
+        border: 2px dashed #8b7355;
+    }
+    
+    .preview-maintenance {
+        background: white;
+        border-radius: 15px;
+        padding: 2rem;
+        text-align: center;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        border: 2px solid #8b7355;
+        max-width: 500px;
+        margin: 0 auto;
+    }
+    
+    .preview-icon {
+        font-size: 2rem;
+        margin-bottom: 1rem;
+    }
+    
+    .preview-title {
+        color: #8b7355;
+        margin-bottom: 1rem;
+        font-size: 1.5rem;
+    }
+    
+    .preview-message {
+        background: #fff3cd;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        color: #856404;
+    }
+    
+    .preview-contact h4 {
+        color: #8b7355;
+        margin-bottom: 0.5rem;
+        font-size: 1rem;
+    }
+    
+    .preview-contact-methods {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    
+    .preview-contact-item {
+        background: #f8f5f0;
+        padding: 0.5rem 1rem;
+        border-radius: 5px;
+        font-size: 0.9rem;
+        color: #8b7355;
+    }
+    
+    .preview-note {
+        text-align: center;
+        margin-top: 1rem;
+        color: #666;
+    }
+    
+    /* レスポンシブ対応 */
+    @media (max-width: 768px) {
+        .status-indicator {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .status-times {
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .form-row {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+        
+        .toggle-controls {
+            margin: 1rem 0;
+        }
+        
+        .btn-lg {
+            width: 100%;
+            padding: 1rem;
+            font-size: 1rem;
+        }
+        
+        .preview-container {
+            padding: 1rem;
+        }
+        
+        .preview-maintenance {
+            padding: 1.5rem;
+        }
+        
+        .preview-contact-methods {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+    }
+</style>
+{% endblock %}

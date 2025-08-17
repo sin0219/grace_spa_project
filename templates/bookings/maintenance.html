@@ -1,0 +1,227 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="maintenance-container">
+    <div class="maintenance-content">
+        <div class="maintenance-icon">
+            🔧
+        </div>
+        
+        <h1 class="maintenance-title">メンテナンス中</h1>
+        
+        <div class="maintenance-message">
+            <p>{{ maintenance.message }}</p>
+        </div>
+        
+        <div class="contact-info">
+            <h3>予約・お問い合わせ</h3>
+            <div class="contact-methods">
+                <div class="contact-item">
+                    <div class="contact-icon">📧</div>
+                    <div class="contact-details">
+                        <label>メール</label>
+                        <a href="mailto:{{ maintenance.contact_email }}">{{ maintenance.contact_email }}</a>
+                    </div>
+                </div>
+                <div class="contact-item">
+                    <div class="contact-icon">📞</div>
+                    <div class="contact-details">
+                        <label>電話</label>
+                        <a href="tel:{{ maintenance.contact_phone }}">{{ maintenance.contact_phone }}</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="maintenance-note">
+            <p>ご不便をおかけして申し訳ございません。<br>
+            メンテナンス完了後、予約システムを再開いたします。</p>
+        </div>
+        
+        <div class="back-home">
+            <a href="{% url 'website:home' %}" class="btn btn-home">
+                🏠 ホームに戻る
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+    .maintenance-container {
+        min-height: calc(100vh - 120px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+        background: linear-gradient(135deg, #f8f5f0 0%, #f0ebe3 100%);
+    }
+    
+    .maintenance-content {
+        max-width: 600px;
+        background: white;
+        border-radius: 20px;
+        padding: 3rem;
+        text-align: center;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        border: 2px solid #8b7355;
+    }
+    
+    .maintenance-icon {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        animation: rotate 2s linear infinite;
+    }
+    
+    @keyframes rotate {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+    
+    .maintenance-title {
+        color: #8b7355;
+        font-size: 2.5rem;
+        margin-bottom: 1.5rem;
+        font-weight: bold;
+    }
+    
+    .maintenance-message {
+        margin-bottom: 2rem;
+        padding: 1.5rem;
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 10px;
+        color: #856404;
+    }
+    
+    .maintenance-message p {
+        font-size: 1.1rem;
+        line-height: 1.6;
+        margin: 0;
+    }
+    
+    .contact-info {
+        margin-bottom: 2rem;
+        padding: 1.5rem;
+        background: #f8f5f0;
+        border-radius: 10px;
+    }
+    
+    .contact-info h3 {
+        color: #8b7355;
+        margin-bottom: 1rem;
+        font-size: 1.3rem;
+    }
+    
+    .contact-methods {
+        display: flex;
+        gap: 1.5rem;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    
+    .contact-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 1rem;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        min-width: 200px;
+        transition: transform 0.3s;
+    }
+    
+    .contact-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    }
+    
+    .contact-icon {
+        font-size: 1.5rem;
+    }
+    
+    .contact-details {
+        text-align: left;
+    }
+    
+    .contact-details label {
+        display: block;
+        font-size: 0.9rem;
+        color: #666;
+        margin-bottom: 0.25rem;
+    }
+    
+    .contact-details a {
+        color: #8b7355;
+        text-decoration: none;
+        font-weight: bold;
+        font-size: 1rem;
+    }
+    
+    .contact-details a:hover {
+        color: #a68b5b;
+        text-decoration: underline;
+    }
+    
+    .maintenance-note {
+        margin-bottom: 2rem;
+        color: #666;
+        font-size: 0.95rem;
+        line-height: 1.6;
+    }
+    
+    .back-home {
+        margin-top: 1.5rem;
+    }
+    
+    .btn-home {
+        background: linear-gradient(135deg, #8b7355 0%, #a68b5b 100%);
+        color: white;
+        padding: 1rem 2rem;
+        border-radius: 50px;
+        text-decoration: none;
+        font-size: 1.1rem;
+        font-weight: bold;
+        display: inline-block;
+        transition: all 0.3s;
+        border: none;
+        cursor: pointer;
+    }
+    
+    .btn-home:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(139, 115, 85, 0.3);
+        text-decoration: none;
+        color: white;
+    }
+    
+    /* レスポンシブ対応 */
+    @media (max-width: 768px) {
+        .maintenance-content {
+            padding: 2rem;
+            margin: 1rem;
+        }
+        
+        .maintenance-title {
+            font-size: 2rem;
+        }
+        
+        .contact-methods {
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .contact-item {
+            min-width: auto;
+            width: 100%;
+            max-width: 280px;
+        }
+        
+        .maintenance-icon {
+            font-size: 3rem;
+        }
+    }
+</style>
+{% endblock %}

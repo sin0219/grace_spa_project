@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.utils import timezone
 from django.db.models import Count, Q
 from django.http import JsonResponse
-from bookings.models import Booking, Customer, Service, Schedule, BusinessHours, Therapist, BookingSettings
+from bookings.models import Booking, Customer, Service, Schedule, BusinessHours, Therapist, BookingSettings, MaintenanceMode
 from datetime import datetime, timedelta
 import calendar
 
@@ -787,3 +787,79 @@ def get_schedule_times_api(request):
             })
     
     return JsonResponse({'time_slots': time_slots})
+# 既存のdashboard/views.pyの最後に以下の関数を追加してください
+
+@staff_member_required
+def maintenance_settings(request):
+    """メンテナンス設定管理"""
+    maintenance = MaintenanceMode.get_current_settings()
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        if action == 'enable':
+            # メンテナンスモードを有効にする
+            maintenance.is_enabled = True
+            maintenance.start_time = timezone.now()
+            maintenance.end_time = None
+            maintenance.save()
+            messages.success(request, 'メンテナンスモードを有効にしました。予約フォームは一時停止されています。')
+            
+        elif action == 'disable':
+            # メンテナンスモードを無効にする
+            maintenance.is_enabled = False
+            maintenance.end_time = timezone.now()
+            maintenance.save()
+            messages.success(request, 'メンテナンスモードを無効にしました。予約フォームが再開されました。')
+            
+        elif action == 'update_message':
+            # メッセージと連絡先を更新
+            maintenance.message = request.POST.get('message', maintenance.message)
+            maintenance.contact_email = request.POST.get('contact_email', maintenance.contact_email)
+            maintenance.contact_phone = request.POST.get('contact_phone', maintenance.contact_phone)
+            maintenance.save()
+            messages.success(request, 'メンテナンス設定を更新しました。')
+        
+        return redirect('dashboard:maintenance_settings')
+    
+    context = {
+        'title': 'メンテナンス設定 - GRACE SPA管理画面',
+        'maintenance': maintenance,
+    }
+    return render(request, 'dashboard/maintenance_settings.html', context)
+
+@staff_member_required
+def toggle_maintenance(request):
+    """AJAX用：メンテナンスモードの切り替え"""
+    if request.method == 'POST':
+        try:
+            maintenance = MaintenanceMode.get_current_settings()
+            
+            # 現在の状態を反転
+            maintenance.is_enabled = not maintenance.is_enabled
+            
+            if maintenance.is_enabled:
+                maintenance.start_time = timezone.now()
+                maintenance.end_time = None
+                status_message = 'メンテナンスモードを有効にしました'
+            else:
+                maintenance.end_time = timezone.now()
+                status_message = 'メンテナンスモードを無効にしました'
+            
+            maintenance.save()
+            
+            return JsonResponse({
+                'success': True,
+                'is_enabled': maintenance.is_enabled,
+                'message': status_message,
+                'start_time': maintenance.start_time.strftime('%Y-%m-%d %H:%M') if maintenance.start_time else None,
+                'end_time': maintenance.end_time.strftime('%Y-%m-%d %H:%M') if maintenance.end_time else None
+            })
+            
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': f'エラーが発生しました: {str(e)}'
+            })
+    
+    return JsonResponse({'success': False, 'message': '無効なリクエストです'})

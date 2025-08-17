@@ -10,7 +10,7 @@ import datetime
 import json
 import logging
 
-from .models import Service, Therapist, Booking, Customer, BusinessHours, BookingSettings, Schedule
+from .models import Service, Therapist, Booking, Customer, BusinessHours, BookingSettings, Schedule, MaintenanceMode
 from .forms import ServiceSelectionForm, DateTimeTherapistForm, CustomerInfoForm, validate_booking_time_slot
 
 # メール機能のインポート
@@ -24,6 +24,17 @@ logger = logging.getLogger(__name__)
 
 def booking_step1(request):
     """ステップ1: サービス選択"""
+    
+    # メンテナンスモードチェック
+    try:
+        maintenance = MaintenanceMode.get_current_settings()
+        if maintenance.is_enabled:
+            return render(request, 'bookings/maintenance.html', {
+                'maintenance': maintenance,
+                'title': 'メンテナンス中 - GRACE SPA'
+            })
+    except Exception as e:
+        logger.error(f"メンテナンスモード設定取得エラー: {e}")
     
     # デバッグ: サービス情報を確認
     all_services = Service.objects.all()
@@ -65,6 +76,18 @@ def booking_step1(request):
 
 def booking_step2(request):
     """ステップ2: 日時・施術者選択"""
+    
+    # メンテナンスモードチェック
+    try:
+        maintenance = MaintenanceMode.get_current_settings()
+        if maintenance.is_enabled:
+            return render(request, 'bookings/maintenance.html', {
+                'maintenance': maintenance,
+                'title': 'メンテナンス中 - GRACE SPA'
+            })
+    except Exception as e:
+        logger.error(f"メンテナンスモード設定取得エラー: {e}")
+    
     # セッションからサービス情報を取得
     service_id = request.session.get('booking_service_id')
     if not service_id:
@@ -120,6 +143,17 @@ def booking_step2(request):
 
 def booking_step3(request):
     """ステップ3: お客様情報入力"""
+    
+    # メンテナンスモードチェック
+    try:
+        maintenance = MaintenanceMode.get_current_settings()
+        if maintenance.is_enabled:
+            return render(request, 'bookings/maintenance.html', {
+                'maintenance': maintenance,
+                'title': 'メンテナンス中 - GRACE SPA'
+            })
+    except Exception as e:
+        logger.error(f"メンテナンスモード設定取得エラー: {e}")
     # セッションから予約情報を取得
     service_id = request.session.get('booking_service_id')
     booking_date_str = request.session.get('booking_date')
