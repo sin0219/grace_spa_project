@@ -21,8 +21,8 @@
                 <div class="therapist-card {% if therapist.is_featured %}featured{% endif %}">
                     <!-- 施術者写真 -->
                     <div class="therapist-photo">
-                        {% if therapist.photo %}
-                            <img src="{{ therapist.photo.url }}" alt="{{ therapist.display_name }}">
+                        {% if therapist.image %}
+                            <img src="{{ therapist.image.url }}" alt="{{ therapist.display_name }}">
                         {% else %}
                             <div class="photo-placeholder">
                                 <span class="icon">👤</span>
@@ -37,24 +37,10 @@
                     <div class="therapist-info">
                         <h2>{{ therapist.display_name }}</h2>
                         
-                        {% if therapist.experience_years > 0 %}
-                            <div class="experience">
-                                <span class="label">経験年数:</span>
-                                <span class="value">{{ therapist.experience_years }}年</span>
-                            </div>
-                        {% endif %}
-                        
-                        {% if therapist.specialties %}
-                            <div class="specialties">
-                                <span class="label">得意な施術:</span>
-                                <p>{{ therapist.specialties }}</p>
-                            </div>
-                        {% endif %}
-                        
-                        {% if therapist.introduction %}
+                        {% if therapist.description %}
                             <div class="introduction">
                                 <span class="label">プロフィール:</span>
-                                <p>{{ therapist.introduction|linebreaks }}</p>
+                                <p>{{ therapist.description|linebreaks }}</p>
                             </div>
                         {% endif %}
                         
@@ -158,16 +144,16 @@
     }
 
     .therapist-photo img {
-        width: 150px;
-        height: 150px;
+        width: 300px;
+        height: 300px;
         border-radius: 50%;
         object-fit: cover;
         border: 3px solid #8b7355;
     }
 
     .photo-placeholder {
-        width: 150px;
-        height: 150px;
+        width: 300px;
+        height: 300px;
         border-radius: 50%;
         background: #e9ecef;
         border: 3px solid #8b7355;
@@ -201,8 +187,6 @@
         font-size: 1.5rem;
     }
 
-    .experience,
-    .specialties,
     .introduction {
         margin-bottom: 1.5rem;
     }
@@ -215,13 +199,6 @@
         font-size: 0.9rem;
     }
 
-    .value {
-        color: #a68b5b;
-        font-weight: bold;
-        font-size: 1.1rem;
-    }
-
-    .specialties p,
     .introduction p {
         color: #555;
         line-height: 1.6;

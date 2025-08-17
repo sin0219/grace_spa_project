@@ -11,7 +11,7 @@ import datetime
 class ServiceSelectionForm(forms.Form):
     """ステップ1: サービス選択フォーム"""
     service = forms.ModelChoiceField(
-        queryset=Service.objects.filter(is_active=True).order_by('name'),
+        queryset=Service.objects.filter(is_active=True).order_by('sort_order', 'name'),
         label='ご希望のサービスをお選びください',
         widget=forms.RadioSelect(attrs={'class': 'service-radio'}),
         empty_label=None,
@@ -21,7 +21,7 @@ class ServiceSelectionForm(forms.Form):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # アクティブなサービスのみを表示
-        self.fields['service'].queryset = Service.objects.filter(is_active=True).order_by('name')
+        self.fields['service'].queryset = Service.objects.filter(is_active=True).order_by('sort_order', 'name')
     
     def clean_service(self):
         service = self.cleaned_data['service']

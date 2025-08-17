@@ -764,7 +764,21 @@
                 }
             });
         });
+        
+        // 当日の場合は5分ごとに時間スロットを更新
+        if (selectedDate && isToday(selectedDate)) {
+            setInterval(() => {
+                if (selectedDate && isToday(selectedDate)) {
+                    loadAvailableTimes(selectedDate);
+                }
+            }, 300000); // 5分ごと
+        }
     });
+    
+    function isToday(date) {
+        const today = new Date();
+        return date.toDateString() === today.toDateString();
+    }
     
     function generateCalendar() {
         const year = currentDate.getFullYear();
@@ -907,7 +921,7 @@
         fetch(url)
             .then(response => response.json())
             .then(data => {
-                displayTimeSlots(data.available_times);
+                displayTimeSlots(data.available_times, date);
             })
             .catch(error => {
                 console.error('Error loading times:', error);
@@ -915,16 +929,22 @@
             });
     }
     
-    function displayTimeSlots(availableTimes) {
+    function displayTimeSlots(availableTimes, selectedDate) {
         const timeSlotsContainer = document.getElementById('timeSlotsContainer');
         
         if (!availableTimes || availableTimes.length === 0) {
-            timeSlotsContainer.innerHTML = '<p class="no-times">この日は予約可能な時間がありません。</p>';
+            if (isToday(selectedDate)) {
+                timeSlotsContainer.innerHTML = '<p class="no-times">本日は予約可能な時間がありません。<br><small>制限時間：現在時刻の20分後以降から予約可能です。</small></p>';
+            } else {
+                timeSlotsContainer.innerHTML = '<p class="no-times">この日は予約可能な時間がありません。</p>';
+            }
             return;
         }
         
         const timeSlotsGrid = document.createElement('div');
         timeSlotsGrid.className = 'time-slots-grid';
+        
+        let hasAvailableSlots = false;
         
         availableTimes.forEach(timeData => {
             const timeSlot = document.createElement('div');
@@ -944,6 +964,7 @@
             
             if (isAvailable) {
                 timeSlot.addEventListener('click', () => selectTime(timeString, timeSlot));
+                hasAvailableSlots = true;
             } else {
                 timeSlot.classList.add('unavailable');
             }
@@ -952,7 +973,15 @@
         });
         
         timeSlotsContainer.innerHTML = '';
-        timeSlotsContainer.appendChild(timeSlotsGrid);
+        
+        // 当日で利用可能時間がない場合のメッセージ
+        if (!hasAvailableSlots && isToday(selectedDate)) {
+            const messageDiv = document.createElement('div');
+            messageDiv.innerHTML = '<p class="no-times">本日は予約可能な時間がありません。<br><small>制限時間：現在時刻の20分後以降から予約可能です。</small></p>';
+            timeSlotsContainer.appendChild(messageDiv);
+        } else {
+            timeSlotsContainer.appendChild(timeSlotsGrid);
+        }
     }
     
     function selectTime(time, element) {
