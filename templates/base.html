@@ -313,8 +313,8 @@
             <ul class="nav-menu">
                 <li><a href="{% url 'website:home' %}">ホーム</a></li>
                 <li><a href="{% url 'website:therapists' %}">セラピスト紹介</a></li>
-                <li><a href="#services">メニュー</a></li>
-                <li><a href="#access">アクセス</a></li>
+                <li><a href="{% url 'website:home' %}#services">メニュー</a></li>
+                <li><a href="{% url 'website:home' %}#access">アクセス</a></li>
                 <li><a href="{% url 'bookings:booking_step1' %}" class="nav-booking-btn">予約する</a></li>
                 <li><a href="#" class="language-switch">🌐 ENGLISH</a></li>
             </ul>

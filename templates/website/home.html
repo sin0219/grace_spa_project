@@ -14,7 +14,7 @@
     <div class="hero-content">
         <div class="hero-text">
             <div class="hero-logo">
-                <img src="/static/images/logo.png" alt="GRACE SPA" class="hero-logo-image">
+                <img src="/static/images/hero-logo.png" alt="GRACE SPA" class="hero-logo-image">
             </div>
             <p>歴18年のプロフェッショナルセラピストによる<br>本格オイルマッサージで究極の癒しを</p>
             <a href="{% url 'bookings:booking_step1' %}" class="cta-button">今すぐ予約する</a>
@@ -186,6 +186,7 @@
 
     .hero-logo {
         margin-bottom: 2rem;
+        overflow: hidden;
     }
 
     .hero-logo-image {
@@ -194,6 +195,39 @@
         max-width: 400px;
         object-fit: contain;
         filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.7));
+        animation: slideInFromLeft 1.2s ease-out;
+    }
+
+    /* 左からスライドインするアニメーション */
+    @keyframes slideInFromLeft {
+        0% {
+            transform: translateX(-100%);
+            opacity: 0;
+        }
+        100% {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    /* キャッチコピーにも遅延アニメーションを追加 */
+    .hero-text p {
+        animation: fadeInUp 1.5s ease-out 0.5s both;
+    }
+
+    .cta-button {
+        animation: fadeInUp 1.8s ease-out 1s both;
+    }
+
+    @keyframes fadeInUp {
+        0% {
+            transform: translateY(30px);
+            opacity: 0;
+        }
+        100% {
+            transform: translateY(0);
+            opacity: 1;
+        }
     }
 
     .hero-content h1 {
@@ -565,6 +599,19 @@
             max-width: 300px;
         }
 
+        /* アニメーション速度をモバイルで少し早めに */
+        .hero-logo-image {
+            animation: slideInFromLeft 1s ease-out;
+        }
+
+        .hero-text p {
+            animation: fadeInUp 1.2s ease-out 0.4s both;
+        }
+
+        .cta-button {
+            animation: fadeInUp 1.5s ease-out 0.8s both;
+        }
+
         .hero-content h1 {
             font-size: 2.5rem;
         }
@@ -610,6 +657,19 @@
         .hero-logo-image {
             height: 60px;
             max-width: 250px;
+        }
+
+        /* さらにアニメーション速度を調整 */
+        .hero-logo-image {
+            animation: slideInFromLeft 0.8s ease-out;
+        }
+
+        .hero-text p {
+            animation: fadeInUp 1s ease-out 0.3s both;
+        }
+
+        .cta-button {
+            animation: fadeInUp 1.2s ease-out 0.6s both;
         }
 
         .hero-content h1 {
