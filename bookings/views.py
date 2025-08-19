@@ -6,11 +6,12 @@ from django.conf import settings
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 from django.db.models import Q
+from django.utils.translation import get_language
 import datetime
 import json
 import logging
 
-from .models import Service, Therapist, Booking, Customer, BusinessHours, BookingSettings, Schedule, MaintenanceMode
+from .models import Service, Therapist, Booking, Customer, BusinessHours, BookingSettings, Schedule
 from .forms import ServiceSelectionForm, DateTimeTherapistForm, CustomerInfoForm, validate_booking_time_slot
 
 # メール機能のインポート
@@ -24,17 +25,7 @@ logger = logging.getLogger(__name__)
 
 def booking_step1(request):
     """ステップ1: サービス選択"""
-    
-    # メンテナンスモードチェック
-    try:
-        maintenance = MaintenanceMode.get_current_settings()
-        if maintenance.is_enabled:
-            return render(request, 'bookings/maintenance.html', {
-                'maintenance': maintenance,
-                'title': 'メンテナンス中 - GRACE SPA'
-            })
-    except Exception as e:
-        logger.error(f"メンテナンスモード設定取得エラー: {e}")
+    current_language = get_language()
     
     # デバッグ: サービス情報を確認
     all_services = Service.objects.all()
@@ -65,39 +56,48 @@ def booking_step1(request):
     services = Service.objects.filter(is_active=True).order_by('sort_order', 'name')
     logger.debug(f"テンプレートに渡すサービス数: {services.count()}")
     
-    context = {
-        'form': form,
-        'services': services,
-        'title': 'ステップ1: サービス選択 - GRACE SPA',
-        'step': 1,
-        'total_steps': 3
-    }
-    return render(request, 'bookings/step1_service.html', context)
+    # 言語に応じてコンテンツを分ける
+    if current_language == 'en':
+        context = {
+            'form': form,
+            'services': services,
+            'title': 'Step 1: Service Selection - GRACE SPA',
+            'step': 1,
+            'total_steps': 3
+        }
+        template_name = 'bookings/step1_service_en.html'
+    else:
+        context = {
+            'form': form,
+            'services': services,
+            'title': 'ステップ1: サービス選択 - GRACE SPA',
+            'step': 1,
+            'total_steps': 3
+        }
+        template_name = 'bookings/step1_service.html'
+    
+    return render(request, template_name, context)
 
 def booking_step2(request):
     """ステップ2: 日時・施術者選択"""
-    
-    # メンテナンスモードチェック
-    try:
-        maintenance = MaintenanceMode.get_current_settings()
-        if maintenance.is_enabled:
-            return render(request, 'bookings/maintenance.html', {
-                'maintenance': maintenance,
-                'title': 'メンテナンス中 - GRACE SPA'
-            })
-    except Exception as e:
-        logger.error(f"メンテナンスモード設定取得エラー: {e}")
+    current_language = get_language()
     
     # セッションからサービス情報を取得
     service_id = request.session.get('booking_service_id')
     if not service_id:
-        messages.error(request, 'サービスが選択されていません。最初からやり直してください。')
+        if current_language == 'en':
+            messages.error(request, 'No service selected. Please start over.')
+        else:
+            messages.error(request, 'サービスが選択されていません。最初からやり直してください。')
         return redirect('bookings:booking_step1')
     
     try:
         service = Service.objects.get(id=service_id)
     except Service.DoesNotExist:
-        messages.error(request, '選択されたサービスが見つかりません。')
+        if current_language == 'en':
+            messages.error(request, 'Selected service not found.')
+        else:
+            messages.error(request, '選択されたサービスが見つかりません。')
         return redirect('bookings:booking_step1')
     
     # 施術者選択機能が有効かチェック
@@ -130,30 +130,36 @@ def booking_step2(request):
     # アクティブな施術者を取得
     therapists = Therapist.objects.filter(is_active=True).order_by('sort_order', 'name')
     
-    context = {
-        'form': form,
-        'service': service,
-        'therapists': therapists,
-        'enable_therapist_selection': enable_therapist_selection,
-        'title': 'ステップ2: 日時・施術者選択 - GRACE SPA',
-        'step': 2,
-        'total_steps': 3
-    }
-    return render(request, 'bookings/step2_datetime.html', context)
+    # 言語に応じてコンテンツを分ける
+    if current_language == 'en':
+        context = {
+            'form': form,
+            'service': service,
+            'therapists': therapists,
+            'enable_therapist_selection': enable_therapist_selection,
+            'title': 'Step 2: Date & Therapist Selection - GRACE SPA',
+            'step': 2,
+            'total_steps': 3
+        }
+        template_name = 'bookings/step2_datetime_en.html'
+    else:
+        context = {
+            'form': form,
+            'service': service,
+            'therapists': therapists,
+            'enable_therapist_selection': enable_therapist_selection,
+            'title': 'ステップ2: 日時・施術者選択 - GRACE SPA',
+            'step': 2,
+            'total_steps': 3
+        }
+        template_name = 'bookings/step2_datetime.html'
+    
+    return render(request, template_name, context)
 
 def booking_step3(request):
     """ステップ3: お客様情報入力"""
+    current_language = get_language()
     
-    # メンテナンスモードチェック
-    try:
-        maintenance = MaintenanceMode.get_current_settings()
-        if maintenance.is_enabled:
-            return render(request, 'bookings/maintenance.html', {
-                'maintenance': maintenance,
-                'title': 'メンテナンス中 - GRACE SPA'
-            })
-    except Exception as e:
-        logger.error(f"メンテナンスモード設定取得エラー: {e}")
     # セッションから予約情報を取得
     service_id = request.session.get('booking_service_id')
     booking_date_str = request.session.get('booking_date')
@@ -161,7 +167,10 @@ def booking_step3(request):
     therapist_id = request.session.get('booking_therapist_id')
     
     if not all([service_id, booking_date_str, booking_time_str]):
-        messages.error(request, '予約情報が不完全です。最初からやり直してください。')
+        if current_language == 'en':
+            messages.error(request, 'Booking information is incomplete. Please start over.')
+        else:
+            messages.error(request, '予約情報が不完全です。最初からやり直してください。')
         return redirect('bookings:booking_step1')
     
     try:
@@ -170,7 +179,10 @@ def booking_step3(request):
         booking_time = datetime.datetime.strptime(booking_time_str, '%H:%M').time()
         therapist = Therapist.objects.get(id=therapist_id) if therapist_id else None
     except (Service.DoesNotExist, Therapist.DoesNotExist, ValueError):
-        messages.error(request, '予約情報に問題があります。最初からやり直してください。')
+        if current_language == 'en':
+            messages.error(request, 'There is a problem with the booking information. Please start over.')
+        else:
+            messages.error(request, '予約情報に問題があります。最初からやり直してください。')
         return redirect('bookings:booking_step1')
     
     # 予約可能性をチェック（表示時のみ - 実際の予約確定は後で行う）
@@ -196,9 +208,15 @@ def booking_step3(request):
             # 両方に内容がある場合は改行で区切って統合
             combined_notes = []
             if step2_notes.strip():
-                combined_notes.append(f"【ご要望】{step2_notes.strip()}")
+                if current_language == 'en':
+                    combined_notes.append(f"【Requests】{step2_notes.strip()}")
+                else:
+                    combined_notes.append(f"【ご要望】{step2_notes.strip()}")
             if step3_notes.strip():
-                combined_notes.append(f"【備考】{step3_notes.strip()}")
+                if current_language == 'en':
+                    combined_notes.append(f"【Notes】{step3_notes.strip()}")
+                else:
+                    combined_notes.append(f"【備考】{step3_notes.strip()}")
             
             request.session['booking_notes'] = '\n'.join(combined_notes)
             
@@ -206,21 +224,40 @@ def booking_step3(request):
     else:
         form = CustomerInfoForm()
     
-    context = {
-        'form': form,
-        'service': service,
-        'therapist': therapist,
-        'booking_date': booking_date,
-        'booking_time': booking_time,
-        'validation_error': validation_error,
-        'title': 'ステップ3: お客様情報入力 - GRACE SPA',
-        'step': 3,
-        'total_steps': 3
-    }
-    return render(request, 'bookings/step3_customer.html', context)
+    # 言語に応じてコンテンツを分ける
+    if current_language == 'en':
+        context = {
+            'form': form,
+            'service': service,
+            'therapist': therapist,
+            'booking_date': booking_date,
+            'booking_time': booking_time,
+            'validation_error': validation_error,
+            'title': 'Step 3: Customer Information - GRACE SPA',
+            'step': 3,
+            'total_steps': 3
+        }
+        template_name = 'bookings/step3_customer_en.html'
+    else:
+        context = {
+            'form': form,
+            'service': service,
+            'therapist': therapist,
+            'booking_date': booking_date,
+            'booking_time': booking_time,
+            'validation_error': validation_error,
+            'title': 'ステップ3: お客様情報入力 - GRACE SPA',
+            'step': 3,
+            'total_steps': 3
+        }
+        template_name = 'bookings/step3_customer.html'
+    
+    return render(request, template_name, context)
 
 def booking_confirm(request):
     """確認画面"""
+    current_language = get_language()
+    
     # セッションからすべての情報を取得
     session_keys = ['booking_service_id', 'booking_date', 'booking_time', 'booking_therapist_id',
                    'customer_name', 'customer_email', 'customer_phone', 'booking_notes']
@@ -233,7 +270,10 @@ def booking_confirm(request):
     if not all([session_data['booking_service_id'], session_data['booking_date'], 
                session_data['booking_time'], session_data['customer_name'], 
                session_data['customer_email']]):
-        messages.error(request, '予約情報が不完全です。最初からやり直してください。')
+        if current_language == 'en':
+            messages.error(request, 'Booking information is incomplete. Please start over.')
+        else:
+            messages.error(request, '予約情報が不完全です。最初からやり直してください。')
         return redirect('bookings:booking_step1')
     
     try:
@@ -242,7 +282,10 @@ def booking_confirm(request):
         booking_time = datetime.datetime.strptime(session_data['booking_time'], '%H:%M').time()
         therapist = Therapist.objects.get(id=session_data['booking_therapist_id']) if session_data['booking_therapist_id'] else None
     except (Service.DoesNotExist, Therapist.DoesNotExist, ValueError):
-        messages.error(request, '予約情報に問題があります。最初からやり直してください。')
+        if current_language == 'en':
+            messages.error(request, 'There is a problem with the booking information. Please start over.')
+        else:
+            messages.error(request, '予約情報に問題があります。最初からやり直してください。')
         return redirect('bookings:booking_step1')
     
     # 予約可能性をチェック（表示時のみ - 実際の予約確定は後で行う）
@@ -294,18 +337,30 @@ def booking_confirm(request):
                 send_admin_new_booking_email(booking)
                 
                 if getattr(settings, 'BOOKING_REQUIRES_APPROVAL', True):
-                    messages.success(
-                        request, 
-                        '予約申込みを受け付けました。管理者が確認後、確定のご連絡をいたします。'
-                    )
+                    if current_language == 'en':
+                        messages.success(
+                            request, 
+                            'Your booking request has been received. We will contact you for confirmation after review by our staff.'
+                        )
+                    else:
+                        messages.success(
+                            request, 
+                            '予約申込みを受け付けました。管理者が確認後、確定のご連絡をいたします。'
+                        )
                 else:
-                    messages.success(request, '予約が確定しました。')
+                    if current_language == 'en':
+                        messages.success(request, 'Your booking has been confirmed.')
+                    else:
+                        messages.success(request, '予約が確定しました。')
                     
                 logger.info(f"新規予約作成とメール送信完了: {booking}")
                     
             except Exception as e:
                 logger.error(f"メール送信エラー: {e}")
-                messages.success(request, '予約申込みを受け付けました。')
+                if current_language == 'en':
+                    messages.success(request, 'Your booking request has been received.')
+                else:
+                    messages.success(request, '予約申込みを受け付けました。')
             
             # セッションをクリア
             session_keys = ['booking_service_id', 'booking_therapist_id', 'booking_date', 'booking_time', 
@@ -316,32 +371,67 @@ def booking_confirm(request):
             return redirect('bookings:booking_complete')
             
         except ValidationError as e:
-            messages.error(request, f'予約の確定に失敗しました: {str(e)}')
+            if current_language == 'en':
+                messages.error(request, f'Failed to confirm booking: {str(e)}')
+            else:
+                messages.error(request, f'予約の確定に失敗しました: {str(e)}')
             logger.error(f"予約確定エラー: {str(e)}")
         except Exception as e:
-            messages.error(request, '予約の確定中にエラーが発生しました。もう一度お試しください。')
+            if current_language == 'en':
+                messages.error(request, 'An error occurred while confirming your booking. Please try again.')
+            else:
+                messages.error(request, '予約の確定中にエラーが発生しました。もう一度お試しください。')
             logger.error(f"予約確定エラー: {str(e)}")
     
-    context = {
-        'service': service,
-        'therapist': therapist,
-        'booking_date': booking_date,
-        'booking_time': booking_time,
-        'customer_name': session_data['customer_name'],
-        'customer_email': session_data['customer_email'],
-        'customer_phone': session_data['customer_phone'],
-        'notes': session_data['booking_notes'],
-        'validation_error': validation_error,
-        'title': '予約確認 - GRACE SPA'
-    }
-    return render(request, 'bookings/confirm.html', context)
+    # 言語に応じてコンテンツを分ける
+    if current_language == 'en':
+        context = {
+            'service': service,
+            'therapist': therapist,
+            'booking_date': booking_date,
+            'booking_time': booking_time,
+            'customer_name': session_data['customer_name'],
+            'customer_email': session_data['customer_email'],
+            'customer_phone': session_data['customer_phone'],
+            'notes': session_data['booking_notes'],
+            'validation_error': validation_error,
+            'title': 'Booking Confirmation - GRACE SPA'
+        }
+        template_name = 'bookings/confirm_en.html'
+    else:
+        context = {
+            'service': service,
+            'therapist': therapist,
+            'booking_date': booking_date,
+            'booking_time': booking_time,
+            'customer_name': session_data['customer_name'],
+            'customer_email': session_data['customer_email'],
+            'customer_phone': session_data['customer_phone'],
+            'notes': session_data['booking_notes'],
+            'validation_error': validation_error,
+            'title': '予約確認 - GRACE SPA'
+        }
+        template_name = 'bookings/confirm.html'
+    
+    return render(request, template_name, context)
 
 def booking_complete(request):
     """完了画面"""
-    context = {
-        'title': '予約完了 - GRACE SPA'
-    }
-    return render(request, 'bookings/complete.html', context)
+    current_language = get_language()
+    
+    # 言語に応じてコンテンツを分ける
+    if current_language == 'en':
+        context = {
+            'title': 'Booking Complete - GRACE SPA'
+        }
+        template_name = 'bookings/complete_en.html'
+    else:
+        context = {
+            'title': '予約完了 - GRACE SPA'
+        }
+        template_name = 'bookings/complete.html'
+    
+    return render(request, template_name, context)
 
 def get_available_times(request):
     """AJAX: 指定された日付の利用可能時間を取得（①当日時刻チェック ②直前予約制限対応）"""
@@ -391,7 +481,9 @@ def get_available_times(request):
         if is_today:
             # ②直前予約制限: 現在時刻 + 制限時間
             min_datetime = now + datetime.timedelta(minutes=min_advance_minutes)
-            calculated_min_time = min_datetime.time()
+            # 🔧 修正: ローカルタイムゾーンに変換してから時刻を取得
+            from django.utils import timezone as django_timezone
+            calculated_min_time = min_datetime.astimezone(django_timezone.get_current_timezone()).time()
             
             # 営業開始時間と比較して遅い方を採用
             if calculated_min_time > min_booking_time:
