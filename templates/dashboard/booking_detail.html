@@ -18,7 +18,16 @@
                 </tr>
                 <tr style="border-bottom: 1px solid #e9ecef;">
                     <td style="padding: 1rem; font-weight: bold; background: #f8f9fa;">お客様名</td>
-                    <td style="padding: 1rem;">{{ booking.customer.name }} 様</td>
+                    <td style="padding: 1rem;">
+                        {{ booking.customer.name }} 様
+                        {% if booking.customer.gender %}
+                        {% if booking.customer.gender == 'male' %}
+                        <span style="color: #007bff; margin-left: 0.5rem;">👨</span>
+                        {% elif booking.customer.gender == 'female' %}
+                        <span style="color: #e91e63; margin-left: 0.5rem;">👩</span>
+                        {% endif %}
+                        {% endif %}
+                    </td>
                 </tr>
                 <tr style="border-bottom: 1px solid #e9ecef;">
                     <td style="padding: 1rem; font-weight: bold; background: #f8f9fa;">メールアドレス</td>
@@ -47,15 +56,15 @@
                     <td style="padding: 1rem; font-weight: bold; background: #f8f9fa;">ステータス</td>
                     <td style="padding: 1rem;">
                         {% if booking.status == 'pending' %}
-                            <span class="badge badge-pending">申込中</span>
+                        <span class="badge badge-pending">申込中</span>
                         {% elif booking.status == 'confirmed' %}
-                            <span class="badge badge-confirmed">確定</span>
+                        <span class="badge badge-confirmed">確定</span>
                         {% elif booking.status == 'completed' %}
-                            <span class="badge badge-completed">完了</span>
+                        <span class="badge badge-completed">完了</span>
                         {% elif booking.status == 'cancelled' %}
-                            <span class="badge badge-cancelled">キャンセル</span>
+                        <span class="badge badge-cancelled">キャンセル</span>
                         {% elif booking.status == 'no_show' %}
-                            <span class="badge badge-no-show">無断キャンセル</span>
+                        <span class="badge badge-no-show">無断キャンセル</span>
                         {% endif %}
                     </td>
                 </tr>
@@ -76,7 +85,30 @@
             </table>
         </div>
     </div>
-
+    <tr>
+        <th>予約時の性別選択</th>
+        <td>
+            {% if booking.customer_gender %}
+            {% if booking.customer_gender == 'male' %}
+            <span style="color: #007bff;">👨 男性</span>
+            {% elif booking.customer_gender == 'female' %}
+            <span style="color: #e91e63;">👩 女性</span>
+            {% endif %}
+            {% else %}
+            <span style="color: #666;">未選択</span>
+            {% endif %}
+        </td>
+    </tr>
+    <tr>
+        <th>初回利用申告</th>
+        <td>
+            {% if booking.customer_is_first_visit %}
+            <span style="color: #28a745;">✅ 初回利用</span>
+            {% else %}
+            <span style="color: #666;">リピーター</span>
+            {% endif %}
+        </td>
+    </tr>
     <!-- アクションパネル -->
     <div>
         <!-- ステータス変更 -->
@@ -87,31 +119,33 @@
             <div class="card-body">
                 <form method="post">
                     {% csrf_token %}
-                    
+
                     {% if booking.status == 'pending' %}
-                        <button type="submit" name="action" value="confirm" class="btn btn-success" style="width: 100%; margin-bottom: 0.5rem;">
-                            ✓ 予約を確定する
-                        </button>
-                        <button type="submit" name="action" value="cancel" class="btn btn-danger" style="width: 100%;" 
-                                onclick="return confirm('本当にキャンセルしますか？')">
-                            ✗ キャンセルする
-                        </button>
+                    <button type="submit" name="action" value="confirm" class="btn btn-success"
+                        style="width: 100%; margin-bottom: 0.5rem;">
+                        ✓ 予約を確定する
+                    </button>
+                    <button type="submit" name="action" value="cancel" class="btn btn-danger" style="width: 100%;"
+                        onclick="return confirm('本当にキャンセルしますか？')">
+                        ✗ キャンセルする
+                    </button>
                     {% elif booking.status == 'confirmed' %}
-                        <button type="submit" name="action" value="complete" class="btn btn-primary" style="width: 100%; margin-bottom: 0.5rem;">
-                            ✓ 施術完了にする
-                        </button>
-                        <button type="submit" name="action" value="cancel" class="btn btn-danger" style="width: 100%;" 
-                                onclick="return confirm('本当にキャンセルしますか？')">
-                            ✗ キャンセルする
-                        </button>
+                    <button type="submit" name="action" value="complete" class="btn btn-primary"
+                        style="width: 100%; margin-bottom: 0.5rem;">
+                        ✓ 施術完了にする
+                    </button>
+                    <button type="submit" name="action" value="cancel" class="btn btn-danger" style="width: 100%;"
+                        onclick="return confirm('本当にキャンセルしますか？')">
+                        ✗ キャンセルする
+                    </button>
                     {% elif booking.status == 'completed' %}
-                        <div class="alert alert-success">
-                            施術が完了しています
-                        </div>
+                    <div class="alert alert-success">
+                        施術が完了しています
+                    </div>
                     {% elif booking.status == 'cancelled' %}
-                        <div class="alert alert-warning">
-                            この予約はキャンセルされています
-                        </div>
+                    <div class="alert alert-warning">
+                        この予約はキャンセルされています
+                    </div>
                     {% endif %}
                 </form>
             </div>
@@ -124,29 +158,29 @@
             </div>
             <div class="card-body">
                 {% with customer_bookings=booking.customer.booking_set.all %}
-                    <p>総予約回数: <strong>{{ customer_bookings.count }}回</strong></p>
-                    
-                    {% if customer_bookings.count > 1 %}
-                        <h4>過去の予約</h4>
-                        {% for past_booking in customer_bookings %}
-                            {% if past_booking.id != booking.id %}
-                                <div style="padding: 0.5rem; border-left: 3px solid #8b7355; margin: 0.5rem 0; background: #f8f9fa;">
-                                    <small>
-                                        {{ past_booking.booking_date|date:"Y/m/d" }} - {{ past_booking.service.name }}
-                                        {% if past_booking.status == 'completed' %}
-                                            <span class="badge badge-completed">完了</span>
-                                        {% elif past_booking.status == 'confirmed' %}
-                                            <span class="badge badge-confirmed">確定</span>
-                                        {% elif past_booking.status == 'cancelled' %}
-                                            <span class="badge badge-cancelled">キャンセル</span>
-                                        {% endif %}
-                                    </small>
-                                </div>
-                            {% endif %}
-                        {% endfor %}
-                    {% else %}
-                        <p><small>初回のお客様です</small></p>
-                    {% endif %}
+                <p>総予約回数: <strong>{{ customer_bookings.count }}回</strong></p>
+
+                {% if customer_bookings.count > 1 %}
+                <h4>過去の予約</h4>
+                {% for past_booking in customer_bookings %}
+                {% if past_booking.id != booking.id %}
+                <div style="padding: 0.5rem; border-left: 3px solid #8b7355; margin: 0.5rem 0; background: #f8f9fa;">
+                    <small>
+                        {{ past_booking.booking_date|date:"Y/m/d" }} - {{ past_booking.service.name }}
+                        {% if past_booking.status == 'completed' %}
+                        <span class="badge badge-completed">完了</span>
+                        {% elif past_booking.status == 'confirmed' %}
+                        <span class="badge badge-confirmed">確定</span>
+                        {% elif past_booking.status == 'cancelled' %}
+                        <span class="badge badge-cancelled">キャンセル</span>
+                        {% endif %}
+                    </small>
+                </div>
+                {% endif %}
+                {% endfor %}
+                {% else %}
+                <p><small>初回のお客様です</small></p>
+                {% endif %}
                 {% endwith %}
             </div>
         </div>
@@ -154,7 +188,8 @@
         <!-- ナビゲーション -->
         <div class="card">
             <div class="card-body">
-                <a href="{% url 'dashboard:booking_list' %}" class="btn btn-secondary" style="width: 100%; margin-bottom: 0.5rem;">
+                <a href="{% url 'dashboard:booking_list' %}" class="btn btn-secondary"
+                    style="width: 100%; margin-bottom: 0.5rem;">
                     ← 予約一覧に戻る
                 </a>
                 <a href="{% url 'dashboard:customer_list' %}" class="btn btn-secondary" style="width: 100%;">

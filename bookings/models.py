@@ -53,12 +53,15 @@ class Customer(models.Model):
         ('female', '女性'),
     ]
     
+    # 既存フィールド
     name = models.CharField('名前', max_length=100)
     email = models.EmailField('メールアドレス', unique=True)
     phone = models.CharField('電話番号', max_length=20)
-    notes = models.TextField('備考', blank=True)  # ← 顧客の永続的な備考用（残す！）
+    notes = models.TextField('備考', blank=True)
+    created_at = models.DateTimeField('作成日時', auto_now_add=True)
+    updated_at = models.DateTimeField('更新日時', auto_now=True)
     
-    # 新しく追加するフィールド
+    # 0010で追加されたフィールド
     gender = models.CharField(
         '性別', 
         max_length=10, 
@@ -71,9 +74,6 @@ class Customer(models.Model):
         default=True,
         help_text='初回利用かどうか'
     )
-    
-    created_at = models.DateTimeField('作成日時', auto_now_add=True)
-    updated_at = models.DateTimeField('更新日時', auto_now=True)
     
     class Meta:
         verbose_name = '顧客'
@@ -117,6 +117,18 @@ class Booking(models.Model):
     created_at = models.DateTimeField('作成日時', auto_now_add=True)
     updated_at = models.DateTimeField('更新日時', auto_now=True)
     
+    # 0011で追加されるフィールド（0011実行後に追加）
+    customer_gender = models.CharField(
+        '予約時の性別選択',
+        max_length=10,
+        choices=[('male', '男性'), ('female', '女性')],
+        blank=True,
+        null=True
+    )
+    customer_is_first_visit = models.BooleanField(
+        '予約時の初回利用選択',
+        default=False
+    )
     class Meta:
         verbose_name = '予約'
         verbose_name_plural = '予約'

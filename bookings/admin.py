@@ -27,10 +27,36 @@ class TherapistAdmin(admin.ModelAdmin):
 
 @admin.register(Customer)
 class CustomerAdmin(admin.ModelAdmin):
-    list_display = ['name', 'email', 'phone', 'booking_count_display', 'created_at']
+    list_display = ['name', 'gender_display', 'email', 'phone', 'booking_count_display', 'created_at']
+    list_filter = ['gender', 'is_first_visit', 'created_at']
     search_fields = ['name', 'email', 'phone']
     readonly_fields = ['created_at', 'updated_at']
     ordering = ['-created_at']
+    
+    # フィールドセットで性別と初回利用を編集可能にする
+    fieldsets = (
+        ('基本情報', {
+            'fields': ('name', 'email', 'phone')
+        }),
+        ('属性情報', {
+            'fields': ('gender', 'is_first_visit'),
+            'description': '顧客の性別は予約時の選択を参考に手動で設定してください。'
+        }),
+        ('その他', {
+            'fields': ('notes', 'created_at', 'updated_at'),
+            'classes': ('collapse',),
+        }),
+    )
+    
+    def gender_display(self, obj):
+        """性別をアイコン付きで表示"""
+        if obj.gender == 'male':
+            return format_html('<span style="color: #007bff;">👨 男性</span>')
+        elif obj.gender == 'female':
+            return format_html('<span style="color: #e91e63;">👩 女性</span>')
+        else:
+            return format_html('<span style="color: #ccc;">👤 未設定</span>')
+    gender_display.short_description = '性別'
     
     def booking_count_display(self, obj):
         count = obj.booking_count
@@ -42,26 +68,42 @@ class CustomerAdmin(admin.ModelAdmin):
 
 @admin.register(Booking)
 class BookingAdmin(admin.ModelAdmin):
-    list_display = ['customer', 'service', 'therapist_display', 'booking_date', 'booking_time', 'status_display', 'created_at']
-    list_filter = ['status', 'booking_date', 'service', 'therapist']
-    search_fields = ['customer__name', 'customer__email', 'notes']
-    readonly_fields = ['created_at', 'updated_at', 'end_time']
-    date_hierarchy = 'booking_date'
-    ordering = ['-booking_date', '-booking_time']
+    # 1. list_display に customer_gender_display を追加
+    list_display = ['customer', 'service', 'therapist_display', 'booking_date', 'booking_time', 'customer_gender_display', 'status_display', 'created_at']
     
+    # 2. list_filter に customer_gender, customer_is_first_visit を追加
+    list_filter = ['status', 'customer_gender', 'customer_is_first_visit', 'booking_date', 'service', 'therapist']
+    
+    # 3. 既存のfieldsets に「予約時の顧客情報」セクションを追加
     fieldsets = (
         ('予約情報', {
             'fields': ('customer', 'service', 'therapist', 'booking_date', 'booking_time', 'status')
         }),
-        ('詳細', {
+        ('予約時の顧客情報', {  # ← この部分だけ追加
+            'fields': ('customer_gender', 'customer_is_first_visit'),
+            'description': 'お客様が予約時に選択した情報です。'
+        }),
+        ('詳細', {  # ← 既存のまま
             'fields': ('notes',)
         }),
-        ('システム情報', {
+        ('システム情報', {  # ← 既存のまま
             'fields': ('created_at', 'updated_at', 'end_time'),
             'classes': ('collapse',)
         }),
     )
     
+    # 4. customer_gender_display メソッドのみ追加（他は既存のまま）
+    def customer_gender_display(self, obj):
+        """予約時の性別選択を表示"""
+        if obj.customer_gender == 'male':
+            return format_html('<span style="color: #007bff;">👨</span>')
+        elif obj.customer_gender == 'female':
+            return format_html('<span style="color: #e91e63;">👩</span>')
+        else:
+            return format_html('<span style="color: #ccc;">-</span>')
+    customer_gender_display.short_description = '性別'
+    
+    # 既存のメソッドはそのまま保持
     def therapist_display(self, obj):
         return obj.therapist.display_name if obj.therapist else "指名なし"
     therapist_display.short_description = '施術者'
