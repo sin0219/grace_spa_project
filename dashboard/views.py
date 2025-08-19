@@ -141,9 +141,7 @@ def customer_list(request):
         )
     
     # 予約回数を追加
-    customers = customers.annotate(
-        booking_count=Count('booking')
-    ).order_by('-created_at')
+    customers = customers.order_by('-created_at')
     
     context = {
         'title': '顧客一覧 - GRACE SPA管理画面',

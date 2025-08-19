@@ -100,14 +100,67 @@
                         </div>
                     </div>
 
-                    <!-- 備考欄を追加 -->
+                    <!-- 性別選択 -->
                     <div class="form-group">
-                        <label for="{{ form.notes.id_for_label }}">{{ form.notes.label }}</label>
-                        {{ form.notes }}
-                        <small class="form-help">アレルギーや健康上の注意点などをお聞かせください（任意）</small>
-                        {% if form.notes.errors %}
-                            <div class="field-error">{{ form.notes.errors }}</div>
+                        <label>{{ form.gender.label }}</label>
+                        <div class="radio-group">
+                            {% for choice in form.gender %}
+                                <div class="radio-item">
+                                    {{ choice.tag }}
+                                    <label for="{{ choice.id_for_label }}">{{ choice.choice_label }}</label>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        {% if form.gender.errors %}
+                            <div class="field-error">{{ form.gender.errors }}</div>
                         {% endif %}
+                    </div>
+
+                    <!-- 初回利用確認 -->
+                    <div class="form-group">
+                        <div class="checkbox-item">
+                            {{ form.is_first_visit }}
+                            <label for="{{ form.is_first_visit.id_for_label }}">{{ form.is_first_visit.label }}</label>
+                        </div>
+                        {% if form.is_first_visit.errors %}
+                            <div class="field-error">{{ form.is_first_visit.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- 重要確認事項 -->
+                <div class="terms-section">
+                    <h3>重要確認</h3>
+                    <div class="terms-box">
+                        <h4>サロンからお客様への確認事項</h4>
+                        
+                        <div class="terms-content">
+                            <p><strong>※ご来店に際しての下記に当てはまる方は施術出来ません。</strong></p>
+                            <ul class="prohibition-list">
+                                <li>◆性的な行為をする方</li>
+                                <li>◆風俗的サービスを要求する方</li>
+                                <li>◆重度の水虫感染症、皮膚感染症をお持ちの方</li>
+                                <li>◆妊娠中の方</li>
+                                <li>◆泥酔している方</li>
+                                <li>◆発熱や咳など症状があり体調が悪い方</li>
+                            </ul>
+                            
+                            <p><strong>※当日キャンセルを何度かする方や無連絡で来ない方はキャンセル料が発生します。<br>
+                            また次回からのご来店をお断りしております。</strong></p>
+                            
+                            <p><strong>※ 待合室がない為ご予約の時間より5分以上前の<br>
+                            ご来店はご遠慮下さい。</strong></p>
+                        </div>
+                        
+                        <div class="form-group">
+                            <div class="checkbox-item terms-check">
+                                {{ form.terms_confirmed }}
+                                <label for="{{ form.terms_confirmed.id_for_label }}">{{ form.terms_confirmed.label }}</label>
+                            </div>
+                            {% if form.terms_confirmed.errors %}
+                                <div class="field-error">{{ form.terms_confirmed.errors }}</div>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
 
@@ -339,6 +392,99 @@
         margin-top: 0.5rem;
     }
 
+    /* ラジオボタンとチェックボックス */
+    .radio-group {
+        display: flex;
+        gap: 2rem;
+        margin-top: 0.5rem;
+    }
+
+    .radio-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .checkbox-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.8rem;
+        margin-top: 0.5rem;
+    }
+
+    .checkbox-item input[type="checkbox"],
+    .radio-item input[type="radio"] {
+        width: auto;
+        margin: 0;
+        transform: scale(1.2);
+    }
+
+    .checkbox-item label,
+    .radio-item label {
+        margin-bottom: 0;
+        cursor: pointer;
+        font-weight: normal;
+    }
+
+    /* 重要確認事項 */
+    .terms-section {
+        margin-bottom: 3rem;
+    }
+
+    .terms-section h3 {
+        color: #dc3545;
+        margin-bottom: 1.5rem;
+        border-bottom: 2px solid #dc3545;
+        padding-bottom: 0.5rem;
+    }
+
+    .terms-box {
+        background: #fff5f5;
+        border: 2px solid #dc3545;
+        border-radius: 10px;
+        padding: 2rem;
+    }
+
+    .terms-box h4 {
+        color: #dc3545;
+        margin-bottom: 1.5rem;
+        font-size: 1.2rem;
+        text-align: center;
+    }
+
+    .terms-content {
+        margin-bottom: 2rem;
+        line-height: 1.6;
+    }
+
+    .terms-content p {
+        margin-bottom: 1rem;
+        color: #333;
+    }
+
+    .prohibition-list {
+        margin: 1rem 0;
+        padding-left: 1rem;
+        color: #333;
+    }
+
+    .prohibition-list li {
+        margin-bottom: 0.5rem;
+    }
+
+    .terms-check {
+        background: #f8f9fa;
+        padding: 1rem;
+        border-radius: 8px;
+        border: 2px solid #dc3545;
+    }
+
+    .terms-check label {
+        font-weight: bold;
+        color: #dc3545;
+        font-size: 1.1rem;
+    }
+
     /* セキュリティ注意事項 */
     .security-notice {
         background: #e8f4f8;
@@ -427,6 +573,11 @@
 
         .form-row {
             grid-template-columns: 1fr;
+        }
+
+        .radio-group {
+            flex-direction: column;
+            gap: 1rem;
         }
 
         .form-actions {

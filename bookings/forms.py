@@ -106,15 +106,32 @@ class CustomerInfoForm(forms.Form):
             'placeholder': '090-1234-5678'
         })
     )
-    notes = forms.CharField(
-        label='ご要望・備考',
-        widget=forms.Textarea(attrs={
-            'class': 'form-control',
-            'rows': 3,
-            'placeholder': 'ご質問やご要望があればお書きください'
-        }),
-        required=False
+    
+    # 新しく追加するフィールド
+    GENDER_CHOICES = [
+        ('male', '男性'),
+        ('female', '女性'),
+    ]
+    
+    gender = forms.ChoiceField(
+        label='性別',
+        choices=GENDER_CHOICES,
+        widget=forms.RadioSelect(attrs={'class': 'form-check-input'})
     )
+    
+    is_first_visit = forms.BooleanField(
+        label='当店の利用は初めてですか？',
+        required=False,
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
+    )
+    
+    terms_confirmed = forms.BooleanField(
+        label='確認しました',
+        required=True,
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
+    )
+    
+   
     
     def clean_customer_email(self):
         email = self.cleaned_data['customer_email']

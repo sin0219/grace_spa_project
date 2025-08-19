@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -25,7 +26,7 @@
             position: sticky;
             top: 0;
             z-index: 1000;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
 
         .nav-container {
@@ -72,21 +73,47 @@
         }
 
         .nav-booking-btn {
-            background: rgba(255,255,255,0.2);
-            padding: 0.5rem 1rem;
-            border-radius: 25px;
-            transition: all 0.3s;
+            background: linear-gradient(135deg, #7a6348 0%, #8b7355 25%, #a68b5b 50%, #8b7355 75%, #7a6348 100%);
+            background-size: 300% 300%;
+            color: white !important;
+            padding: 0.7rem 1.5rem;
+            border-radius: 30px;
+            font-weight: bold;
+            text-decoration: none;
+            cursor: pointer;
+            position: relative;
+            z-index: 10;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(139, 115, 85, 0.4);
+            animation: wave 4s ease-in-out infinite;
+            transition: transform 0.3s ease, box-shadow 0.3s ease !important;
         }
 
-        .nav-booking-btn:hover {
-            background: rgba(255,255,255,0.3);
-            transform: translateY(-2px);
+        @keyframes wave {
+
+            0%,
+            100% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+        }
+
+        .header .nav-container .nav-menu .nav-booking-btn:hover {
+            transform: translateY(-3px) !important;
+            box-shadow: 0 8px 25px rgba(139, 115, 85, 0.6) !important;
+            color: white !important;
+            text-decoration: none !important;
+            animation: none !important;
+            background-position: 50% 50% !important;
         }
 
         /* 言語切り替えボタン */
         .language-switch {
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
             color: white;
             padding: 0.4rem 0.8rem;
             border-radius: 20px;
@@ -99,8 +126,8 @@
         }
 
         .language-switch:hover {
-            background: rgba(255,255,255,0.2);
-            border-color: rgba(255,255,255,0.5);
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.5);
             color: white;
             text-decoration: none;
         }
@@ -182,7 +209,7 @@
 
         .btn:hover:not(:disabled) {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
             text-decoration: none;
             color: inherit;
         }
@@ -231,23 +258,65 @@
             text-align: left;
         }
 
-        .mt-1 { margin-top: 0.5rem; }
-        .mt-2 { margin-top: 1rem; }
-        .mt-3 { margin-top: 1.5rem; }
-        .mt-4 { margin-top: 2rem; }
-        .mt-5 { margin-top: 3rem; }
+        .mt-1 {
+            margin-top: 0.5rem;
+        }
 
-        .mb-1 { margin-bottom: 0.5rem; }
-        .mb-2 { margin-bottom: 1rem; }
-        .mb-3 { margin-bottom: 1.5rem; }
-        .mb-4 { margin-bottom: 2rem; }
-        .mb-5 { margin-bottom: 3rem; }
+        .mt-2 {
+            margin-top: 1rem;
+        }
 
-        .p-1 { padding: 0.5rem; }
-        .p-2 { padding: 1rem; }
-        .p-3 { padding: 1.5rem; }
-        .p-4 { padding: 2rem; }
-        .p-5 { padding: 3rem; }
+        .mt-3 {
+            margin-top: 1.5rem;
+        }
+
+        .mt-4 {
+            margin-top: 2rem;
+        }
+
+        .mt-5 {
+            margin-top: 3rem;
+        }
+
+        .mb-1 {
+            margin-bottom: 0.5rem;
+        }
+
+        .mb-2 {
+            margin-bottom: 1rem;
+        }
+
+        .mb-3 {
+            margin-bottom: 1.5rem;
+        }
+
+        .mb-4 {
+            margin-bottom: 2rem;
+        }
+
+        .mb-5 {
+            margin-bottom: 3rem;
+        }
+
+        .p-1 {
+            padding: 0.5rem;
+        }
+
+        .p-2 {
+            padding: 1rem;
+        }
+
+        .p-3 {
+            padding: 1.5rem;
+        }
+
+        .p-4 {
+            padding: 2rem;
+        }
+
+        .p-5 {
+            padding: 3rem;
+        }
 
         /* レスポンシブ対応 */
         @media (max-width: 768px) {
@@ -275,7 +344,8 @@
             /* モバイル用のフォームスタイル */
             .form-control {
                 padding: 0.75rem;
-                font-size: 16px; /* iOS Safari のズームを防ぐ */
+                font-size: 16px;
+                /* iOS Safari のズームを防ぐ */
             }
         }
 
@@ -301,9 +371,10 @@
             }
         }
     </style>
-    
+
     {% block extra_css %}{% endblock %}
 </head>
+
 <body>
     <header class="header">
         <nav class="nav-container">
@@ -324,13 +395,13 @@
     <main class="main-content">
         <!-- メッセージ表示 -->
         {% if messages %}
-            <div class="container">
-                {% for message in messages %}
-                    <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %}">
-                        {{ message }}
-                    </div>
-                {% endfor %}
+        <div class="container">
+            {% for message in messages %}
+            <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %}">
+                {{ message }}
             </div>
+            {% endfor %}
+        </div>
         {% endif %}
 
         {% block content %}{% endblock %}
@@ -344,4 +415,5 @@
 
     {% block extra_js %}{% endblock %}
 </body>
+
 </html>

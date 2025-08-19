@@ -43,12 +43,35 @@ class Therapist(models.Model):
     def __str__(self):
         return self.display_name
 
+# bookings/models.py の Customer モデル部分に以下のフィールドを追加してください
+
 class Customer(models.Model):
     """顧客モデル"""
+    
+    GENDER_CHOICES = [
+        ('male', '男性'),
+        ('female', '女性'),
+    ]
+    
     name = models.CharField('名前', max_length=100)
     email = models.EmailField('メールアドレス', unique=True)
     phone = models.CharField('電話番号', max_length=20)
-    notes = models.TextField('備考', blank=True)
+    notes = models.TextField('備考', blank=True)  # ← 顧客の永続的な備考用（残す！）
+    
+    # 新しく追加するフィールド
+    gender = models.CharField(
+        '性別', 
+        max_length=10, 
+        choices=GENDER_CHOICES,
+        blank=True,
+        null=True
+    )
+    is_first_visit = models.BooleanField(
+        '初回利用', 
+        default=True,
+        help_text='初回利用かどうか'
+    )
+    
     created_at = models.DateTimeField('作成日時', auto_now_add=True)
     updated_at = models.DateTimeField('更新日時', auto_now=True)
     
@@ -58,13 +81,23 @@ class Customer(models.Model):
         ordering = ['-created_at']
     
     def __str__(self):
-        return f'{self.name} ({self.email})'
+        return self.name
     
     @property
     def booking_count(self):
-        """予約回数"""
-        return self.booking_set.count()
-
+        """予約回数を返す"""
+        return self.booking_set.filter(
+            status__in=['confirmed', 'completed']
+        ).count()
+    
+    @property
+    def last_booking_date(self):
+        """最終予約日を返す"""
+        last_booking = self.booking_set.filter(
+            status__in=['confirmed', 'completed']
+        ).order_by('-booking_date').first()
+        return last_booking.booking_date if last_booking else None
+    
 class Booking(models.Model):
     """予約モデル"""
     STATUS_CHOICES = [
