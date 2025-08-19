@@ -151,7 +151,75 @@ class CustomerInfoForm(forms.Form):
             )
         
         return email
-
+    
+    def clean_customer_phone(self):
+        phone = self.cleaned_data['customer_phone']
+        
+        # 電話番号の形式チェック（簡易版）
+        import re
+        if not re.match(r'^[\d\-\+\(\)\s]+$', phone):
+            raise ValidationError('正しい電話番号を入力してください。')
+        
+        return phone
+    
+    def save_customer_and_booking(self, request):
+        """
+        顧客情報と予約を保存（0010/0011のフィールド名に対応）
+        """
+        from .models import Booking, Customer, Service, Therapist
+        from django.utils.dateparse import parse_date, parse_time
+        
+        # セッションから予約情報を取得
+        service_id = request.session.get('service_id')
+        therapist_id = request.session.get('therapist_id')
+        booking_date_str = request.session.get('booking_date')
+        booking_time_str = request.session.get('booking_time')
+        notes_from_step2 = request.session.get('notes', '')
+        
+        # 日時をパース
+        booking_date = parse_date(booking_date_str) if booking_date_str else None
+        booking_time = parse_time(booking_time_str) if booking_time_str else None
+        
+        # 必要な情報が揃っているかチェック
+        if not all([service_id, booking_date, booking_time]):
+            raise ValidationError('予約情報が不完全です。最初からやり直してください。')
+        
+        # サービスと施術者を取得
+        service = Service.objects.get(id=service_id)
+        therapist = Therapist.objects.get(id=therapist_id) if therapist_id else None
+        
+        # 顧客を取得または作成（0010のフィールド名に対応）
+        customer, created = Customer.objects.get_or_create(
+            email=self.cleaned_data['customer_email'],
+            defaults={
+                'name': self.cleaned_data['customer_name'],
+                'phone': self.cleaned_data['customer_phone'],
+                'gender': self.cleaned_data['gender'],  # 0010: Customer.gender
+                'is_first_visit': self.cleaned_data['is_first_visit']  # 0010: Customer.is_first_visit
+            }
+        )
+        
+        # 既存顧客の場合は基本情報のみ更新（性別は管理画面で手動管理）
+        if not created:
+            customer.name = self.cleaned_data['customer_name']
+            customer.phone = self.cleaned_data['customer_phone']
+            customer.save()
+        
+        # 予約を作成（0011のフィールド名に対応）
+        booking = Booking.objects.create(
+            customer=customer,
+            service=service,
+            therapist=therapist,
+            booking_date=booking_date,
+            booking_time=booking_time,
+            notes=notes_from_step2,  # ステップ2の備考
+            customer_gender=self.cleaned_data['gender'],  # 0011: Booking.customer_gender
+            customer_is_first_visit=self.cleaned_data['is_first_visit'],  # 0011: Booking.customer_is_first_visit
+            status='pending'
+        )
+        
+        return booking
+    
 # ===== バリデーション関数 =====
 
 def validate_booking_time_slot(service, booking_date, booking_time, therapist=None):
