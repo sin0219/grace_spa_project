@@ -12,12 +12,12 @@
         <div class="hero-overlay"></div>
     </div>
     <div class="hero-content">
-        <div class="hero-text">
+        <div class="hero-text"> 
             <div class="hero-logo">
-                <img src="/static/images/hero-logo.png" alt="GRACE SPA" class="hero-logo-image">
-            <p>日本とカナダのSPAで長年の実績を積んだPROFESSIONAL<br>本格オイルマッサージで究極の癒しを</p>
+                <img src="/static/images/   hero-logo.png" alt="GRACE SPA" class="hero-logo-image">
+                <p>日本とカナダのSPAで長年の実績を積んだPROFESSIONAL<br>本格オイルマッサージで究極の癒しを</p>
+            </div>
         </div>
-    </div>
 </section>
 
 <section id="about" class="section">
@@ -26,7 +26,8 @@
         <div class="about-content">
             <div class="about-text">
                 <p>GRACE SPAは、日本とカナダのSPAで長年の実績を積んだプロフェッショナルセラピストが運営する完全予約制のプライベートサロンです。</p>
-                <p>ハワイの伝統的なロミロミマッサージとバリ島のバリニーズマッサージを取り入れたオイルリンパマッサージ、タイ政府認定セラピストによるタイ古式マッサージで、お客様一人ひとりに合わせた最高の癒しの時間をご提供いたします。</p>
+                <p>ハワイの伝統的なロミロミマッサージとバリ島のバリニーズマッサージを取り入れたオイルリンパマッサージ、タイ政府認定セラピストによるタイ古式マッサージで、お客様一人ひとりに合わせた最高の癒しの時間をご提供いたします。
+                </p>
             </div>
             <!-- 施術風景の画像エリア -->
             <div class="about-images">
@@ -46,7 +47,7 @@
             {% for service in services %}
             <div class="service-card {% if service.is_combo %}combo-service{% endif %}">
                 {% if service.is_combo %}
-                    <div class="combo-badge">コンボメニュー</div>
+                <div class="combo-badge">コンボメニュー</div>
                 {% endif %}
                 <h3>{{ service.name }}</h3>
                 <div class="service-duration">{{ service.duration }}</div>
@@ -68,7 +69,7 @@
                     <h3>📍 住所</h3>
                     <p>〒064-0809<br>北海道札幌市中央区南9条西4丁目3-15 <br>AMSタワー中島502号室</p>
                 </div>
-                
+
                 <div class="info-group">
                     <h3>🚃 アクセス</h3>
                     <ul>
@@ -76,7 +77,7 @@
                         <li>市電「山鼻9条」より徒歩5分</li>
                     </ul>
                 </div>
-                
+
                 <div class="info-group">
                     <h3>🕐 営業時間</h3>
                     <div class="hours-table">
@@ -94,7 +95,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="info-group">
                     <h3>📞 お問い合わせ・キャンセル申込</h3>
                     <div class="contact-info">
@@ -105,27 +106,25 @@
                         <p class="note">※施術中は電話に出られない場合がございます。<br>お急ぎでない場合はWEB予約をご利用ください。</p>
                     </div>
                 </div>
-                
+
                 <div class="info-group">
                     <h3>🚗 駐車場</h3>
                     <p>無し<br>近隣のコインパーキングをご利用ください<br>（駐車料金の補助はございません）</p>
                 </div>
             </div>
-            
+
             <div class="map-container">
                 <h3>📍 地図</h3>
                 <div class="map-wrapper">
-                    <iframe 
-                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2915.629396845014!2d141.3509683767311!3d43.0492284912833!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x5f0b2a278770a115%3A0x90e02f65682d877a!2z44CSMDY0LTA4MDkg5YyX5rW36YGT5pyt5bmM5biC5Lit5aSu5Yy65Y2X77yZ5p2h6KW_77yU5LiB55uu77yT4oiS77yR77yVIEFtcyBUb3dlciDkuK3ls7Y!5e0!3m2!1sja!2sjp!4v1755438071311!5m2!1sja!2sjp" 
-                        width="100%"
-                        height="400" 
-                        style="border:0; border-radius: 10px;" 
-                        allowfullscreen="" 
-                        loading="lazy" 
-                        referrerpolicy="no-referrer-when-downgrade">
+                    <iframe
+                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2915.629396845014!2d141.3509683767311!3d43.0492284912833!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x5f0b2a278770a115%3A0x90e02f65682d877a!2z44CSMDY0LTA4MDkg5YyX5rW36YGT5pyt5bmM5biC5Lit5aSu5Yy65Y2X77yZ5p2h6KW_77yU5LiB55uu77yT4oiS77yR77yVIEFtcyBUb3dlciDkuK3ls7Y!5e0!3m2!1sja!2sjp!4v1755438071311!5m2!1sja!2sjp"
+                        width="100%" height="400" style="border:0; border-radius: 10px;" allowfullscreen=""
+                        loading="lazy" referrerpolicy="no-referrer-when-downgrade">
                     </iframe>
                 </div>
-                <p class="map-note">地下鉄でお越しの方は中島公園駅2番出口を出て右へ歩くとセブンイレブンがあります。セブンイレブンが1階に入っているマンションの5階になります。マンションの入り口はセブンイレブンの角を右に曲がるとあります。玄関入り口に【AMSタワー中島】の記載を確認しましたらインターフォンで502を押してお呼び出しください。(近くにAMSタワーが2軒あります。当マンションは34階のタワーマンションではなく21階建てのマンションです) </p>
+                <p class="map-note">
+                    地下鉄でお越しの方は中島公園駅2番出口を出て右へ歩くとセブンイレブンがあります。セブンイレブンが1階に入っているマンションの5階になります。マンションの入り口はセブンイレブンの角を右に曲がるとあります。玄関入り口に【AMSタワー中島】の記載を確認しましたらインターフォンで502を押してお呼び出しください。(近くにAMSタワーが2軒あります。当マンションは34階のタワーマンションではなく21階建てのマンションです)
+                </p>
             </div>
         </div>
     </div>
@@ -162,7 +161,7 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background: linear-gradient(135deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.2) 100%);
+        background: linear-gradient(135deg, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.2) 100%);
         z-index: 2;
     }
 
@@ -190,7 +189,7 @@
         width: auto;
         max-width: 400px;
         object-fit: contain;
-        filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.7));
+        filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.7));
         animation: slideInFromLeft 1.2s ease-out;
     }
 
@@ -200,6 +199,7 @@
             transform: translateX(-100%);
             opacity: 0;
         }
+
         100% {
             transform: translateX(0);
             opacity: 1;
@@ -220,6 +220,7 @@
             transform: translateY(30px);
             opacity: 0;
         }
+
         100% {
             transform: translateY(0);
             opacity: 1;
@@ -231,14 +232,14 @@
         font-weight: bold;
         margin-bottom: 1rem;
         letter-spacing: 3px;
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
     }
 
     .hero-content p {
         font-size: 1.3rem;
         margin-bottom: 2rem;
         line-height: 1.8;
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
     }
 
     .cta-button {
@@ -251,12 +252,12 @@
         font-weight: bold;
         transition: all 0.3s;
         display: inline-block;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
     }
 
     .cta-button:hover {
         transform: translateY(-3px);
-        box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
         text-decoration: none;
         color: white;
     }
@@ -315,7 +316,7 @@
         max-width: 500px;
         border-radius: 15px;
         overflow: hidden;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
     }
 
     .image-placeholder {
@@ -374,7 +375,7 @@
         background: white;
         padding: 2rem;
         border-radius: 15px;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
         text-align: center;
         transition: transform 0.3s;
         position: relative;
@@ -428,7 +429,7 @@
         border-radius: 15px;
         font-size: 0.8rem;
         font-weight: bold;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     }
 
     /* アクセスセクション */
@@ -468,7 +469,7 @@
         background: white;
         padding: 2rem;
         border-radius: 15px;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
     }
 
     .info-group {
@@ -491,7 +492,8 @@
         gap: 0.5rem;
     }
 
-    .info-group p, .info-group li {
+    .info-group p,
+    .info-group li {
         color: #555;
         line-height: 1.6;
         margin-bottom: 0.5rem;
@@ -563,7 +565,7 @@
         background: white;
         padding: 2rem;
         border-radius: 15px;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
     }
 
     .map-container h3 {
@@ -578,7 +580,7 @@
     .map-wrapper {
         border-radius: 10px;
         overflow: hidden;
-        box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
     }
 
     .map-note {
@@ -672,11 +674,14 @@
             font-size: 2rem;
         }
 
-        .section h2, .services h2, .access h2 {
+        .section h2,
+        .services h2,
+        .access h2 {
             font-size: 2rem;
         }
 
-        .access-info, .map-container {
+        .access-info,
+        .map-container {
             padding: 1.5rem;
         }
     }
