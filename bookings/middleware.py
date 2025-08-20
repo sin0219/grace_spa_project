@@ -146,3 +146,48 @@ class SuspiciousActivityMiddleware:
         else:
             ip = request.META.get('REMOTE_ADDR')
         return ip
+
+# bookings/middleware.py に以下のクラスを追加
+
+class MaintenanceModeMiddleware:
+    """メンテナンスモードチェックミドルウェア"""
+    
+    def __init__(self, get_response):
+        self.get_response = get_response
+        
+    def __call__(self, request):
+        # 管理画面やダッシュボードのアクセスは許可
+        if (request.path.startswith('/admin/') or 
+            request.path.startswith('/dashboard/') or
+            request.path.startswith('/static/') or
+            request.path.startswith('/media/')):
+            return self.get_response(request)
+        
+        # メンテナンスモードの確認
+        try:
+            from .models import MaintenanceMode
+            maintenance = MaintenanceMode.get_current_settings()
+            
+            if maintenance.is_enabled:
+                # 予約関連のページのみにアクセスした場合（ホームとセラピスト紹介は除外）
+                if (request.path.startswith('/booking/') or
+                    request.path.startswith('/bookings/')):  # トップページとセラピスト紹介は閲覧可能
+                    
+                    # メンテナンス画面を表示
+                    from django.shortcuts import render
+                    from django.http import HttpResponse
+                    
+                    context = {
+                        'maintenance': maintenance,
+                        'title': 'メンテナンス中 - GRACE SPA'
+                    }
+                    
+                    response = render(request, 'maintenance.html', context)
+                    response.status_code = 503  # Service Unavailable
+                    return response
+                    
+        except Exception:
+            # メンテナンスモードの確認でエラーが発生した場合は通常処理を継続
+            pass
+        
+        return self.get_response(request)

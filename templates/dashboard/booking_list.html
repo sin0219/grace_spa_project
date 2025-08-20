@@ -121,101 +121,44 @@
     </div>
 </div>
 
-<!-- ★ 新規追加: 性別・利用状況統計 -->
+<!-- 予約統計 -->
 <div class="card">
     <div class="card-header">
-        <h3>予約統計（表示中の予約）</h3>
+        <h3>予約統計</h3>
     </div>
     <div class="card-body">
         <div class="stats-grid">
             <div class="stat-card">
-                <div class="stat-number">{{ bookings.count }}</div>
+                <div class="stat-number">{{ booking_stats.total_bookings }}</div>
                 <div class="stat-label">総予約数</div>
             </div>
             <div class="stat-card">
-                <div class="stat-number">
-                    {% with male_bookings=0 %}
-                        {% for booking in bookings %}
-                            {% if booking.customer.gender == 'male' %}
-                                {% with male_bookings=male_bookings|add:1 %}{% endwith %}
-                            {% endif %}
-                        {% endfor %}
-                        {% for booking in bookings %}
-                            {% if booking.customer.gender == 'male' and forloop.last %}
-                                {{ forloop.counter0|add:1 }}
-                            {% endif %}
-                        {% endfor %}
-                    {% endwith %}
-                </div>
+                <div class="stat-number">{{ booking_stats.male_bookings }}</div>
                 <div class="stat-label">👨 男性の予約</div>
             </div>
             <div class="stat-card">
-                <div class="stat-number">
-                    {% with female_bookings=0 %}
-                        {% for booking in bookings %}
-                            {% if booking.customer.gender == 'female' %}
-                                {% with female_bookings=female_bookings|add:1 %}{% endwith %}
-                            {% endif %}
-                        {% endfor %}
-                        {% for booking in bookings %}
-                            {% if booking.customer.gender == 'female' and forloop.last %}
-                                {{ forloop.counter0|add:1 }}
-                            {% endif %}
-                        {% endfor %}
-                    {% endwith %}
-                </div>
+                <div class="stat-number">{{ booking_stats.female_bookings }}</div>
                 <div class="stat-label">👩 女性の予約</div>
             </div>
             <div class="stat-card">
-                <div class="stat-number">
-                    {% with first_visit_bookings=0 %}
-                        {% for booking in bookings %}
-                            {% if booking.customer.is_first_visit %}
-                                {% with first_visit_bookings=first_visit_bookings|add:1 %}{% endwith %}
-                            {% endif %}
-                        {% endfor %}
-                        {% for booking in bookings %}
-                            {% if booking.customer.is_first_visit and forloop.last %}
-                                {{ forloop.counter0|add:1 }}
-                            {% endif %}
-                        {% endfor %}
-                    {% endwith %}
-                </div>
+                <div class="stat-number">{{ booking_stats.first_visit_bookings }}</div>
                 <div class="stat-label">初回利用の予約</div>
             </div>
             <div class="stat-card">
-                <div class="stat-number">
-                    {% with pending_bookings=0 %}
-                        {% for booking in bookings %}
-                            {% if booking.status == 'pending' %}
-                                {% with pending_bookings=pending_bookings|add:1 %}{% endwith %}
-                            {% endif %}
-                        {% endfor %}
-                        {% for booking in bookings %}
-                            {% if booking.status == 'pending' and forloop.last %}
-                                {{ forloop.counter0|add:1 }}
-                            {% endif %}
-                        {% endfor %}
-                    {% endwith %}
-                </div>
+                <div class="stat-number">{{ booking_stats.pending_bookings }}</div>
                 <div class="stat-label">申込中の予約</div>
             </div>
             <div class="stat-card">
-                <div class="stat-number">
-                    {% with confirmed_bookings=0 %}
-                        {% for booking in bookings %}
-                            {% if booking.status == 'confirmed' %}
-                                {% with confirmed_bookings=confirmed_bookings|add:1 %}{% endwith %}
-                            {% endif %}
-                        {% endfor %}
-                        {% for booking in bookings %}
-                            {% if booking.status == 'confirmed' and forloop.last %}
-                                {{ forloop.counter0|add:1 }}
-                            {% endif %}
-                        {% endfor %}
-                    {% endwith %}
-                </div>
-                <div class="stat-label">確定済み予約</div>
+                <div class="stat-number">{{ booking_stats.confirmed_bookings }}</div>
+                <div class="stat-label">確定済みの予約</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ booking_stats.completed_bookings }}</div>
+                <div class="stat-label">完了済みの予約</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ booking_stats.cancelled_bookings }}</div>
+                <div class="stat-label">キャンセル済み</div>
             </div>
         </div>
     </div>

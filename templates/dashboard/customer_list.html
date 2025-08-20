@@ -132,7 +132,7 @@
     </div>
 </div>
 
-<!-- ★ 新規追加: 性別統計を含む顧客統計 -->
+<!-- 顧客統計 -->
 <div class="card">
     <div class="card-header">
         <h3>顧客統計</h3>
@@ -140,116 +140,64 @@
     <div class="card-body">
         <div class="stats-grid">
             <div class="stat-card">
-                <div class="stat-number">{{ customers.count }}</div>
+                <div class="stat-number">{{ customer_stats.total_customers }}</div>
                 <div class="stat-label">総顧客数</div>
             </div>
             <div class="stat-card">
-                <div class="stat-number">
-                    {% with male_count=0 %}
-                        {% for customer in customers %}
-                            {% if customer.gender == 'male' %}
-                                {% with male_count=male_count|add:1 %}{% endwith %}
-                            {% endif %}
-                        {% endfor %}
-                        {% for customer in customers %}
-                            {% if customer.gender == 'male' and forloop.last %}
-                                {{ forloop.counter0|add:1 }}
-                            {% endif %}
-                        {% endfor %}
-                    {% endwith %}
-                </div>
+                <div class="stat-number">{{ customer_stats.male_customers }}</div>
                 <div class="stat-label">👨 男性顧客</div>
             </div>
             <div class="stat-card">
-                <div class="stat-number">
-                    {% with female_count=0 %}
-                        {% for customer in customers %}
-                            {% if customer.gender == 'female' %}
-                                {% with female_count=female_count|add:1 %}{% endwith %}
-                            {% endif %}
-                        {% endfor %}
-                        {% for customer in customers %}
-                            {% if customer.gender == 'female' and forloop.last %}
-                                {{ forloop.counter0|add:1 }}
-                            {% endif %}
-                        {% endfor %}
-                    {% endwith %}
-                </div>
+                <div class="stat-number">{{ customer_stats.female_customers }}</div>
                 <div class="stat-label">👩 女性顧客</div>
             </div>
             <div class="stat-card">
-                <div class="stat-number">
-                    {% with first_visit_count=0 %}
-                        {% for customer in customers %}
-                            {% if customer.is_first_visit %}
-                                {% with first_visit_count=first_visit_count|add:1 %}{% endwith %}
-                            {% endif %}
-                        {% endfor %}
-                        {% for customer in customers %}
-                            {% if customer.is_first_visit and forloop.last %}
-                                {{ forloop.counter0|add:1 }}
-                            {% endif %}
-                        {% endfor %}
-                    {% endwith %}
-                </div>
+                <div class="stat-number">{{ customer_stats.unset_gender_customers }}</div>
+                <div class="stat-label">❓ 性別未設定</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ customer_stats.first_visit_customers }}</div>
                 <div class="stat-label">初回顧客</div>
             </div>
             <div class="stat-card">
-                <div class="stat-number">
-                    {% with repeat_customers=0 %}
-                        {% for customer in customers %}
-                            {% if customer.booking_count >= 2 %}
-                                {% with repeat_customers=repeat_customers|add:1 %}{% endwith %}
-                            {% endif %}
-                        {% endfor %}
-                        {% for customer in customers %}
-                            {% if customer.booking_count >= 2 and forloop.last %}
-                                {{ forloop.counter0|add:1 }}
-                            {% endif %}
-                        {% endfor %}
-                    {% endwith %}
-                </div>
-                <div class="stat-label">リピーター</div>
+                <div class="stat-number">{{ customer_stats.repeat_customers }}</div>
+                <div class="stat-label">リピート顧客</div>
             </div>
             <div class="stat-card">
-                <div class="stat-number">
-                    {% with vip_customers=0 %}
-                        {% for customer in customers %}
-                            {% if customer.booking_count >= 5 %}
-                                {% with vip_customers=vip_customers|add:1 %}{% endwith %}
-                            {% endif %}
-                        {% endfor %}
-                        {% for customer in customers %}
-                            {% if customer.booking_count >= 5 and forloop.last %}
-                                {{ forloop.counter0|add:1 }}
-                            {% endif %}
-                        {% endfor %}
-                    {% endwith %}
-                </div>
-                <div class="stat-label">常連客</div>
+                <div class="stat-number">{{ customer_stats.repeat_customers_with_bookings }}</div>
+                <div class="stat-label">実際のリピーター<br><small>(2回以上予約)</small></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ customer_stats.vip_customers }}</div>
+                <div class="stat-label">常連客<br><small>(5回以上予約)</small></div>
             </div>
         </div>
-    </div>
-</div>
-
-<!-- ★ 新規追加: 性別分析の説明 -->
-<div class="card">
-    <div class="card-header">
-        <h3>💡 性別表示について</h3>
-    </div>
-    <div class="card-body">
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
-            <div style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; background: #f8f9fa; border-radius: 5px;">
-                <span style="font-size: 18px; color: #007bff;">👨</span>
-                <span>男性のお客様</span>
-            </div>
-            <div style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; background: #f8f9fa; border-radius: 5px;">
-                <span style="font-size: 18px; color: #e91e63;">👩</span>
-                <span>女性のお客様</span>
-            </div>
-            <div style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; background: #f8f9fa; border-radius: 5px;">
-                <span style="font-size: 16px; color: #6c757d;">❓</span>
-                <span>性別未設定（管理画面で設定可能）</span>
+        
+        <!-- 性別比率の視覚的表示 -->
+        <div style="margin-top: 2rem;">
+            <h4>性別比率</h4>
+            <div style="display: flex; gap: 1rem; align-items: center;">
+                {% if customer_stats.total_customers > 0 %}
+                    <!-- 男性比率 -->
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="font-size: 18px; color: #007bff;">👨</span>
+                        <span>男性: {{ customer_stats.male_customers }}名 ({% widthratio customer_stats.male_customers customer_stats.total_customers 100 %}%)</span>
+                    </div>
+                    <!-- 女性比率 -->
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="font-size: 18px; color: #e91e63;">👩</span>
+                        <span>女性: {{ customer_stats.female_customers }}名 ({% widthratio customer_stats.female_customers customer_stats.total_customers 100 %}%)</span>
+                    </div>
+                    <!-- 未設定比率 -->
+                    {% if customer_stats.unset_gender_customers > 0 %}
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="font-size: 16px; color: #6c757d;">❓</span>
+                        <span>未設定: {{ customer_stats.unset_gender_customers }}名 ({% widthratio customer_stats.unset_gender_customers customer_stats.total_customers 100 %}%)</span>
+                    </div>
+                    {% endif %}
+                {% else %}
+                    <p>まだ顧客データがありません。</p>
+                {% endif %}
             </div>
         </div>
         <p style="margin-top: 1rem; color: #666; font-size: 0.9rem;">

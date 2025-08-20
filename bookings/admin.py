@@ -112,7 +112,7 @@ class BookingAdmin(admin.ModelAdmin):
     list_display = ['customer', 'customer_gender_display', 'service', 'therapist_display', 'booking_date', 'booking_time', 'status_display', 'created_at']
     list_filter = ['status', 'booking_date', 'service', 'therapist', 'customer__gender']  # ★ 性別フィルター追加
     search_fields = ['customer__name', 'customer__email', 'notes']
-    readonly_fields = ['created_at', 'updated_at', 'end_time']
+    readonly_fields = ['created_at', 'updated_at']
     date_hierarchy = 'booking_date'
     ordering = ['-booking_date', '-booking_time']
     
@@ -124,7 +124,7 @@ class BookingAdmin(admin.ModelAdmin):
             'fields': ('notes',)
         }),
         ('システム情報', {
-            'fields': ('created_at', 'updated_at', 'end_time'),
+            'fields': ('created_at', 'updated_at'),
             'classes': ('collapse',)
         }),
     )

@@ -130,9 +130,17 @@ class Booking(models.Model):
     @property
     def end_time(self):
         """施術終了時間"""
-        start_datetime = datetime.datetime.combine(self.booking_date, self.booking_time)
-        end_datetime = start_datetime + datetime.timedelta(minutes=self.service.duration_minutes)
-        return end_datetime.time()
+        # booking_date と booking_time が None でないかチェック
+        if not self.booking_date or not self.booking_time:
+            return None
+    
+        try:
+            start_datetime = datetime.datetime.combine(self.booking_date, self.booking_time)
+            end_datetime = start_datetime + datetime.timedelta(minutes=self.service.duration_minutes)
+            return end_datetime.time()
+        except (AttributeError, TypeError):
+            # service が None の場合などのエラーに対応
+            return None
 
 class BusinessHours(models.Model):
     """営業時間モデル"""

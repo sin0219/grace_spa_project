@@ -78,9 +78,21 @@ def booking_list(request):
     
     bookings = bookings.order_by('-booking_date', '-booking_time')
     
+    booking_stats = {
+        'total_bookings': bookings.count(),
+        'male_bookings': bookings.filter(customer__gender='male').count(),
+        'female_bookings': bookings.filter(customer__gender='female').count(),
+        'first_visit_bookings': bookings.filter(customer__is_first_visit=True).count(),
+        'pending_bookings': bookings.filter(status='pending').count(),
+        'confirmed_bookings': bookings.filter(status='confirmed').count(),
+        'completed_bookings': bookings.filter(status='completed').count(),
+        'cancelled_bookings': bookings.filter(status='cancelled').count(),
+    }
+    
     context = {
         'title': '予約一覧 - GRACE SPA管理画面',
         'bookings': bookings,
+        'booking_stats': booking_stats,  # ★ 統計データを追加
         'status_choices': Booking.STATUS_CHOICES,
         'current_status': status_filter,
         'current_date': date_filter,
@@ -143,9 +155,36 @@ def customer_list(request):
     # 予約回数を追加
     customers = customers.order_by('-created_at')
     
+    # ★ 新規追加: 顧客統計の計算
+    customer_stats = {
+        'total_customers': customers.count(),
+        'male_customers': customers.filter(gender='male').count(),
+        'female_customers': customers.filter(gender='female').count(),
+        'unset_gender_customers': customers.filter(Q(gender__isnull=True) | Q(gender='')).count(),
+        'first_visit_customers': customers.filter(is_first_visit=True).count(),
+        'repeat_customers': customers.filter(is_first_visit=False).count(),
+    }
+    
+    # 予約回数別の統計（リピーター（2回以上）、常連客（5回以上）を計算）
+    # 注意：booking_count はプロパティなので、直接フィルターできない
+    # ここではPythonでカウントする
+    repeat_customers_count = 0
+    vip_customers_count = 0
+    
+    for customer in customers:
+        booking_count = customer.booking_count
+        if booking_count >= 2:
+            repeat_customers_count += 1
+        if booking_count >= 5:
+            vip_customers_count += 1
+    
+    customer_stats['repeat_customers_with_bookings'] = repeat_customers_count
+    customer_stats['vip_customers'] = vip_customers_count
+
     context = {
         'title': '顧客一覧 - GRACE SPA管理画面',
         'customers': customers,
+        'customer_stats': customer_stats,  # ★ 統計データを追加
         'search_query': search,
     }
     return render(request, 'dashboard/customer_list.html', context)

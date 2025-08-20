@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #8b7355 0%, #d4c4a8 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .maintenance-container {
+            max-width: 600px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 3rem;
+            text-align: center;
+            margin: 2rem;
+        }
+        
+        .maintenance-icon {
+            font-size: 5rem;
+            margin-bottom: 1rem;
+            color: #8b7355;
+        }
+        
+        .maintenance-title {
+            font-size: 2.5rem;
+            color: #8b7355;
+            margin-bottom: 1rem;
+            font-weight: bold;
+        }
+        
+        .maintenance-message {
+            font-size: 1.2rem;
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+        }
+        
+        .contact-info {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 2rem;
+            margin-top: 2rem;
+        }
+        
+        .contact-title {
+            font-size: 1.5rem;
+            color: #8b7355;
+            margin-bottom: 1rem;
+            font-weight: bold;
+        }
+        
+        .contact-item {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin: 1rem 0;
+            font-size: 1.1rem;
+        }
+        
+        .contact-icon {
+            font-size: 1.5rem;
+            color: #8b7355;
+        }
+        
+        .contact-value {
+            color: #333;
+            font-weight: 500;
+        }
+        
+        .contact-link {
+            color: #8b7355;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        
+        .contact-link:hover {
+            text-decoration: underline;
+        }
+        
+        .home-button {
+            display: inline-block;
+            background: #8b7355;
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-top: 2rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(139, 115, 85, 0.3);
+        }
+        
+        .home-button:hover {
+            background: #6d5940;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(139, 115, 85, 0.4);
+            color: white;
+            text-decoration: none;
+        }
+        
+        .maintenance-time {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 10px;
+            padding: 1rem;
+            margin: 1.5rem 0;
+            color: #856404;
+        }
+        
+        .time-label {
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        
+        @media (max-width: 768px) {
+            .maintenance-container {
+                margin: 1rem;
+                padding: 2rem;
+            }
+            
+            .maintenance-title {
+                font-size: 2rem;
+            }
+            
+            .maintenance-icon {
+                font-size: 3rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="maintenance-container">
+        <div class="maintenance-icon">🔧</div>
+        
+        <h1 class="maintenance-title">予約システム メンテナンス中</h1>
+        
+        <p class="maintenance-message">
+            {{ maintenance.message|default:"現在、予約システムのメンテナンスを実施しております。予約フォームは一時的にご利用いただけません。ご不便をおかけして申し訳ございません。" }}
+        </p>
+        
+        {% if maintenance.start_time %}
+        <div class="maintenance-time">
+            <div class="time-label">メンテナンス開始時刻</div>
+            {{ maintenance.start_time|date:"Y年n月j日 H:i" }}
+        </div>
+        {% endif %}
+        
+        <div class="contact-info">
+            <h2 class="contact-title">📞 緊急のご予約・お問い合わせ</h2>
+            
+            <div class="contact-item">
+                <span class="contact-icon">📧</span>
+                <span class="contact-value">
+                    <a href="mailto:{{ maintenance.contact_email }}" class="contact-link">
+                        {{ maintenance.contact_email }}
+                    </a>
+                </span>
+            </div>
+            
+            <div class="contact-item">
+                <span class="contact-icon">📞</span>
+                <span class="contact-value">
+                    <a href="tel:{{ maintenance.contact_phone }}" class="contact-link">
+                        {{ maintenance.contact_phone }}
+                    </a>
+                </span>
+            </div>
+            
+            <p style="margin-top: 1.5rem; color: #666; font-size: 0.9rem;">
+                お急ぎの場合は上記連絡先まで直接お電話ください。<br>
+                ご迷惑をおかけして誠に申し訳ございません。
+            </p>
+        </div>
+        
+        <!-- ホームボタンを追加 -->
+        <a href="/" class="home-button">🏠 ホームページに戻る</a>
+    </div>
+</body>
+</html>
