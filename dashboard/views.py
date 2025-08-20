@@ -900,3 +900,214 @@ def toggle_maintenance(request):
             })
     
     return JsonResponse({'success': False, 'message': '無効なリクエストです'})
+# dashboard/views.py の既存コードの最後に以下の関数を追加してください
+
+@staff_member_required
+def sales_dashboard(request):
+    """売上ダッシュボード"""
+    from django.db.models import Sum, Count, Avg
+    from datetime import datetime, timedelta
+    import calendar
+    
+    today = timezone.now().date()
+    
+    # ★ 新機能: URL パラメータから年月を取得
+    year = int(request.GET.get('year', today.year))
+    month = int(request.GET.get('month', today.month))
+    
+    # 選択された年月の月初日を計算
+    try:
+        selected_month = datetime(year, month, 1).date()
+    except ValueError:
+        # 無効な年月の場合は現在月を使用
+        selected_month = today.replace(day=1)
+        year = today.year
+        month = today.month
+    
+    current_month = selected_month
+    
+    # 📊 月別売上（過去12ヶ月）
+    monthly_sales = []
+    for i in range(12):
+        if i == 0:
+            month_start = current_month
+        else:
+            # 前月を計算
+            if current_month.month - i <= 0:
+                year = current_month.year - 1
+                month = 12 + (current_month.month - i)
+            else:
+                year = current_month.year
+                month = current_month.month - i
+            month_start = current_month.replace(year=year, month=month, day=1)
+        
+        # 翌月の1日を計算
+        if month_start.month == 12:
+            next_month = month_start.replace(year=month_start.year + 1, month=1, day=1)
+        else:
+            next_month = month_start.replace(month=month_start.month + 1, day=1)
+        
+        month_revenue = Booking.objects.filter(
+            booking_date__gte=month_start,
+            booking_date__lt=next_month,
+            status='completed'
+        ).aggregate(
+            total=Sum('service__price'),
+            count=Count('id'),
+            avg_price=Avg('service__price')
+        )
+        
+        monthly_sales.append({
+            'month': month_start.strftime('%Y年%m月'),
+            'month_short': month_start.strftime('%m月'),
+            'revenue': month_revenue['total'] or 0,
+            'bookings': month_revenue['count'] or 0,
+            'avg_price': round(month_revenue['avg_price'] or 0, 0),
+        })
+    
+    # 新しい順にソート（最新月が最後に）
+    monthly_sales.reverse()
+    
+    # 📈 選択月の日別売上
+    daily_sales = []
+    days_in_selected_month = calendar.monthrange(year, month)[1]
+    
+    for day in range(1, days_in_selected_month + 1):
+        target_date = selected_month.replace(day=day)
+        
+        daily_revenue = Booking.objects.filter(
+            booking_date=target_date,
+            status='completed'
+        ).aggregate(
+            total=Sum('service__price'),
+            count=Count('id')
+        )
+        
+        daily_sales.append({
+            'date': target_date.strftime('%m/%d'),
+            'day': day,
+            'revenue': daily_revenue['total'] or 0,
+            'bookings': daily_revenue['count'] or 0,
+            'is_today': target_date == today,
+            'is_future': target_date > today
+        })
+    
+    # 🛍️ サービス別売上（選択月）
+    next_month = current_month.replace(month=current_month.month + 1, day=1) if current_month.month < 12 else current_month.replace(year=current_month.year + 1, month=1, day=1)
+    
+    service_sales = Booking.objects.filter(
+        booking_date__gte=current_month,
+        booking_date__lt=next_month,
+        status='completed'
+    ).values('service__name', 'service__price').annotate(
+        count=Count('id'),
+        total=Sum('service__price')
+    ).order_by('-total')
+    
+    # 💆‍♀️ セラピスト別売上（選択月）
+    therapist_sales = Booking.objects.filter(
+        booking_date__gte=current_month,
+        booking_date__lt=next_month,
+        status='completed',
+        therapist__isnull=False
+    ).values('therapist__display_name').annotate(
+        count=Count('id'),
+        total=Sum('service__price')
+    ).order_by('-total')
+    
+    # 📊 選択月の統計サマリー
+    current_month_bookings = Booking.objects.filter(
+        booking_date__gte=current_month,
+        booking_date__lt=next_month,
+        status='completed'
+    )
+    
+    current_month_stats = current_month_bookings.aggregate(
+        total_revenue=Sum('service__price'),
+        total_bookings=Count('id'),
+        avg_price=Avg('service__price')
+    )
+    
+    # 前月との比較（選択月の前月）
+    last_month = current_month.replace(month=current_month.month - 1) if current_month.month > 1 else current_month.replace(year=current_month.year - 1, month=12)
+    last_month_end = current_month
+    
+    last_month_stats = Booking.objects.filter(
+        booking_date__gte=last_month,
+        booking_date__lt=last_month_end,
+        status='completed'
+    ).aggregate(
+        total_revenue=Sum('service__price'),
+        total_bookings=Count('id')
+    )
+    
+    # 成長率計算
+    revenue_growth = 0
+    booking_growth = 0
+    
+    if last_month_stats['total_revenue'] and current_month_stats['total_revenue']:
+        revenue_growth = ((current_month_stats['total_revenue'] - last_month_stats['total_revenue']) / last_month_stats['total_revenue']) * 100
+    
+    if last_month_stats['total_bookings'] and current_month_stats['total_bookings']:
+        booking_growth = ((current_month_stats['total_bookings'] - last_month_stats['total_bookings']) / last_month_stats['total_bookings']) * 100
+    
+    # 📋 統計サマリー
+    summary_stats = {
+        'total_revenue': current_month_stats['total_revenue'] or 0,
+        'total_bookings': current_month_stats['total_bookings'] or 0,
+        'avg_price': round(current_month_stats['avg_price'] or 0, 0),
+        'revenue_growth': round(revenue_growth, 1),
+        'booking_growth': round(booking_growth, 1),
+        'avg_daily_revenue': round((current_month_stats['total_revenue'] or 0) / selected_month.day if selected_month <= today else (current_month_stats['total_revenue'] or 0) / days_in_selected_month, 0),
+        'last_month_revenue': last_month_stats['total_revenue'] or 0,
+        'last_month_bookings': last_month_stats['total_bookings'] or 0,
+    }
+    
+    # ★ 新機能: 月選択用のデータを生成
+    # 最初の予約から現在まで、または過去24ヶ月のどちらか短い方
+    first_booking = Booking.objects.order_by('booking_date').first()
+    if first_booking:
+        start_year = first_booking.booking_date.year
+        start_month = first_booking.booking_date.month
+    else:
+        # 予約がない場合は過去12ヶ月から
+        start_year = today.year - 1
+        start_month = today.month
+    
+    # 月選択肢のリストを生成
+    available_months = []
+    current_date = datetime(start_year, start_month, 1).date()
+    end_date = today.replace(day=1)
+    
+    while current_date <= end_date:
+        available_months.append({
+            'year': current_date.year,
+            'month': current_date.month,
+            'display': current_date.strftime('%Y年%m月'),
+            'is_selected': current_date.year == year and current_date.month == month
+        })
+        
+        # 次の月を計算
+        if current_date.month == 12:
+            current_date = current_date.replace(year=current_date.year + 1, month=1)
+        else:
+            current_date = current_date.replace(month=current_date.month + 1)
+    
+    # 降順にソート（新しい月が最初に）
+    available_months.reverse()
+    
+    context = {
+        'title': '売上ダッシュボード - GRACE SPA管理画面',
+        'monthly_sales': monthly_sales,
+        'daily_sales': daily_sales,
+        'service_sales': service_sales,
+        'therapist_sales': therapist_sales,
+        'summary_stats': summary_stats,
+        'current_month': current_month.strftime('%Y年%m月'),
+        'last_month': last_month.strftime('%Y年%m月'),
+        'selected_year': year,
+        'selected_month': month,
+        'available_months': available_months,  # ★ 新機能: 月選択用データ
+        'is_current_month': selected_month.year == today.year and selected_month.month == today.month,  # ★ 現在月かどうか
+    }
+    return render(request, 'dashboard/sales_dashboard.html', context)

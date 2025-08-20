@@ -12,6 +12,8 @@ urlpatterns = [
     path('dashboard/calendar/', views.calendar_view, name='calendar'),
     path('dashboard/week/', views.week_view, name='week_calendar'),
     
+    # ★ 新規追加: 売上ダッシュボード
+    path('dashboard/sales/', views.sales_dashboard, name='sales_dashboard'),
     # 予約管理機能
     path('dashboard/booking/create/', views.booking_create_dashboard, name='booking_create'),
     

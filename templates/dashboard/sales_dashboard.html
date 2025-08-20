@@ -1,0 +1,490 @@
+{% extends 'dashboard/base_dashboard.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}💰 売上ダッシュボード{% endblock %}
+
+{% block content %}
+<!-- ★ 新機能: 月選択機能 -->
+<div class="card">
+    <div class="card-header">
+        <h3>📅 表示月選択</h3>
+    </div>
+    <div class="card-body">
+        <div class="month-selector">
+            <select id="monthSelector" class="form-control">
+                {% for month_data in available_months %}
+                <option value="{{ month_data.year }}-{{ month_data.month }}" 
+                        {% if month_data.is_selected %}selected{% endif %}>
+                    {{ month_data.display }}
+                    {% if month_data.year == selected_year and month_data.month == selected_month and is_current_month %}
+                        （現在）
+                    {% endif %}
+                </option>
+                {% endfor %}
+            </select>
+            <div class="month-navigation">
+                <!-- 前月・次月ボタンはJavaScriptで実装 -->
+                <button id="prevMonthBtn" class="btn btn-secondary btn-sm">← 前月</button>
+                <button id="nextMonthBtn" class="btn btn-secondary btn-sm">次月 →</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 売上サマリー -->
+<div class="card">
+    <div class="card-header">
+        <h3>📊 {{ current_month }}の売上サマリー</h3>
+        {% if not is_current_month %}
+        <small style="color: #666;">過去のデータを表示中</small>
+        {% endif %}
+    </div>
+    <div class="card-body">
+        <div class="stats-grid">
+            <div class="stat-card highlight">
+                <div class="stat-number">¥{{ summary_stats.total_revenue|floatformat:0 }}</div>
+                <div class="stat-label">{{ current_month }}の売上</div>
+                {% if summary_stats.revenue_growth != 0 %}
+                <div class="stat-growth {% if summary_stats.revenue_growth > 0 %}positive{% else %}negative{% endif %}">
+                    {% if summary_stats.revenue_growth > 0 %}↗{% else %}↘{% endif %} {{ summary_stats.revenue_growth }}%
+                </div>
+                {% endif %}
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ summary_stats.total_bookings }}</div>
+                <div class="stat-label">{{ current_month }}の予約数</div>
+                {% if summary_stats.booking_growth != 0 %}
+                <div class="stat-growth {% if summary_stats.booking_growth > 0 %}positive{% else %}negative{% endif %}">
+                    {% if summary_stats.booking_growth > 0 %}↗{% else %}↘{% endif %} {{ summary_stats.booking_growth }}%
+                </div>
+                {% endif %}
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">¥{{ summary_stats.avg_price|floatformat:0 }}</div>
+                <div class="stat-label">平均客単価</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">¥{{ summary_stats.avg_daily_revenue|floatformat:0 }}</div>
+                <div class="stat-label">1日平均売上</div>
+            </div>
+        </div>
+        
+        <!-- 前月比較 -->
+        <div class="comparison-section">
+            <h4>📈 前月（{{ last_month }}）との比較</h4>
+            <div class="comparison-grid">
+                <div class="comparison-item">
+                    <span class="label">前月売上:</span>
+                    <span class="value">¥{{ summary_stats.last_month_revenue|floatformat:0 }}</span>
+                </div>
+                <div class="comparison-item">
+                    <span class="label">前月予約数:</span>
+                    <span class="value">{{ summary_stats.last_month_bookings }}件</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- グラフ表示エリア -->
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+    <!-- 月別売上推移 -->
+    <div class="card">
+        <div class="card-header">
+            <h3>📈 月別売上推移（過去12ヶ月）</h3>
+        </div>
+        <div class="card-body">
+            <canvas id="monthlyRevenueChart" width="400" height="200"></canvas>
+        </div>
+    </div>
+    
+    <!-- 今月の日別売上 -->
+    <div class="card">
+        <div class="card-header">
+            <h3>📅 {{ current_month }}日別売上</h3>
+        </div>
+        <div class="card-body">
+            <canvas id="dailyRevenueChart" width="400" height="200"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- サービス別売上 & セラピスト別売上 -->
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+    <!-- サービス別売上 -->
+    <div class="card">
+        <div class="card-header">
+            <h3>🛍️ サービス別売上（{{ current_month }}）</h3>
+        </div>
+        <div class="card-body">
+            {% if service_sales %}
+                <div class="service-sales-list">
+                    {% for service in service_sales %}
+                    <div class="service-item">
+                        <div class="service-info">
+                            <div class="service-name">{{ service.service__name }}</div>
+                            <div class="service-details">
+                                {{ service.count }}回 × ¥{{ service.service__price|floatformat:0 }}
+                            </div>
+                        </div>
+                        <div class="service-revenue">¥{{ service.total|floatformat:0 }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- サービス別円グラフ -->
+                <div style="margin-top: 2rem;">
+                    <canvas id="serviceRevenueChart" width="300" height="150"></canvas>
+                </div>
+            {% else %}
+                <p style="text-align: center; color: #666; padding: 2rem;">
+                    {{ current_month }}は完了した予約がありません。
+                </p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- セラピスト別売上 -->
+    <div class="card">
+        <div class="card-header">
+            <h3>💆‍♀️ セラピスト別売上（{{ current_month }}）</h3>
+        </div>
+        <div class="card-body">
+            {% if therapist_sales %}
+                <div class="therapist-sales-list">
+                    {% for therapist in therapist_sales %}
+                    <div class="therapist-item">
+                        <div class="therapist-info">
+                            <div class="therapist-name">{{ therapist.therapist__display_name }}</div>
+                            <div class="therapist-details">{{ therapist.count }}件の施術</div>
+                        </div>
+                        <div class="therapist-revenue">¥{{ therapist.total|floatformat:0 }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p style="text-align: center; color: #666; padding: 2rem;">
+                    {{ current_month }}はセラピスト指名の完了予約がありません。
+                </p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .stat-card {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        border: 2px solid #e9ecef;
+        text-align: center;
+        transition: all 0.3s ease;
+    }
+    
+    .stat-card.highlight {
+        background: linear-gradient(135deg, #8b7355 0%, #d4c4a8 100%);
+        color: white;
+        border-color: #8b7355;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    }
+    
+    .stat-number {
+        font-size: 2rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+    }
+    
+    .stat-label {
+        font-size: 0.9rem;
+        opacity: 0.8;
+    }
+    
+    .stat-growth {
+        font-size: 0.9rem;
+        font-weight: bold;
+        margin-top: 0.5rem;
+    }
+    
+    .stat-growth.positive {
+        color: #28a745;
+    }
+    
+    .stat-growth.negative {
+        color: #dc3545;
+    }
+    
+    .comparison-section {
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid #e9ecef;
+    }
+    
+    .comparison-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .comparison-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.75rem;
+        background: #f8f9fa;
+        border-radius: 8px;
+    }
+    
+    .comparison-item .label {
+        font-weight: 500;
+        color: #666;
+    }
+    
+    .comparison-item .value {
+        font-weight: bold;
+        color: #333;
+    }
+    
+    .service-sales-list, .therapist-sales-list {
+        space-y: 1rem;
+    }
+    
+    .service-item, .therapist-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        background: #f8f9fa;
+        border-radius: 8px;
+        margin-bottom: 0.75rem;
+    }
+    
+    .service-name, .therapist-name {
+        font-weight: bold;
+        color: #333;
+    }
+    
+    .service-details, .therapist-details {
+        font-size: 0.9rem;
+        color: #666;
+    }
+    
+    .service-revenue,     .therapist-revenue {
+        font-weight: bold;
+        font-size: 1.1rem;
+        color: #8b7355;
+    }
+    
+    /* ★ 新機能: 月選択機能のスタイル */
+    .month-selector {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+    
+    .month-selector select {
+        min-width: 200px;
+        padding: 0.75rem;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        font-size: 1rem;
+        background: white;
+        transition: border-color 0.3s;
+    }
+    
+    .month-selector select:focus {
+        outline: none;
+        border-color: #8b7355;
+        box-shadow: 0 0 5px rgba(139, 115, 85, 0.3);
+    }
+    
+    .month-navigation {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+    }
+    
+    .month-navigation .btn {
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+        border-radius: 20px;
+    }
+    
+    @media (max-width: 768px) {
+        .month-selector {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        
+        .month-selector select {
+            min-width: 100%;
+        }
+    }
+</style>
+
+<!-- Chart.js スクリプト -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // ★ 新機能: 月選択機能
+    const monthSelector = document.getElementById('monthSelector');
+    const prevMonthBtn = document.getElementById('prevMonthBtn');
+    const nextMonthBtn = document.getElementById('nextMonthBtn');
+    
+    if (monthSelector) {
+        monthSelector.addEventListener('change', function() {
+            const selectedValue = this.value;
+            const [year, month] = selectedValue.split('-');
+            
+            // URL を更新してページを再読み込み
+            const newUrl = `${window.location.pathname}?year=${year}&month=${month}`;
+            window.location.href = newUrl;
+        });
+        
+        // 前月・次月ボタンの設定
+        const options = Array.from(monthSelector.options);
+        const selectedIndex = monthSelector.selectedIndex;
+        
+        // 前月ボタン
+        if (prevMonthBtn) {
+            if (selectedIndex < options.length - 1) {
+                const prevOption = options[selectedIndex + 1];
+                const [prevYear, prevMonth] = prevOption.value.split('-');
+                prevMonthBtn.onclick = function() {
+                    window.location.href = `${window.location.pathname}?year=${prevYear}&month=${prevMonth}`;
+                };
+                prevMonthBtn.disabled = false;
+            } else {
+                prevMonthBtn.disabled = true;
+            }
+        }
+        
+        // 次月ボタン
+        if (nextMonthBtn) {
+            if (selectedIndex > 0) {
+                const nextOption = options[selectedIndex - 1];
+                const [nextYear, nextMonth] = nextOption.value.split('-');
+                nextMonthBtn.onclick = function() {
+                    window.location.href = `${window.location.pathname}?year=${nextYear}&month=${nextMonth}`;
+                };
+                nextMonthBtn.disabled = false;
+            } else {
+                nextMonthBtn.disabled = true;
+            }
+        }
+    }
+    
+    // 月別売上推移グラフ
+    const monthlyCtx = document.getElementById('monthlyRevenueChart').getContext('2d');
+    new Chart(monthlyCtx, {
+        type: 'line',
+        data: {
+            labels: [{% for month in monthly_sales %}'{{ month.month_short }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+            datasets: [{
+                label: '売上（円）',
+                data: [{% for month in monthly_sales %}{{ month.revenue }}{% if not forloop.last %},{% endif %}{% endfor %}],
+                borderColor: '#8b7355',
+                backgroundColor: 'rgba(139, 115, 85, 0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '¥' + value.toLocaleString();
+                        }
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+    
+    // 日別売上グラフ
+    const dailyCtx = document.getElementById('dailyRevenueChart').getContext('2d');
+    new Chart(dailyCtx, {
+        type: 'bar',
+        data: {
+            labels: [{% for day in daily_sales %}'{{ day.date }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+            datasets: [{
+                label: '売上（円）',
+                data: [{% for day in daily_sales %}{{ day.revenue }}{% if not forloop.last %},{% endif %}{% endfor %}],
+                backgroundColor: [{% for day in daily_sales %}{% if day.is_today %}'rgba(139, 115, 85, 0.8)'{% else %}'rgba(139, 115, 85, 0.6)'{% endif %}{% if not forloop.last %},{% endif %}{% endfor %}],
+                borderColor: '#8b7355',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '¥' + value.toLocaleString();
+                        }
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+    
+    {% if service_sales %}
+    // サービス別円グラフ
+    const serviceCtx = document.getElementById('serviceRevenueChart').getContext('2d');
+    new Chart(serviceCtx, {
+        type: 'doughnut',
+        data: {
+            labels: [{% for service in service_sales %}'{{ service.service__name }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+            datasets: [{
+                data: [{% for service in service_sales %}{{ service.total }}{% if not forloop.last %},{% endif %}{% endfor %}],
+                backgroundColor: [
+                    'rgba(139, 115, 85, 0.8)',
+                    'rgba(212, 196, 168, 0.8)',
+                    'rgba(139, 115, 85, 0.6)',
+                    'rgba(212, 196, 168, 0.6)',
+                    'rgba(139, 115, 85, 0.4)',
+                    'rgba(212, 196, 168, 0.4)'
+                ],
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+    {% endif %}
+});
+</script>
+{% endblock %}
