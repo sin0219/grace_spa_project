@@ -12,13 +12,13 @@
     <div class="card-body">
         <form method="post" class="booking-form" id="bookingForm">
             {% csrf_token %}
-            
+
             {% if form.non_field_errors %}
-                <div class="alert alert-warning">
-                    {% for error in form.non_field_errors %}
-                        <p>{{ error }}</p>
-                    {% endfor %}
-                </div>
+            <div class="alert alert-warning">
+                {% for error in form.non_field_errors %}
+                <p>{{ error }}</p>
+                {% endfor %}
+            </div>
             {% endif %}
 
             <!-- 顧客情報セクション -->
@@ -29,29 +29,54 @@
                         <label for="{{ form.customer_name.id_for_label }}">{{ form.customer_name.label }}</label>
                         {{ form.customer_name }}
                         {% if form.customer_name.errors %}
-                            <div class="field-error">{{ form.customer_name.errors }}</div>
+                        <div class="field-error">{{ form.customer_name.errors }}</div>
                         {% endif %}
                     </div>
                 </div>
-                
+
                 <div class="form-row">
                     <div class="form-group">
                         <label for="{{ form.customer_email.id_for_label }}">{{ form.customer_email.label }}</label>
                         {{ form.customer_email }}
                         {% if form.customer_email.errors %}
-                            <div class="field-error">{{ form.customer_email.errors }}</div>
+                        <div class="field-error">{{ form.customer_email.errors }}</div>
                         {% endif %}
                     </div>
-                    
+
                     <div class="form-group">
                         <label for="{{ form.customer_phone.id_for_label }}">{{ form.customer_phone.label }}</label>
                         {{ form.customer_phone }}
                         {% if form.customer_phone.errors %}
-                            <div class="field-error">{{ form.customer_phone.errors }}</div>
+                        <div class="field-error">{{ form.customer_phone.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- ★ 新規追加: 性別と初回利用フラグ -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="{{ form.customer_gender.id_for_label }}">{{ form.customer_gender.label }}</label>
+                        {{ form.customer_gender }}
+                        <small class="form-help">{{ form.customer_gender.help_text }}</small>
+                        {% if form.customer_gender.errors %}
+                        <div class="field-error">{{ form.customer_gender.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 1.5rem;">
+                            {{ form.customer_is_first_visit }}
+                            <label for="{{ form.customer_is_first_visit.id_for_label }}">{{
+                                form.customer_is_first_visit.label }}</label>
+                        </div>
+                        <small class="form-help">{{ form.customer_is_first_visit.help_text }}</small>
+                        {% if form.customer_is_first_visit.errors %}
+                        <div class="field-error">{{ form.customer_is_first_visit.errors }}</div>
                         {% endif %}
                     </div>
                 </div>
             </div>
+
 
             <!-- 予約情報セクション -->
             <div class="form-section">
@@ -61,31 +86,31 @@
                         <label for="{{ form.service.id_for_label }}">{{ form.service.label }}</label>
                         {{ form.service }}
                         {% if form.service.errors %}
-                            <div class="field-error">{{ form.service.errors }}</div>
+                        <div class="field-error">{{ form.service.errors }}</div>
                         {% endif %}
                     </div>
-                    
+
                     <div class="form-group">
                         <label for="{{ form.therapist.id_for_label }}">{{ form.therapist.label }}</label>
                         {{ form.therapist }}
                         {% if form.therapist.errors %}
-                            <div class="field-error">{{ form.therapist.errors }}</div>
+                        <div class="field-error">{{ form.therapist.errors }}</div>
                         {% endif %}
                     </div>
-                    
+
                     <div class="form-group">
                         <label for="{{ form.status.id_for_label }}">{{ form.status.label }}</label>
                         {{ form.status }}
                         {% if form.status.errors %}
-                            <div class="field-error">{{ form.status.errors }}</div>
+                        <div class="field-error">{{ form.status.errors }}</div>
                         {% endif %}
                     </div>
                 </div>
-                
+
                 <!-- 日付選択セクション -->
                 <div class="date-time-section">
                     <h5>日時選択</h5>
-                    
+
                     <!-- 日付選択 -->
                     <div class="date-selection">
                         <label>予約日</label>
@@ -96,7 +121,13 @@
                                 <button type="button" class="calendar-nav" id="nextMonth">›</button>
                             </div>
                             <div class="calendar-weekdays">
-                                <div>日</div><div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div>土</div>
+                                <div>日</div>
+                                <div>月</div>
+                                <div>火</div>
+                                <div>水</div>
+                                <div>木</div>
+                                <div>金</div>
+                                <div>土</div>
                             </div>
                             <div class="calendar-days" id="calendarDays">
                                 <!-- JavaScriptで動的に生成 -->
@@ -115,21 +146,21 @@
                     <!-- 隠しフィールド -->
                     <input type="hidden" name="booking_date" id="id_booking_date">
                     <input type="hidden" name="booking_time" id="id_booking_time">
-                    
+
                     <!-- エラー表示 -->
                     {% if form.booking_date.errors %}
-                        <div class="field-error">{{ form.booking_date.errors }}</div>
+                    <div class="field-error">{{ form.booking_date.errors }}</div>
                     {% endif %}
                     {% if form.booking_time.errors %}
-                        <div class="field-error">{{ form.booking_time.errors }}</div>
+                    <div class="field-error">{{ form.booking_time.errors }}</div>
                     {% endif %}
                 </div>
-                
+
                 <div class="form-group">
                     <label for="{{ form.notes.id_for_label }}">{{ form.notes.label }}</label>
                     {{ form.notes }}
                     {% if form.notes.errors %}
-                        <div class="field-error">{{ form.notes.errors }}</div>
+                    <div class="field-error">{{ form.notes.errors }}</div>
                     {% endif %}
                 </div>
             </div>
@@ -177,38 +208,38 @@
         border-radius: 8px;
         background: #f8f9fa;
     }
-    
+
     .form-section h4 {
         color: #8b7355;
         margin-bottom: 1rem;
         border-bottom: 2px solid #d4c4a8;
         padding-bottom: 0.5rem;
     }
-    
+
     .form-row {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
         gap: 1rem;
         margin-bottom: 1rem;
     }
-    
+
     .form-group {
         display: flex;
         flex-direction: column;
     }
-    
+
     .form-group label {
         font-weight: bold;
         margin-bottom: 0.5rem;
         color: #555;
     }
-    
+
     .field-error {
         color: #dc3545;
         font-size: 0.9rem;
         margin-top: 0.25rem;
     }
-    
+
     .form-actions {
         text-align: center;
         margin-top: 2rem;
@@ -216,7 +247,7 @@
         gap: 1rem;
         justify-content: center;
     }
-    
+
     .alert-warning {
         background-color: #fff3cd;
         border: 1px solid #ffeaa7;
@@ -455,266 +486,266 @@
 </style>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    let currentDate = new Date();
-    let selectedDate = null;
-    let selectedTime = null;
-    
-    // 営業時間情報（デフォルト値）
-    const businessHours = {
-        0: { is_open: true, open_time: '09:00:00', close_time: '20:00:00', last_booking_time: '19:00:00' }, // 月
-        1: { is_open: true, open_time: '09:00:00', close_time: '20:00:00', last_booking_time: '19:00:00' }, // 火
-        2: { is_open: true, open_time: '09:00:00', close_time: '20:00:00', last_booking_time: '19:00:00' }, // 水
-        3: { is_open: true, open_time: '09:00:00', close_time: '20:00:00', last_booking_time: '19:00:00' }, // 木
-        4: { is_open: true, open_time: '09:00:00', close_time: '20:00:00', last_booking_time: '19:00:00' }, // 金
-        5: { is_open: true, open_time: '09:00:00', close_time: '20:00:00', last_booking_time: '19:00:00' }, // 土
-        6: { is_open: false, open_time: '09:00:00', close_time: '20:00:00', last_booking_time: '19:00:00' } // 日
-    };
-    
-    // カレンダー初期化
-    updateCalendar();
-    
-    // イベントリスナー
-    document.getElementById('prevMonth').addEventListener('click', () => {
-        currentDate.setMonth(currentDate.getMonth() - 1);
+    document.addEventListener('DOMContentLoaded', function () {
+        let currentDate = new Date();
+        let selectedDate = null;
+        let selectedTime = null;
+
+        // 営業時間情報（デフォルト値）
+        const businessHours = {
+            0: { is_open: true, open_time: '09:00:00', close_time: '20:00:00', last_booking_time: '19:00:00' }, // 月
+            1: { is_open: true, open_time: '09:00:00', close_time: '20:00:00', last_booking_time: '19:00:00' }, // 火
+            2: { is_open: true, open_time: '09:00:00', close_time: '20:00:00', last_booking_time: '19:00:00' }, // 水
+            3: { is_open: true, open_time: '09:00:00', close_time: '20:00:00', last_booking_time: '19:00:00' }, // 木
+            4: { is_open: true, open_time: '09:00:00', close_time: '20:00:00', last_booking_time: '19:00:00' }, // 金
+            5: { is_open: true, open_time: '09:00:00', close_time: '20:00:00', last_booking_time: '19:00:00' }, // 土
+            6: { is_open: false, open_time: '09:00:00', close_time: '20:00:00', last_booking_time: '19:00:00' } // 日
+        };
+
+        // カレンダー初期化
         updateCalendar();
-    });
-    
-    document.getElementById('nextMonth').addEventListener('click', () => {
-        currentDate.setMonth(currentDate.getMonth() + 1);
-        updateCalendar();
-    });
-    
-    // サービス・施術者選択の変更を監視
-    const serviceSelect = document.querySelector('select[name="service"]');
-    const therapistSelect = document.querySelector('select[name="therapist"]');
-    
-    if (serviceSelect) {
-        serviceSelect.addEventListener('change', () => {
-            if (selectedDate) {
-                loadAvailableTimes(selectedDate);
-            }
+
+        // イベントリスナー
+        document.getElementById('prevMonth').addEventListener('click', () => {
+            currentDate.setMonth(currentDate.getMonth() - 1);
+            updateCalendar();
         });
-    }
-    
-    if (therapistSelect) {
-        therapistSelect.addEventListener('change', () => {
-            if (selectedDate) {
-                loadAvailableTimes(selectedDate);
-            }
+
+        document.getElementById('nextMonth').addEventListener('click', () => {
+            currentDate.setMonth(currentDate.getMonth() + 1);
+            updateCalendar();
         });
-    }
-    
-    function updateCalendar() {
-        const year = currentDate.getFullYear();
-        const month = currentDate.getMonth();
-        
-        // 月名を更新
-        const monthNames = ['1月', '2月', '3月', '4月', '5月', '6月', 
-                           '7月', '8月', '9月', '10月', '11月', '12月'];
-        document.getElementById('currentMonth').textContent = `${year}年${monthNames[month]}`;
-        
-        // カレンダーの日付を生成
-        const firstDay = new Date(year, month, 1);
-        const lastDay = new Date(year, month + 1, 0);
-        const startDate = new Date(firstDay);
-        startDate.setDate(startDate.getDate() - firstDay.getDay());
-        
-        const calendarDays = document.getElementById('calendarDays');
-        calendarDays.innerHTML = '';
-        
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        
-        for (let i = 0; i < 42; i++) {
-            const date = new Date(startDate);
-            date.setDate(startDate.getDate() + i);
-            
-            const dayElement = document.createElement('div');
-            dayElement.className = 'calendar-day';
-            dayElement.textContent = date.getDate();
-            
-            // クラスの設定
-            if (date.getMonth() !== month) {
-                dayElement.classList.add('other-month');
-            } else if (date < today) {
-                dayElement.classList.add('disabled');
-            } else if (date.getTime() === today.getTime()) {
-                dayElement.classList.add('today');
+
+        // サービス・施術者選択の変更を監視
+        const serviceSelect = document.querySelector('select[name="service"]');
+        const therapistSelect = document.querySelector('select[name="therapist"]');
+
+        if (serviceSelect) {
+            serviceSelect.addEventListener('change', () => {
+                if (selectedDate) {
+                    loadAvailableTimes(selectedDate);
+                }
+            });
+        }
+
+        if (therapistSelect) {
+            therapistSelect.addEventListener('change', () => {
+                if (selectedDate) {
+                    loadAvailableTimes(selectedDate);
+                }
+            });
+        }
+
+        function updateCalendar() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+
+            // 月名を更新
+            const monthNames = ['1月', '2月', '3月', '4月', '5月', '6月',
+                '7月', '8月', '9月', '10月', '11月', '12月'];
+            document.getElementById('currentMonth').textContent = `${year}年${monthNames[month]}`;
+
+            // カレンダーの日付を生成
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const startDate = new Date(firstDay);
+            startDate.setDate(startDate.getDate() - firstDay.getDay());
+
+            const calendarDays = document.getElementById('calendarDays');
+            calendarDays.innerHTML = '';
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            for (let i = 0; i < 42; i++) {
+                const date = new Date(startDate);
+                date.setDate(startDate.getDate() + i);
+
+                const dayElement = document.createElement('div');
+                dayElement.className = 'calendar-day';
+                dayElement.textContent = date.getDate();
+
+                // クラスの設定
+                if (date.getMonth() !== month) {
+                    dayElement.classList.add('other-month');
+                } else if (date < today) {
+                    dayElement.classList.add('disabled');
+                } else if (date.getTime() === today.getTime()) {
+                    dayElement.classList.add('today');
+                }
+
+                // 営業日チェック
+                const dayOfWeek = date.getDay();
+                const businessHour = businessHours[dayOfWeek];
+                if (!businessHour || !businessHour.is_open) {
+                    dayElement.classList.add('disabled');
+                }
+
+                // クリックイベント
+                if (!dayElement.classList.contains('disabled') && !dayElement.classList.contains('other-month')) {
+                    dayElement.addEventListener('click', () => selectDate(date, dayElement));
+                }
+
+                calendarDays.appendChild(dayElement);
             }
-            
-            // 営業日チェック
+        }
+
+        function selectDate(date, element) {
+            // 前の選択をクリア
+            document.querySelectorAll('.calendar-day.selected').forEach(el => {
+                el.classList.remove('selected');
+            });
+
+            // 新しい選択を設定
+            element.classList.add('selected');
+            selectedDate = date;
+
+            // 隠しフィールドに設定
+            document.getElementById('id_booking_date').value = date.toISOString().split('T')[0];
+
+            // 利用可能時間を読み込み
+            loadAvailableTimes(date);
+        }
+
+        function loadAvailableTimes(date) {
+            const therapistSelect = document.querySelector('select[name="therapist"]');
+            const serviceSelect = document.querySelector('select[name="service"]');
+
+            const therapistId = therapistSelect ? therapistSelect.value : '';
+            const serviceId = serviceSelect ? serviceSelect.value : '';
+
+            const dateStr = date.toISOString().split('T')[0];
+            const url = `/dashboard/api/available-times/?date=${dateStr}&therapist_id=${therapistId}&service_id=${serviceId}`;
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    displayTimeslots(data.time_slots);
+                })
+                .catch(error => {
+                    console.error('Error loading times:', error);
+                    // エラー時はローカルで時間スロットを生成
+                    displayLocalTimeslots(date);
+                });
+        }
+
+        function displayLocalTimeslots(date) {
             const dayOfWeek = date.getDay();
             const businessHour = businessHours[dayOfWeek];
+
             if (!businessHour || !businessHour.is_open) {
-                dayElement.classList.add('disabled');
+                const timeSlotsContainer = document.getElementById('timeSlots');
+                timeSlotsContainer.innerHTML = '<p class="no-times">この日は営業していません。</p>';
+                return;
             }
-            
-            // クリックイベント
-            if (!dayElement.classList.contains('disabled') && !dayElement.classList.contains('other-month')) {
-                dayElement.addEventListener('click', () => selectDate(date, dayElement));
-            }
-            
-            calendarDays.appendChild(dayElement);
-        }
-    }
-    
-    function selectDate(date, element) {
-        // 前の選択をクリア
-        document.querySelectorAll('.calendar-day.selected').forEach(el => {
-            el.classList.remove('selected');
-        });
-        
-        // 新しい選択を設定
-        element.classList.add('selected');
-        selectedDate = date;
-        
-        // 隠しフィールドに設定
-        document.getElementById('id_booking_date').value = date.toISOString().split('T')[0];
-        
-        // 利用可能時間を読み込み
-        loadAvailableTimes(date);
-    }
-    
-    function loadAvailableTimes(date) {
-        const therapistSelect = document.querySelector('select[name="therapist"]');
-        const serviceSelect = document.querySelector('select[name="service"]');
-        
-        const therapistId = therapistSelect ? therapistSelect.value : '';
-        const serviceId = serviceSelect ? serviceSelect.value : '';
-        
-        const dateStr = date.toISOString().split('T')[0];
-        const url = `/dashboard/api/available-times/?date=${dateStr}&therapist_id=${therapistId}&service_id=${serviceId}`;
-        
-        fetch(url)
-            .then(response => response.json())
-            .then(data => {
-                displayTimeslots(data.time_slots);
-            })
-            .catch(error => {
-                console.error('Error loading times:', error);
-                // エラー時はローカルで時間スロットを生成
-                displayLocalTimeslots(date);
-            });
-    }
-    
-    function displayLocalTimeslots(date) {
-        const dayOfWeek = date.getDay();
-        const businessHour = businessHours[dayOfWeek];
-        
-        if (!businessHour || !businessHour.is_open) {
+
             const timeSlotsContainer = document.getElementById('timeSlots');
-            timeSlotsContainer.innerHTML = '<p class="no-times">この日は営業していません。</p>';
-            return;
-        }
-        
-        const timeSlotsContainer = document.getElementById('timeSlots');
-        timeSlotsContainer.innerHTML = '';
-        
-        // 営業時間内の時間スロットを10分刻みで生成
-        const openTime = parseTime(businessHour.open_time);
-        const lastBookingTime = parseTime(businessHour.last_booking_time);
-        
-        let currentTime = openTime;
-        
-        while (currentTime <= lastBookingTime) {
-            const timeStr = formatTime(currentTime);
-            
-            const timeSlot = document.createElement('div');
-            timeSlot.className = 'time-slot available';
-            timeSlot.textContent = timeStr;
-            timeSlot.addEventListener('click', () => selectTime(timeStr, timeSlot));
-            
-            timeSlotsContainer.appendChild(timeSlot);
-            
-            currentTime += 10; // 10分刻み
-        }
-    }
-    
-    function displayTimeslots(timeSlots) {
-        const timeSlotsContainer = document.getElementById('timeSlots');
-        timeSlotsContainer.innerHTML = '';
-        
-        if (timeSlots.length === 0) {
-            timeSlotsContainer.innerHTML = '<p class="no-times">この日は予約可能な時間がありません。</p>';
-            return;
-        }
-        
-        timeSlots.forEach(timeData => {
-            const timeSlot = document.createElement('div');
-            timeSlot.className = 'time-slot';
-            timeSlot.textContent = timeData.time;
-            
-            // ステータスに応じてクラスを設定
-            if (timeData.status === 'available') {
-                timeSlot.classList.add('available');
-                timeSlot.addEventListener('click', () => selectTime(timeData.time, timeSlot));
-            } else if (timeData.status === 'booking_conflict') {
-                timeSlot.classList.add('booking-conflict');
-                timeSlot.title = `既存予約: ${timeData.conflict_info || ''}`;
-                // 管理者なので重複も選択可能
-                timeSlot.addEventListener('click', () => selectTime(timeData.time, timeSlot));
-            } else if (timeData.status === 'schedule_conflict') {
-                timeSlot.classList.add('schedule-conflict');
-                timeSlot.title = `予定: ${timeData.conflict_info || ''}`;
-                // 管理者なので重複も選択可能
-                timeSlot.addEventListener('click', () => selectTime(timeData.time, timeSlot));
-            } else {
-                timeSlot.classList.add('outside-hours');
-                timeSlot.title = '営業時間外';
+            timeSlotsContainer.innerHTML = '';
+
+            // 営業時間内の時間スロットを10分刻みで生成
+            const openTime = parseTime(businessHour.open_time);
+            const lastBookingTime = parseTime(businessHour.last_booking_time);
+
+            let currentTime = openTime;
+
+            while (currentTime <= lastBookingTime) {
+                const timeStr = formatTime(currentTime);
+
+                const timeSlot = document.createElement('div');
+                timeSlot.className = 'time-slot available';
+                timeSlot.textContent = timeStr;
+                timeSlot.addEventListener('click', () => selectTime(timeStr, timeSlot));
+
+                timeSlotsContainer.appendChild(timeSlot);
+
+                currentTime += 10; // 10分刻み
             }
-            
-            timeSlotsContainer.appendChild(timeSlot);
-        });
-    }
-    
-    function selectTime(time, element) {
-        // 営業時間外は選択不可
-        if (element.classList.contains('outside-hours')) {
-            return;
         }
-        
-        // 前の選択をクリア
-        document.querySelectorAll('.time-slot.selected').forEach(el => {
-            el.classList.remove('selected');
-        });
-        
-        // 新しい選択を設定
-        element.classList.add('selected');
-        selectedTime = time;
-        
-        // 隠しフィールドに設定
-        document.getElementById('id_booking_time').value = time;
-        
-        // 送信ボタンを有効化
-        updateSubmitButton();
-    }
-    
-    function updateSubmitButton() {
-        const submitBtn = document.getElementById('submitBtn');
-        submitBtn.disabled = false; // 管理者なので基本的に有効
-    }
-    
-    // ユーティリティ関数
-    function parseTime(timeStr) {
-        const [hours, minutes] = timeStr.split(':').map(Number);
-        return hours * 60 + minutes;
-    }
-    
-    function formatTime(minutes) {
-        const hours = Math.floor(minutes / 60);
-        const mins = minutes % 60;
-        return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
-    }
-    
-    // フォーム送信時のバリデーション
-    document.getElementById('bookingForm').addEventListener('submit', function(e) {
-        if (!selectedDate || !selectedTime) {
-            e.preventDefault();
-            alert('日付と時間を選択してください。');
-            return false;
+
+        function displayTimeslots(timeSlots) {
+            const timeSlotsContainer = document.getElementById('timeSlots');
+            timeSlotsContainer.innerHTML = '';
+
+            if (timeSlots.length === 0) {
+                timeSlotsContainer.innerHTML = '<p class="no-times">この日は予約可能な時間がありません。</p>';
+                return;
+            }
+
+            timeSlots.forEach(timeData => {
+                const timeSlot = document.createElement('div');
+                timeSlot.className = 'time-slot';
+                timeSlot.textContent = timeData.time;
+
+                // ステータスに応じてクラスを設定
+                if (timeData.status === 'available') {
+                    timeSlot.classList.add('available');
+                    timeSlot.addEventListener('click', () => selectTime(timeData.time, timeSlot));
+                } else if (timeData.status === 'booking_conflict') {
+                    timeSlot.classList.add('booking-conflict');
+                    timeSlot.title = `既存予約: ${timeData.conflict_info || ''}`;
+                    // 管理者なので重複も選択可能
+                    timeSlot.addEventListener('click', () => selectTime(timeData.time, timeSlot));
+                } else if (timeData.status === 'schedule_conflict') {
+                    timeSlot.classList.add('schedule-conflict');
+                    timeSlot.title = `予定: ${timeData.conflict_info || ''}`;
+                    // 管理者なので重複も選択可能
+                    timeSlot.addEventListener('click', () => selectTime(timeData.time, timeSlot));
+                } else {
+                    timeSlot.classList.add('outside-hours');
+                    timeSlot.title = '営業時間外';
+                }
+
+                timeSlotsContainer.appendChild(timeSlot);
+            });
         }
+
+        function selectTime(time, element) {
+            // 営業時間外は選択不可
+            if (element.classList.contains('outside-hours')) {
+                return;
+            }
+
+            // 前の選択をクリア
+            document.querySelectorAll('.time-slot.selected').forEach(el => {
+                el.classList.remove('selected');
+            });
+
+            // 新しい選択を設定
+            element.classList.add('selected');
+            selectedTime = time;
+
+            // 隠しフィールドに設定
+            document.getElementById('id_booking_time').value = time;
+
+            // 送信ボタンを有効化
+            updateSubmitButton();
+        }
+
+        function updateSubmitButton() {
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = false; // 管理者なので基本的に有効
+        }
+
+        // ユーティリティ関数
+        function parseTime(timeStr) {
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            return hours * 60 + minutes;
+        }
+
+        function formatTime(minutes) {
+            const hours = Math.floor(minutes / 60);
+            const mins = minutes % 60;
+            return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+        }
+
+        // フォーム送信時のバリデーション
+        document.getElementById('bookingForm').addEventListener('submit', function (e) {
+            if (!selectedDate || !selectedTime) {
+                e.preventDefault();
+                alert('日付と時間を選択してください。');
+                return false;
+            }
+        });
     });
-});
 </script>
 {% endblock %}

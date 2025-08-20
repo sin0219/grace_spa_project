@@ -18,7 +18,43 @@
                 </tr>
                 <tr style="border-bottom: 1px solid #e9ecef;">
                     <td style="padding: 1rem; font-weight: bold; background: #f8f9fa;">お客様名</td>
-                    <td style="padding: 1rem;">{{ booking.customer.name }} 様</td>
+                    <td style="padding: 1rem;">
+                        <!-- ★ 修正: 性別アイコンと名前を表示 -->
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            {% if booking.customer.gender == 'male' %}
+                            <span style="font-size: 18px; color: #007bff;" title="男性">👨</span>
+                            {% elif booking.customer.gender == 'female' %}
+                            <span style="font-size: 18px; color: #e91e63;" title="女性">👩</span>
+                            {% else %}
+                            <span style="font-size: 16px; color: #6c757d;" title="性別未設定">❓</span>
+                            {% endif %}
+                            <strong>{{ booking.customer.name }} 様</strong>
+                        </div>
+                        <!-- ★ 新規追加: 利用状況表示 -->
+                        <div style="margin-top: 0.5rem;">
+                            {% if booking.customer.is_first_visit %}
+                            <span class="badge"
+                                style="background: #28a745; color: white; font-size: 0.8rem;">初回利用</span>
+                            {% else %}
+                            <span class="badge"
+                                style="background: #6c757d; color: white; font-size: 0.8rem;">リピート利用</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                <!-- ★ 新規追加: 予約時の性別選択情報 -->
+                <tr style="border-bottom: 1px solid #e9ecef;">
+                    <td style="padding: 1rem; font-weight: bold; background: #f8f9fa;">性別（予約時選択）</td>
+                    <td style="padding: 1rem;">
+                        {% if booking.customer.gender == 'male' %}
+                        <span style="color: #007bff; font-weight: bold;">👨 男性</span>
+                        {% elif booking.customer.gender == 'female' %}
+                        <span style="color: #e91e63; font-weight: bold;">👩 女性</span>
+                        {% else %}
+                        <span style="color: #6c757d;">❓ 未設定</span>
+                        <small style="color: #dc3545; margin-left: 0.5rem;">（管理画面で設定してください）</small>
+                        {% endif %}
+                    </td>
                 </tr>
                 <tr style="border-bottom: 1px solid #e9ecef;">
                     <td style="padding: 1rem; font-weight: bold; background: #f8f9fa;">メールアドレス</td>
@@ -47,15 +83,15 @@
                     <td style="padding: 1rem; font-weight: bold; background: #f8f9fa;">ステータス</td>
                     <td style="padding: 1rem;">
                         {% if booking.status == 'pending' %}
-                            <span class="badge badge-pending">申込中</span>
+                        <span class="badge badge-pending">申込中</span>
                         {% elif booking.status == 'confirmed' %}
-                            <span class="badge badge-confirmed">確定</span>
+                        <span class="badge badge-confirmed">確定</span>
                         {% elif booking.status == 'completed' %}
-                            <span class="badge badge-completed">完了</span>
+                        <span class="badge badge-completed">完了</span>
                         {% elif booking.status == 'cancelled' %}
-                            <span class="badge badge-cancelled">キャンセル</span>
+                        <span class="badge badge-cancelled">キャンセル</span>
                         {% elif booking.status == 'no_show' %}
-                            <span class="badge badge-no-show">無断キャンセル</span>
+                        <span class="badge badge-no-show">無断キャンセル</span>
                         {% endif %}
                     </td>
                 </tr>
@@ -75,78 +111,125 @@
                 </tr>
             </table>
         </div>
+
+        <!-- アクションボタン -->
+        <div class="card-footer">
+            <form method="post">
+                {% csrf_token %}
+
+                {% if booking.status == 'pending' %}
+                <button type="submit" name="action" value="confirm" class="btn btn-success"
+                    style="width: 100%; margin-bottom: 0.5rem;">
+                    ✓ 予約を確定する
+                </button>
+                <button type="submit" name="action" value="cancel" class="btn btn-danger" style="width: 100%;"
+                    onclick="return confirm('本当にキャンセルしますか？')">
+                    ✗ キャンセルする
+                </button>
+                {% elif booking.status == 'confirmed' %}
+                <button type="submit" name="action" value="complete" class="btn btn-primary"
+                    style="width: 100%; margin-bottom: 0.5rem;">
+                    ✓ 施術完了にする
+                </button>
+                <button type="submit" name="action" value="cancel" class="btn btn-danger" style="width: 100%;"
+                    onclick="return confirm('本当にキャンセルしますか？')">
+                    ✗ キャンセルする
+                </button>
+                {% elif booking.status == 'completed' %}
+                <div class="alert alert-success">
+                    施術が完了しています
+                </div>
+                {% elif booking.status == 'cancelled' %}
+                <div class="alert alert-warning">
+                    この予約はキャンセルされています
+                </div>
+                {% endif %}
+            </form>
+        </div>
     </div>
 
-    <!-- アクションパネル -->
+    <!-- サイドバー：顧客情報とアクション -->
     <div>
-        <!-- ステータス変更 -->
+        <!-- 顧客情報 -->
         <div class="card">
             <div class="card-header">
-                <h3>ステータス変更</h3>
+                <h3>
+                    <!-- ★ 修正: ヘッダーにも性別アイコンを表示 -->
+                    {% if booking.customer.gender == 'male' %}
+                    👨
+                    {% elif booking.customer.gender == 'female' %}
+                    👩
+                    {% else %}
+                    👤
+                    {% endif %}
+                    顧客情報
+                </h3>
             </div>
             <div class="card-body">
-                <form method="post">
-                    {% csrf_token %}
-                    
-                    {% if booking.status == 'pending' %}
-                        <button type="submit" name="action" value="confirm" class="btn btn-success" style="width: 100%; margin-bottom: 0.5rem;">
-                            ✓ 予約を確定する
-                        </button>
-                        <button type="submit" name="action" value="cancel" class="btn btn-danger" style="width: 100%;" 
-                                onclick="return confirm('本当にキャンセルしますか？')">
-                            ✗ キャンセルする
-                        </button>
-                    {% elif booking.status == 'confirmed' %}
-                        <button type="submit" name="action" value="complete" class="btn btn-primary" style="width: 100%; margin-bottom: 0.5rem;">
-                            ✓ 施術完了にする
-                        </button>
-                        <button type="submit" name="action" value="cancel" class="btn btn-danger" style="width: 100%;" 
-                                onclick="return confirm('本当にキャンセルしますか？')">
-                            ✗ キャンセルする
-                        </button>
-                    {% elif booking.status == 'completed' %}
-                        <div class="alert alert-success">
-                            施術が完了しています
-                        </div>
-                    {% elif booking.status == 'cancelled' %}
-                        <div class="alert alert-warning">
-                            この予約はキャンセルされています
-                        </div>
-                    {% endif %}
-                </form>
+                <!-- ★ 新規追加: 性別と利用状況の詳細情報 -->
+                <div style="margin-bottom: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
+                    <h5 style="margin-bottom: 0.5rem;">属性情報</h5>
+                    <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 0.5rem;">
+                        <span><strong>性別:</strong></span>
+                        {% if booking.customer.gender == 'male' %}
+                        <span style="color: #007bff; font-weight: bold;">👨 男性</span>
+                        {% elif booking.customer.gender == 'female' %}
+                        <span style="color: #e91e63; font-weight: bold;">👩 女性</span>
+                        {% else %}
+                        <span style="color: #6c757d;">❓ 未設定</span>
+                        {% endif %}
+                    </div>
+                    <div style="display: flex; gap: 1rem; align-items: center;">
+                        <span><strong>利用状況:</strong></span>
+                        {% if booking.customer.is_first_visit %}
+                        <span class="badge" style="background: #28a745; color: white;">初回利用</span>
+                        {% else %}
+                        <span class="badge" style="background: #6c757d; color: white;">リピート利用</span>
+                        {% endif %}
+                    </div>
+
+                    <!-- ★ 新規追加: 管理画面へのリンク -->
+                    <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #dee2e6;">
+                        <a href="/admin/bookings/customer/{{ booking.customer.id }}/change/"
+                            class="btn btn-sm btn-outline-secondary" target="_blank">
+                            ⚙️ 管理画面で顧客情報を編集
+                        </a>
+                    </div>
+                </div>
+
             </div>
         </div>
 
-        <!-- 顧客情報 -->
+        <!-- この顧客の予約履歴 -->
         <div class="card">
             <div class="card-header">
                 <h3>この顧客の予約履歴</h3>
             </div>
             <div class="card-body">
                 {% with customer_bookings=booking.customer.booking_set.all %}
-                    <p>総予約回数: <strong>{{ customer_bookings.count }}回</strong></p>
-                    
-                    {% if customer_bookings.count > 1 %}
-                        <h4>過去の予約</h4>
-                        {% for past_booking in customer_bookings %}
-                            {% if past_booking.id != booking.id %}
-                                <div style="padding: 0.5rem; border-left: 3px solid #8b7355; margin: 0.5rem 0; background: #f8f9fa;">
-                                    <small>
-                                        {{ past_booking.booking_date|date:"Y/m/d" }} - {{ past_booking.service.name }}
-                                        {% if past_booking.status == 'completed' %}
-                                            <span class="badge badge-completed">完了</span>
-                                        {% elif past_booking.status == 'confirmed' %}
-                                            <span class="badge badge-confirmed">確定</span>
-                                        {% elif past_booking.status == 'cancelled' %}
-                                            <span class="badge badge-cancelled">キャンセル</span>
-                                        {% endif %}
-                                    </small>
-                                </div>
-                            {% endif %}
-                        {% endfor %}
-                    {% else %}
-                        <p><small>初回のお客様です</small></p>
-                    {% endif %}
+                <p>総予約回数: <strong>{{ customer_bookings.count }}回</strong></p>
+
+                {% if customer_bookings.count > 1 %}
+                <h4>過去の予約</h4>
+                {% for past_booking in customer_bookings %}
+                {% if past_booking.id != booking.id %}
+                <div style="padding: 0.5rem; border-left: 3px solid #8b7355; margin: 0.5rem 0; background: #f8f9fa;">
+                    <small>
+                        {{ past_booking.booking_date|date:"Y/m/d" }} - {{ past_booking.service.name }}
+                        {% if past_booking.status == 'completed' %}
+                        <span class="badge badge-completed">完了</span>
+                        {% elif past_booking.status == 'confirmed' %}
+                        <span class="badge badge-confirmed">確定</span>
+                        {% elif past_booking.status == 'cancelled' %}
+                        <span class="badge badge-cancelled">キャンセル</span>
+                        {% endif %}
+                    </small>
+                </div>
+                {% endif %}
+                {% endfor %}
+                {% else %}
+                <p><small>初回のお客様です</small></p>
+                {% endif %}
                 {% endwith %}
             </div>
         </div>
@@ -154,13 +237,31 @@
         <!-- ナビゲーション -->
         <div class="card">
             <div class="card-body">
-                <a href="{% url 'dashboard:booking_list' %}" class="btn btn-secondary" style="width: 100%; margin-bottom: 0.5rem;">
+                <a href="{% url 'dashboard:booking_list' %}" class="btn btn-secondary"
+                    style="width: 100%; margin-bottom: 0.5rem;">
                     ← 予約一覧に戻る
                 </a>
                 <a href="{% url 'dashboard:customer_list' %}" class="btn btn-secondary" style="width: 100%;">
                     👥 顧客一覧
                 </a>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- ★ 新規追加: 性別情報の説明 -->
+<div class="card" style="margin-top: 2rem;">
+    <div class="card-header">
+        <h3>💡 性別情報について</h3>
+    </div>
+    <div class="card-body">
+        <div style="background: #e7f3ff; padding: 1rem; border-radius: 8px; border-left: 4px solid #007bff;">
+            <p style="margin: 0; color: #004085;">
+                <strong>性別情報の取り扱い:</strong><br>
+                • 予約時にお客様が選択した性別が表示されています<br>
+                • 管理者は管理画面から最終的な判断で性別を設定・変更できます<br>
+                • 未設定の場合は管理画面で手動で設定してください
+            </p>
         </div>
     </div>
 </div>

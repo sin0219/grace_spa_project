@@ -201,6 +201,10 @@ def booking_step3(request):
             request.session['customer_email'] = form.cleaned_data['customer_email']
             request.session['customer_phone'] = form.cleaned_data['customer_phone']
             
+            # ★ 新規追加: 性別と初回利用フラグをセッションに保存
+            request.session['customer_gender'] = form.cleaned_data['gender']
+            request.session['customer_is_first_visit'] = form.cleaned_data['is_first_visit']
+
             # ステップ2とステップ3の備考を統合
             step2_notes = request.session.get('booking_notes', '')
             step3_notes = form.cleaned_data.get('notes', '')
@@ -258,9 +262,10 @@ def booking_confirm(request):
     """確認画面"""
     current_language = get_language()
     
-    # セッションからすべての情報を取得
+    # ★ 修正: セッションからすべての情報を取得（性別と初回利用フラグを追加）
     session_keys = ['booking_service_id', 'booking_date', 'booking_time', 'booking_therapist_id',
-                   'customer_name', 'customer_email', 'customer_phone', 'booking_notes']
+                   'customer_name', 'customer_email', 'customer_phone', 'booking_notes',
+                   'customer_gender', 'customer_is_first_visit']
     
     session_data = {}
     for key in session_keys:
@@ -302,19 +307,25 @@ def booking_confirm(request):
             # 最終的な重複チェック
             validate_booking_time_slot(service, booking_date, booking_time, therapist)
             
-            # 顧客情報を取得または作成
+            # ★ 修正: 顧客情報を取得または作成（性別と初回利用フラグを追加）
             customer, created = Customer.objects.get_or_create(
                 email=session_data['customer_email'],
                 defaults={
                     'name': session_data['customer_name'],
-                    'phone': session_data['customer_phone']
+                    'phone': session_data['customer_phone'],
+                    'gender': session_data['customer_gender'],
+                    'is_first_visit': session_data['customer_is_first_visit']
                 }
             )
             
-            # 既存顧客の場合は情報を更新
+            # ★ 修正: 既存顧客の場合は情報を更新（性別と初回利用フラグも更新）
             if not created:
                 customer.name = session_data['customer_name']
                 customer.phone = session_data['customer_phone']
+                # ★ 注意: 既存顧客の性別は予約時の選択で上書きしない（管理者が手動で設定するため）
+                # customer.gender = session_data['customer_gender']  # <- コメントアウト
+                # is_first_visitは既存顧客なので常にFalseに設定
+                customer.is_first_visit = False
                 customer.save()
             
             # 予約を作成
@@ -362,9 +373,10 @@ def booking_confirm(request):
                 else:
                     messages.success(request, '予約申込みを受け付けました。')
             
-            # セッションをクリア
+            # ★ 修正: セッションをクリア（性別と初回利用フラグも追加）
             session_keys = ['booking_service_id', 'booking_therapist_id', 'booking_date', 'booking_time', 
-                          'booking_notes', 'customer_name', 'customer_email', 'customer_phone']
+                          'booking_notes', 'customer_name', 'customer_email', 'customer_phone',
+                          'customer_gender', 'customer_is_first_visit']
             for key in session_keys:
                 request.session.pop(key, None)
             

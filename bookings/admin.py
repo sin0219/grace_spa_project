@@ -27,11 +27,59 @@ class TherapistAdmin(admin.ModelAdmin):
 
 @admin.register(Customer)
 class CustomerAdmin(admin.ModelAdmin):
-    list_display = ['name', 'email', 'phone', 'booking_count_display', 'created_at']
+    # ★ 修正: list_displayに性別アイコンを追加
+    list_display = ['name', 'gender_display', 'email', 'phone', 'is_first_visit_display', 'booking_count_display', 'created_at']
+    
+    # ★ 追加: フィルター機能に性別と初回利用を追加
+    list_filter = ['gender', 'is_first_visit', 'created_at']
+    
     search_fields = ['name', 'email', 'phone']
-    readonly_fields = ['created_at', 'updated_at']
+    readonly_fields = ['created_at', 'updated_at', 'booking_count_display', 'last_booking_date']
     ordering = ['-created_at']
     
+    # ★ 新規追加: fieldsets で編集画面を整理
+    fieldsets = (
+        ('基本情報', {
+            'fields': ('name', 'email', 'phone')
+        }),
+        ('顧客属性', {
+            'fields': ('gender', 'is_first_visit'),
+            'description': '性別は管理者が最終的に判断して設定してください。初回利用フラグは予約履歴に基づいて調整可能です。'
+        }),
+        ('備考・メモ', {
+            'fields': ('notes',),
+            'description': '顧客に関する永続的な備考やメモを記録できます。'
+        }),
+        ('システム情報', {
+            'fields': ('booking_count_display', 'last_booking_date', 'created_at', 'updated_at'),
+            'classes': ('collapse',),
+            'description': '読み取り専用の統計情報です。'
+        }),
+    )
+    
+    # ★ 新規追加: 性別アイコン表示メソッド
+    def gender_display(self, obj):
+        """性別をアイコンで表示"""
+        if obj.gender == 'male':
+            return format_html('<span style="font-size: 16px; color: #007bff;">👨</span> 男性')
+        elif obj.gender == 'female':
+            return format_html('<span style="font-size: 16px; color: #e91e63;">👩</span> 女性')
+        else:
+            return format_html('<span style="color: #6c757d;">❓</span> 未設定')
+    gender_display.short_description = '性別'
+    gender_display.admin_order_field = 'gender'  # ソート可能にする
+    
+    # ★ 新規追加: 初回利用フラグ表示メソッド
+    def is_first_visit_display(self, obj):
+        """初回利用フラグを視覚的に表示"""
+        if obj.is_first_visit:
+            return format_html('<span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: 11px;">初回</span>')
+        else:
+            return format_html('<span style="background: #6c757d; color: white; padding: 2px 6px; border-radius: 3px; font-size: 11px;">リピート</span>')
+    is_first_visit_display.short_description = '利用状況'
+    is_first_visit_display.admin_order_field = 'is_first_visit'  # ソート可能にする
+    
+    # 既存のメソッド（変更なし）
     def booking_count_display(self, obj):
         count = obj.booking_count
         if count > 0:
@@ -39,11 +87,30 @@ class CustomerAdmin(admin.ModelAdmin):
             return format_html('<a href="{}">{} 件</a>', url, count)
         return '0 件'
     booking_count_display.short_description = '予約回数'
+    
+    # ★ 新規追加: カスタムアクション
+    actions = ['mark_as_returning_customer', 'mark_as_first_time_customer']
+    
+    def mark_as_returning_customer(self, request, queryset):
+        """選択した顧客をリピート顧客に設定"""
+        updated = queryset.update(is_first_visit=False)
+        self.message_user(request, f'{updated} 名の顧客をリピート顧客に設定しました。')
+    mark_as_returning_customer.short_description = '選択した顧客をリピート顧客に設定'
+    
+    def mark_as_first_time_customer(self, request, queryset):
+        """選択した顧客を初回顧客に設定"""
+        updated = queryset.update(is_first_visit=True)
+        self.message_user(request, f'{updated} 名の顧客を初回顧客に設定しました。')
+    mark_as_first_time_customer.short_description = '選択した顧客を初回顧客に設定'
+
+
+# ★ 補足: BookingAdminも予約詳細で性別が確認できるよう、既存コードに小さな追加
+# 以下は既存のBookingAdminに対する小さな修正提案（オプション）
 
 @admin.register(Booking)
 class BookingAdmin(admin.ModelAdmin):
-    list_display = ['customer', 'service', 'therapist_display', 'booking_date', 'booking_time', 'status_display', 'created_at']
-    list_filter = ['status', 'booking_date', 'service', 'therapist']
+    list_display = ['customer', 'customer_gender_display', 'service', 'therapist_display', 'booking_date', 'booking_time', 'status_display', 'created_at']
+    list_filter = ['status', 'booking_date', 'service', 'therapist', 'customer__gender']  # ★ 性別フィルター追加
     search_fields = ['customer__name', 'customer__email', 'notes']
     readonly_fields = ['created_at', 'updated_at', 'end_time']
     date_hierarchy = 'booking_date'
@@ -62,6 +129,19 @@ class BookingAdmin(admin.ModelAdmin):
         }),
     )
     
+    # ★ 新規追加: 予約一覧で顧客の性別も確認できるメソッド
+    def customer_gender_display(self, obj):
+        """予約一覧で顧客の性別をアイコン表示"""
+        if obj.customer.gender == 'male':
+            return format_html('<span style="font-size: 14px;">👨</span>')
+        elif obj.customer.gender == 'female':
+            return format_html('<span style="font-size: 14px;">👩</span>')
+        else:
+            return format_html('<span style="font-size: 14px; color: #6c757d;">❓</span>')
+    customer_gender_display.short_description = '性別'
+    customer_gender_display.admin_order_field = 'customer__gender'
+    
+    # 既存のメソッド（変更なし）
     def therapist_display(self, obj):
         return obj.therapist.display_name if obj.therapist else "指名なし"
     therapist_display.short_description = '施術者'
@@ -97,7 +177,7 @@ class BookingAdmin(admin.ModelAdmin):
         updated = queryset.update(status='cancelled')
         self.message_user(request, f'{updated} 件の予約をキャンセルしました。')
     mark_as_cancelled.short_description = '選択した予約をキャンセルする'
-
+    
 @admin.register(BusinessHours)
 class BusinessHoursAdmin(admin.ModelAdmin):
     list_display = ['weekday_display', 'is_open_display', 'open_time', 'close_time', 'last_booking_time']

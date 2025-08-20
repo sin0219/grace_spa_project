@@ -31,7 +31,32 @@ class DashboardBookingForm(forms.ModelForm):
             'placeholder': '090-1234-5678'
         })
     )
+    GENDER_CHOICES = [
+        ('', '選択してください'),  # 空の選択肢を追加
+        ('male', '男性'),
+        ('female', '女性'),
+    ]
     
+    customer_gender = forms.ChoiceField(
+        label='性別（予約時の選択）',
+        choices=GENDER_CHOICES,
+        required=False,
+        widget=forms.Select(attrs={
+            'class': 'form-control'
+        }),
+        help_text='お客様が予約時に選択した性別です。管理者は後で変更可能です。'
+    )
+    
+    # ★ 新規追加: 初回利用フラグ（管理者用）
+    customer_is_first_visit = forms.BooleanField(
+        label='初回利用',
+        required=False,
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-check-input'
+        }),
+        help_text='初回利用の場合はチェックしてください。'
+    )
+
     # 日時フィールドを隠しフィールドに変更
     booking_date = forms.DateField(
         label='予約日',
@@ -108,19 +133,36 @@ class DashboardBookingForm(forms.ModelForm):
     def save(self, commit=True):
         booking = super().save(commit=False)
         
-        # 顧客情報を取得または作成
+         # ★ 修正: 顧客情報を取得または作成（性別と初回利用フラグを追加）
+        customer_defaults = {
+            'name': self.cleaned_data['customer_name'],
+            'phone': self.cleaned_data['customer_phone']
+        }
+        
+        # 性別が選択されている場合のみ追加
+        if self.cleaned_data.get('customer_gender'):
+            customer_defaults['gender'] = self.cleaned_data['customer_gender']
+        
+        # 初回利用フラグを追加
+        customer_defaults['is_first_visit'] = self.cleaned_data['customer_is_first_visit']
+        
         customer, created = Customer.objects.get_or_create(
             email=self.cleaned_data['customer_email'],
-            defaults={
-                'name': self.cleaned_data['customer_name'],
-                'phone': self.cleaned_data['customer_phone']
-            }
+            defaults=customer_defaults
         )
         
-        # 既存顧客の場合は情報を更新
+        # ★ 修正: 既存顧客の場合は情報を更新（性別の取り扱いに注意）
         if not created:
             customer.name = self.cleaned_data['customer_name']
             customer.phone = self.cleaned_data['customer_phone']
+            
+            # 性別については管理者が後で手動設定するため、空の場合のみ更新
+            if self.cleaned_data.get('customer_gender') and not customer.gender:
+                customer.gender = self.cleaned_data['customer_gender']
+            
+            # 既存顧客の場合、is_first_visitは通常Falseだが、管理者の判断を優先
+            customer.is_first_visit = self.cleaned_data['customer_is_first_visit']
+            
             customer.save()
         
         booking.customer = customer
@@ -129,6 +171,7 @@ class DashboardBookingForm(forms.ModelForm):
             booking.save()
         
         return booking
+
 
 class ScheduleForm(forms.ModelForm):
     """予定登録フォーム"""

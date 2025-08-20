@@ -44,12 +44,33 @@
                     {% for customer in customers %}
                     <tr>
                         <td>
-                            <strong>{{ customer.name }}</strong>
-                            {% if customer.booking_count == 1 %}
-                                <span class="badge" style="background: #17a2b8; color: white; font-size: 0.7rem;">初回</span>
-                            {% elif customer.booking_count >= 5 %}
-                                <span class="badge" style="background: #ffc107; color: #212529; font-size: 0.7rem;">常連</span>
-                            {% endif %}
+                            <!-- ★ 修正: 性別アイコンと名前を表示 -->
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                {% if customer.gender == 'male' %}
+                                    <span style="font-size: 18px; color: #007bff;" title="男性">👨</span>
+                                {% elif customer.gender == 'female' %}
+                                    <span style="font-size: 18px; color: #e91e63;" title="女性">👩</span>
+                                {% else %}
+                                    <span style="font-size: 16px; color: #6c757d;" title="性別未設定">❓</span>
+                                {% endif %}
+                                <strong>{{ customer.name }}</strong>
+                            </div>
+                            
+                            <!-- ★ 修正: 利用状況バッジの表示を更新 -->
+                            <div style="margin-top: 0.25rem;">
+                                {% if customer.is_first_visit %}
+                                    <span class="badge" style="background: #28a745; color: white; font-size: 0.7rem;">初回</span>
+                                {% else %}
+                                    <span class="badge" style="background: #6c757d; color: white; font-size: 0.7rem;">リピート</span>
+                                {% endif %}
+                                
+                                <!-- 予約回数に応じた追加バッジ -->
+                                {% if customer.booking_count >= 5 %}
+                                    <span class="badge" style="background: #ffc107; color: #212529; font-size: 0.7rem;">常連</span>
+                                {% elif customer.booking_count >= 2 %}
+                                    <span class="badge" style="background: #17a2b8; color: white; font-size: 0.7rem;">{{ customer.booking_count }}回</span>
+                                {% endif %}
+                            </div>
                         </td>
                         <td>
                             <div>{{ customer.email }}</div>
@@ -111,7 +132,7 @@
     </div>
 </div>
 
-<!-- 顧客統計 -->
+<!-- ★ 新規追加: 性別統計を含む顧客統計 -->
 <div class="card">
     <div class="card-header">
         <h3>顧客統計</h3>
@@ -124,20 +145,54 @@
             </div>
             <div class="stat-card">
                 <div class="stat-number">
-                    {% with new_customers=0 %}
+                    {% with male_count=0 %}
                         {% for customer in customers %}
-                            {% if customer.booking_count == 1 %}
-                                {% with new_customers=new_customers|add:1 %}{% endwith %}
+                            {% if customer.gender == 'male' %}
+                                {% with male_count=male_count|add:1 %}{% endwith %}
                             {% endif %}
                         {% endfor %}
                         {% for customer in customers %}
-                            {% if customer.booking_count == 1 and forloop.last %}
+                            {% if customer.gender == 'male' and forloop.last %}
                                 {{ forloop.counter0|add:1 }}
                             {% endif %}
                         {% endfor %}
                     {% endwith %}
                 </div>
-                <div class="stat-label">新規顧客</div>
+                <div class="stat-label">👨 男性顧客</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">
+                    {% with female_count=0 %}
+                        {% for customer in customers %}
+                            {% if customer.gender == 'female' %}
+                                {% with female_count=female_count|add:1 %}{% endwith %}
+                            {% endif %}
+                        {% endfor %}
+                        {% for customer in customers %}
+                            {% if customer.gender == 'female' and forloop.last %}
+                                {{ forloop.counter0|add:1 }}
+                            {% endif %}
+                        {% endfor %}
+                    {% endwith %}
+                </div>
+                <div class="stat-label">👩 女性顧客</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">
+                    {% with first_visit_count=0 %}
+                        {% for customer in customers %}
+                            {% if customer.is_first_visit %}
+                                {% with first_visit_count=first_visit_count|add:1 %}{% endwith %}
+                            {% endif %}
+                        {% endfor %}
+                        {% for customer in customers %}
+                            {% if customer.is_first_visit and forloop.last %}
+                                {{ forloop.counter0|add:1 }}
+                            {% endif %}
+                        {% endfor %}
+                    {% endwith %}
+                </div>
+                <div class="stat-label">初回顧客</div>
             </div>
             <div class="stat-card">
                 <div class="stat-number">
@@ -174,6 +229,32 @@
                 <div class="stat-label">常連客</div>
             </div>
         </div>
+    </div>
+</div>
+
+<!-- ★ 新規追加: 性別分析の説明 -->
+<div class="card">
+    <div class="card-header">
+        <h3>💡 性別表示について</h3>
+    </div>
+    <div class="card-body">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+            <div style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; background: #f8f9fa; border-radius: 5px;">
+                <span style="font-size: 18px; color: #007bff;">👨</span>
+                <span>男性のお客様</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; background: #f8f9fa; border-radius: 5px;">
+                <span style="font-size: 18px; color: #e91e63;">👩</span>
+                <span>女性のお客様</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; background: #f8f9fa; border-radius: 5px;">
+                <span style="font-size: 16px; color: #6c757d;">❓</span>
+                <span>性別未設定（管理画面で設定可能）</span>
+            </div>
+        </div>
+        <p style="margin-top: 1rem; color: #666; font-size: 0.9rem;">
+            ※ 性別は予約時にお客様が選択したものです。管理画面から最終的な判断をして変更可能です。
+        </p>
     </div>
 </div>
 {% endblock %}

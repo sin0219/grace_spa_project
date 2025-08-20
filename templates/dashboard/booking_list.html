@@ -7,26 +7,26 @@
 <!-- フィルター -->
 <div class="card">
     <div class="card-header">
-        <h3>検索・フィルター</h3>
+        <h3>予約検索・フィルター</h3>
     </div>
     <div class="card-body">
-        <form method="get" style="display: flex; gap: 1rem; align-items: end;">
+        <form method="get" style="display: flex; gap: 1rem; align-items: end; flex-wrap: wrap;">
             <div class="form-group" style="margin-bottom: 0;">
                 <label for="status">ステータス</label>
-                <select name="status" id="status" class="form-control" style="width: 150px;">
-                    <option value="">全て</option>
+                <select name="status" id="status" class="form-control">
+                    <option value="">すべて</option>
                     {% for value, label in status_choices %}
-                        <option value="{{ value }}" {% if current_status == value %}selected{% endif %}>
+                        <option value="{{ value }}" {% if value == current_status %}selected{% endif %}>
                             {{ label }}
                         </option>
                     {% endfor %}
                 </select>
             </div>
             <div class="form-group" style="margin-bottom: 0;">
-                <label for="date">日付</label>
-                <input type="date" name="date" id="date" value="{{ current_date }}" class="form-control" style="width: 150px;">
+                <label for="date">予約日</label>
+                <input type="date" name="date" id="date" value="{{ current_date }}" class="form-control">
             </div>
-            <button type="submit" class="btn btn-primary">検索</button>
+            <button type="submit" class="btn btn-primary">絞り込み</button>
             <a href="{% url 'dashboard:booking_list' %}" class="btn btn-secondary">リセット</a>
         </form>
     </div>
@@ -36,6 +36,7 @@
 <div class="card">
     <div class="card-header">
         <h3>予約一覧 ({{ bookings.count }}件)</h3>
+        <a href="{% url 'dashboard:booking_create' %}" class="btn btn-primary">新規予約登録</a>
     </div>
     <div class="card-body">
         {% if bookings %}
@@ -59,7 +60,28 @@
                             {{ booking.booking_time }}
                         </td>
                         <td>
-                            <strong>{{ booking.customer.name }}</strong><br>
+                            <!-- ★ 修正: 性別アイコンと顧客名を表示 -->
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                {% if booking.customer.gender == 'male' %}
+                                    <span style="font-size: 16px; color: #007bff;" title="男性">👨</span>
+                                {% elif booking.customer.gender == 'female' %}
+                                    <span style="font-size: 16px; color: #e91e63;" title="女性">👩</span>
+                                {% else %}
+                                    <span style="font-size: 14px; color: #6c757d;" title="性別未設定">❓</span>
+                                {% endif %}
+                                <strong>{{ booking.customer.name }}</strong>
+                            </div>
+                            
+                            <!-- ★ 修正: 利用状況バッジを追加 -->
+                            <div style="margin: 0.25rem 0;">
+                                {% if booking.customer.is_first_visit %}
+                                    <span class="badge" style="background: #28a745; color: white; font-size: 0.7rem;">初回</span>
+                                {% else %}
+                                    <span class="badge" style="background: #6c757d; color: white; font-size: 0.7rem;">リピート</span>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- 連絡先情報 -->
                             <small>{{ booking.customer.email }}</small><br>
                             <small>{{ booking.customer.phone }}</small>
                         </td>
@@ -78,11 +100,10 @@
                                 <span class="badge badge-no-show">無断キャンセル</span>
                             {% endif %}
                         </td>
+                        <td>{{ booking.created_at|date:"m/d H:i" }}</td>
                         <td>
-                            {{ booking.created_at|date:"m/d H:i" }}
-                        </td>
-                        <td>
-                            <a href="{% url 'dashboard:booking_detail' booking.id %}" class="btn btn-primary btn-sm">詳細</a>
+                            <a href="{% url 'dashboard:booking_detail' booking.id %}" 
+                               class="btn btn-sm btn-primary">詳細</a>
                         </td>
                     </tr>
                     {% endfor %}
@@ -90,70 +111,153 @@
             </table>
         {% else %}
             <p style="text-align: center; color: #666; padding: 3rem;">
-                条件に合う予約が見つかりません。
+                {% if current_status or current_date %}
+                    指定した条件に該当する予約がありません。
+                {% else %}
+                    まだ予約がありません。
+                {% endif %}
             </p>
         {% endif %}
     </div>
 </div>
 
-<!-- 統計情報 -->
+<!-- ★ 新規追加: 性別・利用状況統計 -->
 <div class="card">
     <div class="card-header">
-        <h3>予約統計</h3>
+        <h3>予約統計（表示中の予約）</h3>
     </div>
     <div class="card-body">
         <div class="stats-grid">
             <div class="stat-card">
-                <div class="stat-number">
-                    {{ bookings|length }}
-                </div>
+                <div class="stat-number">{{ bookings.count }}</div>
                 <div class="stat-label">総予約数</div>
             </div>
             <div class="stat-card">
                 <div class="stat-number">
-                    {% with pending_count=0 %}
+                    {% with male_bookings=0 %}
                         {% for booking in bookings %}
-                            {% if booking.status == 'pending' %}
-                                {% with pending_count=pending_count|add:1 %}{% endwith %}
+                            {% if booking.customer.gender == 'male' %}
+                                {% with male_bookings=male_bookings|add:1 %}{% endwith %}
                             {% endif %}
                         {% endfor %}
                         {% for booking in bookings %}
-                            {% if booking.status == 'pending' %}
+                            {% if booking.customer.gender == 'male' and forloop.last %}
                                 {{ forloop.counter0|add:1 }}
-                                {% if forloop.last %}{% endif %}
                             {% endif %}
                         {% endfor %}
                     {% endwith %}
                 </div>
-                <div class="stat-label">承認待ち</div>
+                <div class="stat-label">👨 男性の予約</div>
             </div>
             <div class="stat-card">
                 <div class="stat-number">
-                    {% with confirmed_count=0 %}
+                    {% with female_bookings=0 %}
+                        {% for booking in bookings %}
+                            {% if booking.customer.gender == 'female' %}
+                                {% with female_bookings=female_bookings|add:1 %}{% endwith %}
+                            {% endif %}
+                        {% endfor %}
+                        {% for booking in bookings %}
+                            {% if booking.customer.gender == 'female' and forloop.last %}
+                                {{ forloop.counter0|add:1 }}
+                            {% endif %}
+                        {% endfor %}
+                    {% endwith %}
+                </div>
+                <div class="stat-label">👩 女性の予約</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">
+                    {% with first_visit_bookings=0 %}
+                        {% for booking in bookings %}
+                            {% if booking.customer.is_first_visit %}
+                                {% with first_visit_bookings=first_visit_bookings|add:1 %}{% endwith %}
+                            {% endif %}
+                        {% endfor %}
+                        {% for booking in bookings %}
+                            {% if booking.customer.is_first_visit and forloop.last %}
+                                {{ forloop.counter0|add:1 }}
+                            {% endif %}
+                        {% endfor %}
+                    {% endwith %}
+                </div>
+                <div class="stat-label">初回利用の予約</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">
+                    {% with pending_bookings=0 %}
+                        {% for booking in bookings %}
+                            {% if booking.status == 'pending' %}
+                                {% with pending_bookings=pending_bookings|add:1 %}{% endwith %}
+                            {% endif %}
+                        {% endfor %}
+                        {% for booking in bookings %}
+                            {% if booking.status == 'pending' and forloop.last %}
+                                {{ forloop.counter0|add:1 }}
+                            {% endif %}
+                        {% endfor %}
+                    {% endwith %}
+                </div>
+                <div class="stat-label">申込中の予約</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">
+                    {% with confirmed_bookings=0 %}
                         {% for booking in bookings %}
                             {% if booking.status == 'confirmed' %}
-                                {{ forloop.counter0|add:1 }}
-                                {% if forloop.last %}{% endif %}
+                                {% with confirmed_bookings=confirmed_bookings|add:1 %}{% endwith %}
                             {% endif %}
                         {% endfor %}
-                    {% endwith %}
-                </div>
-                <div class="stat-label">確定済み</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number">
-                    {% with total_revenue=0 %}
                         {% for booking in bookings %}
-                            {% if booking.status == 'completed' %}
-                                {% with total_revenue=total_revenue|add:booking.service.price %}{% endwith %}
+                            {% if booking.status == 'confirmed' and forloop.last %}
+                                {{ forloop.counter0|add:1 }}
                             {% endif %}
                         {% endfor %}
-                        ¥{% for booking in bookings %}{% if booking.status == 'completed' %}{{ booking.service.price|add:0 }}{% if not forloop.last %}+{% endif %}{% endif %}{% endfor %}
                     {% endwith %}
                 </div>
-                <div class="stat-label">完了済み売上</div>
+                <div class="stat-label">確定済み予約</div>
             </div>
         </div>
+    </div>
+</div>
+
+<!-- ★ 新規追加: 表示の説明 -->
+<div class="card">
+    <div class="card-header">
+        <h3>💡 予約一覧の見方</h3>
+    </div>
+    <div class="card-body">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem;">
+            <div style="padding: 1rem; background: #f8f9fa; border-radius: 8px;">
+                <h5 style="margin-bottom: 0.5rem;">性別アイコン</h5>
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                    <span style="font-size: 16px; color: #007bff;">👨</span>
+                    <span>男性のお客様</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                    <span style="font-size: 16px; color: #e91e63;">👩</span>
+                    <span>女性のお客様</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span style="font-size: 14px; color: #6c757d;">❓</span>
+                    <span>性別未設定</span>
+                </div>
+            </div>
+            <div style="padding: 1rem; background: #f8f9fa; border-radius: 8px;">
+                <h5 style="margin-bottom: 0.5rem;">利用状況バッジ</h5>
+                <div style="margin-bottom: 0.5rem;">
+                    <span class="badge" style="background: #28a745; color: white; font-size: 0.7rem;">初回</span>
+                    <span style="margin-left: 0.5rem;">初回利用のお客様</span>
+                </div>
+                <div>
+                    <span class="badge" style="background: #6c757d; color: white; font-size: 0.7rem;">リピート</span>
+                    <span style="margin-left: 0.5rem;">リピート利用のお客様</span>
+                </div>
+            </div>
+        </div>
+        <p style="margin-top: 1rem; color: #666; font-size: 0.9rem;">
+            ※ 性別は予約時の選択情報です。管理画面から最終判断での変更が可能です。
+        </p>
     </div>
 </div>
 {% endblock %}
