@@ -499,7 +499,7 @@
             3: { is_open: true, open_time: '09:00:00', close_time: '20:00:00', last_booking_time: '19:00:00' }, // 木
             4: { is_open: true, open_time: '09:00:00', close_time: '20:00:00', last_booking_time: '19:00:00' }, // 金
             5: { is_open: true, open_time: '09:00:00', close_time: '20:00:00', last_booking_time: '19:00:00' }, // 土
-            6: { is_open: false, open_time: '09:00:00', close_time: '20:00:00', last_booking_time: '19:00:00' } // 日
+            6: { is_open: true, open_time: '09:00:00', close_time: '20:00:00', last_booking_time: '19:00:00' } // 日
         };
 
         // カレンダー初期化
@@ -574,13 +574,13 @@
                     dayElement.classList.add('today');
                 }
 
-                // 営業日チェック
+               // ✅ 修正：営業日チェック（土曜日を有効にする）
                 const dayOfWeek = date.getDay();
                 const businessHour = businessHours[dayOfWeek];
                 if (!businessHour || !businessHour.is_open) {
-                    dayElement.classList.add('disabled');
+                dayElement.classList.add('disabled');
                 }
-
+                
                 // クリックイベント
                 if (!dayElement.classList.contains('disabled') && !dayElement.classList.contains('other-month')) {
                     dayElement.addEventListener('click', () => selectDate(date, dayElement));
@@ -600,8 +600,18 @@
             element.classList.add('selected');
             selectedDate = date;
 
+            // ✅ 修正：正常動作しているstep2_datetime.htmlと同じ方法を採用
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const dateString = `${year}-${month}-${day}`;
+
             // 隠しフィールドに設定
-            document.getElementById('id_booking_date').value = date.toISOString().split('T')[0];
+            document.getElementById('id_booking_date').value = dateString;
+
+            // デバッグ用ログ
+            console.log('選択された日付:', date);
+            console.log('送信される日付文字列:', dateString);
 
             // 利用可能時間を読み込み
             loadAvailableTimes(date);
@@ -614,8 +624,13 @@
             const therapistId = therapistSelect ? therapistSelect.value : '';
             const serviceId = serviceSelect ? serviceSelect.value : '';
 
-            const dateStr = date.toISOString().split('T')[0];
-            const url = `/dashboard/api/available-times/?date=${dateStr}&therapist_id=${therapistId}&service_id=${serviceId}`;
+               // ✅ 修正：同じ方法で日付文字列を作成
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const dateStr = `${year}-${month}-${day}`;
+
+            const url = `/dashboard/api/available-times/?date=${dateStr}&service_id=${serviceId}&therapist_id=${therapistId}`;
 
             fetch(url)
                 .then(response => response.json())

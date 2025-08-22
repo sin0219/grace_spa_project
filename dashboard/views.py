@@ -542,27 +542,50 @@ def schedule_detail(request, schedule_id):
         return redirect('dashboard:schedule_list')
 
 @staff_member_required
-def schedule_delete(request, schedule_id):
-    """予定削除"""
+def schedule_list(request):
+    """予定一覧"""
     try:
-        schedule = get_object_or_404(Schedule, id=schedule_id)
+        date_filter = request.GET.get('date', '')
+        type_filter = request.GET.get('type', '')
         
-        if request.method == 'POST':
-            title = schedule.title
-            schedule.delete()
-            messages.success(request, f'予定「{title}」を削除しました。')
-            return redirect('dashboard:schedule_list')
+        schedules = Schedule.objects.filter(is_active=True)
+        
+        if date_filter:
+            try:
+                filter_date = datetime.strptime(date_filter, '%Y-%m-%d').date()
+                schedules = schedules.filter(schedule_date=filter_date)
+            except ValueError:
+                pass
+        
+        if type_filter:
+            schedules = schedules.filter(schedule_type=type_filter)
+        
+        schedules = schedules.order_by('-schedule_date', 'start_time')
+        
+        # Schedule.SCHEDULE_TYPE_CHOICESを安全に取得
+        try:
+            type_choices = Schedule.SCHEDULE_TYPE_CHOICES
+        except AttributeError:
+            type_choices = []
         
         context = {
-            'title': f'予定削除 - {schedule.title}',
-            'schedule': schedule,
+            'title': '予定一覧 - GRACE SPA管理画面',
+            'schedules': schedules,
+            'type_choices': type_choices,
+            'current_date': date_filter,
+            'current_type': type_filter,
         }
-        return render(request, 'dashboard/schedule_delete.html', context)
+        return render(request, 'dashboard/schedule_list.html', context)
         
-    except:
-        messages.error(request, '予定が見つかりません。')
-        return redirect('dashboard:schedule_list')
-
+    except Exception as e:
+        # 具体的なエラー情報を表示
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"Schedule List Error: {str(e)}")
+        print(f"Traceback: {error_details}")
+        
+        messages.error(request, f'予定一覧の表示中にエラーが発生しました: {str(e)}')
+        return redirect('dashboard:home')
 # ===== API エンドポイント =====
 
 @staff_member_required
@@ -729,6 +752,28 @@ def get_schedule_times_api(request):
     current_date = now.date()
     current_time = now.time()
     
+    # ✅ 追加: 営業時間を取得
+    weekday = target_date.weekday()
+    try:
+        business_hour = BusinessHours.objects.get(weekday=weekday)
+        if not business_hour.is_open:
+            return JsonResponse({'time_slots': []})
+    except BusinessHours.DoesNotExist:
+        # デフォルト営業時間を作成
+        business_hour_data = {
+            'is_open': True,
+            'open_time': datetime.strptime('09:00', '%H:%M').time(),
+            'close_time': datetime.strptime('20:00', '%H:%M').time(),
+            'last_booking_time': datetime.strptime('19:00', '%H:%M').time(),
+        }
+        
+        class BusinessHourDefault:
+            def __init__(self, data):
+                for key, value in data.items():
+                    setattr(self, key, value)
+        
+        business_hour = BusinessHourDefault(business_hour_data)
+   
     # 予約設定を取得
     try:
         settings_obj = BookingSettings.get_current_settings()
@@ -742,7 +787,7 @@ def get_schedule_times_api(request):
         min_advance_minutes = 10  # デフォルト10分前まで
     
     # ①当日の場合の最小予定作成可能時間を計算
-    min_schedule_time = datetime.strptime('06:00', '%H:%M').time()  # 6:00から
+    min_schedule_time = business_hour.open_time
     if target_date == current_date:
         # 現在時刻 + 直前制限時間
         min_datetime = now + timedelta(minutes=min_advance_minutes)
@@ -775,14 +820,24 @@ def get_schedule_times_api(request):
     
     # 時間スロットを10分刻みで生成（6:00-22:00）
     time_slots = []
-    start_hour = 6
-    end_hour = 22
+
     
-    for hour in range(start_hour, end_hour):
-        for minute in range(0, 60, 10):
-            slot_time = datetime.strptime(f'{hour:02d}:{minute:02d}', '%H:%M').time()
-            current_time_slot = datetime.combine(target_date, slot_time)
+    # 開始時間の範囲を営業時間に限定
+    if start_time_str:
+        # 終了時間の選択肢を生成（開始時間より後）
+        start_time_obj = datetime.strptime(start_time_str, '%H:%M').time()
+        
+        # 開始時間より後で営業時間内の時間を生成
+        current_time_slot = datetime.combine(target_date, start_time_obj) + timedelta(minutes=10)
+        end_boundary = datetime.combine(target_date, business_hour.close_time)
+    else:
+        # 開始時間の選択肢を生成
+        current_time_slot = datetime.combine(target_date, min_schedule_time)
+        end_boundary = datetime.combine(target_date, business_hour.last_booking_time)
+    
+    while current_time_slot <= end_boundary:
             time_str = current_time_slot.strftime('%H:%M')
+            slot_time = current_time_slot.time()
             status = 'available'
             conflict_info = ''
             
@@ -822,7 +877,7 @@ def get_schedule_times_api(request):
                 'status': status,
                 'conflict_info': conflict_info
             })
-    
+            current_time_slot += timedelta(minutes=10)  # 10分刻み
     return JsonResponse({'time_slots': time_slots})
 # 既存のdashboard/views.pyの最後に以下の関数を追加してください
 
@@ -1111,3 +1166,27 @@ def sales_dashboard(request):
         'is_current_month': selected_month.year == today.year and selected_month.month == today.month,  # ★ 現在月かどうか
     }
     return render(request, 'dashboard/sales_dashboard.html', context)
+
+@staff_member_required
+def schedule_delete(request, schedule_id):
+    """予定削除（直接実行）"""
+    try:
+        schedule = get_object_or_404(Schedule, id=schedule_id)
+        
+        if request.method == 'POST':
+            # POSTリクエストで直接削除実行
+            title = schedule.title
+            schedule.delete()
+            messages.success(request, f'予定「{title}」を削除しました。')
+            return redirect('dashboard:schedule_list')
+        else:
+            # GETリクエストの場合はエラー（安全のため）
+            messages.error(request, '無効なリクエストです。')
+            return redirect('dashboard:schedule_list')
+        
+    except Schedule.DoesNotExist:
+        messages.error(request, '予定が見つかりません。')
+        return redirect('dashboard:schedule_list')
+    except Exception as e:
+        messages.error(request, f'削除中にエラーが発生しました: {str(e)}')
+        return redirect('dashboard:schedule_list')

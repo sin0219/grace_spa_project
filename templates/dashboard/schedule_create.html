@@ -591,52 +591,88 @@ document.addEventListener('DOMContentLoaded', function() {
             dayElement.className = 'calendar-day';
             dayElement.textContent = date.getDate();
             
-            // クラスの設定
-            if (date.getMonth() !== month) {
-                dayElement.classList.add('other-month');
-            } else if (date.getTime() === today.getTime()) {
-                dayElement.classList.add('today');
-            }
-            
-            // クリックイベント（過去の日付も選択可能にする）
-            if (!dayElement.classList.contains('other-month')) {
-                dayElement.addEventListener('click', () => selectDate(date, dayElement));
-            }
-            
-            calendarDays.appendChild(dayElement);
+// ✅ 修正: 過去の日付チェックを追加
+        // クラスの設定
+        if (date.getMonth() !== month) {
+            dayElement.classList.add('other-month');
+        } else if (date < today) {
+            // ✅ 追加: 過去の日付をdisabledに設定
+            dayElement.classList.add('disabled');
+        } else if (date.getTime() === today.getTime()) {
+            dayElement.classList.add('today');
         }
+        
+        // 既存の選択状態を復元
+        if (selectedDate && date.toDateString() === selectedDate.toDateString()) {
+            dayElement.classList.add('selected');
+        }
+        
+        // ✅ 修正: disabledの日付はクリック不可に変更
+        // クリックイベント（過去の日付は選択不可にする）
+        if (!dayElement.classList.contains('other-month') && !dayElement.classList.contains('disabled')) {
+            dayElement.addEventListener('click', () => selectDate(date, dayElement));
+        }
+        
+        calendarDays.appendChild(dayElement);
+    }
+}
+
+       // ✅ 追加: 過去の日付が選択された場合のバリデーション
+        function selectDate(date, element) {
+       // 過去の日付チェック
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+    
+        if (date < today) {
+          alert('過去の日付は選択できません。');
+        return;
     }
     
-    function selectDate(date, element) {
-        // 前の選択をクリア
-        document.querySelectorAll('.calendar-day.selected').forEach(el => {
-            el.classList.remove('selected');
-        });
-        
-        // 新しい選択を設定
-        element.classList.add('selected');
-        selectedDate = date;
-        
-        // 隠しフィールドに設定
-        document.getElementById('id_schedule_date').value = date.toISOString().split('T')[0];
-        
-        // 時間選択を初期化
-        loadTimeSlots();
-        
-        // 選択状態をリセット
-        selectedStartTime = null;
-        selectedEndTime = null;
-        document.getElementById('id_start_time').value = '';
-        document.getElementById('id_end_time').value = '';
-        updateEndTimeSlots();
-        updateSubmitButton();
-    }
+    // 前の選択をクリア
+    document.querySelectorAll('.calendar-day.selected').forEach(el => {
+        el.classList.remove('selected');
+    });
+    
+    // 新しい選択を設定
+    element.classList.add('selected');
+    selectedDate = date;
+    
+    // ローカル時間で日付文字列を作成
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const dateString = `${year}-${month}-${day}`;
+    
+    // 隠しフィールドに設定
+    document.getElementById('id_schedule_date').value = dateString;
+    
+    // デバッグ用ログ
+    console.log('選択された日付:', date);
+    console.log('送信される日付文字列:', dateString);
+    
+    // 時間選択を初期化
+    loadTimeSlots();
+    
+    // 選択状態をリセット
+    selectedStartTime = null;
+    selectedEndTime = null;
+    document.getElementById('id_start_time').value = '';
+    document.getElementById('id_end_time').value = '';
+    updateEndTimeSlots();
+    updateSubmitButton();
+}
     
     function loadTimeSlots() {
         const therapistSelect = document.querySelector('select[name="therapist"]');
         const therapistId = therapistSelect ? therapistSelect.value : '';
-        
-        const dateStr = selectedDate.toISOString().split('T')[0];
+        // 日付をローカル時間で文字列化する関数
+    function formatDateLocal(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+        const dateStr = formatDateLocal(selectedDate);
         const url = `/dashboard/api/schedule-times/?date=${dateStr}&therapist_id=${therapistId}`;
         
         fetch(url)
@@ -739,7 +775,14 @@ document.addEventListener('DOMContentLoaded', function() {
         const therapistSelect = document.querySelector('select[name="therapist"]');
         const therapistId = therapistSelect ? therapistSelect.value : '';
         
-        const dateStr = selectedDate.toISOString().split('T')[0];
+        // 日付をローカル時間で文字列化する関数
+        function formatDateLocal(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+        }
+        const dateStr = formatDateLocal(selectedDate);
         const url = `/dashboard/api/schedule-times/?date=${dateStr}&therapist_id=${therapistId}&start_time=${selectedStartTime}`;
         
         fetch(url)
