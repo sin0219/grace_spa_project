@@ -1,0 +1,502 @@
+{% extends 'en/base_en.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <div class="hero-background">
+        <!-- Treatment room background image area -->
+        <div class="hero-image">
+            <!-- Treatment room image will be placed here -->
+        </div>
+        <div class="hero-overlay"></div>
+    </div>
+    <div class="hero-content">
+        <div class="hero-text"> 
+            <div class="hero-logo">
+                <img src="/static/images/hero-logo.png" alt="GRACE SPA" class="hero-logo-image">
+                <p>PROFESSIONAL therapists with years of experience in Japanese and Canadian SPAs<br>Ultimate relaxation through authentic oil massage</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="about" class="section">
+    <div class="container">
+        <h2>About GRACE SPA</h2>
+        <div class="about-content">
+            <div class="about-text">
+                <p>GRACE SPA is a completely appointment-only private salon operated by professional therapists with years of experience in Japanese and Canadian spas.</p>
+                <p>We provide the ultimate healing experience tailored to each customer through oil lymphatic massage incorporating traditional Hawaiian Lomi Lomi and Balinese massage techniques, as well as Thai traditional massage by Thai government-certified therapists.</p>
+            </div>
+            <!-- Treatment scene image area -->
+            <div class="about-images">
+                <div class="treatment-image">
+                    <!-- Treatment scene image will be placed here -->
+                    <img src="/static/images/treatment-scene.jpg" alt="Treatment Scene">
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="services" class="services">
+    <div class="container">
+        <h2>Our Services</h2>
+        <div class="services-grid">
+            {% for service in services %}
+            <div class="service-card {% if service.is_combo %}combo-service{% endif %}">
+                {% if service.is_combo %}
+                <div class="combo-badge">Combo Menu</div>
+                {% endif %}
+                <h3>{{ service.name }}</h3>
+                <div class="service-duration">{{ service.duration }}</div>
+                <div class="price">{{ service.price }}</div>
+                <p>{{ service.description }}</p>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="book-now-section">
+            <p class="book-description">Ready to experience ultimate relaxation?</p>
+            <a href="{% url 'bookings:booking_step1_en' %}" class="btn btn-primary book-now-btn">
+                📅 Book Your Appointment Now
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- Access Information Section -->
+<section id="access" class="access">
+    <div class="container">
+        <h2>Access & Store Information</h2>
+        <div class="access-content">
+            <div class="access-info">
+                <div class="info-group">
+                    <h3>📍 Address</h3>
+                    <p>〒064-0809<br>Hokkaido, Sapporo, Chuo-ku, Minami 9-jo Nishi 4-chome 3-15<br>AMS Tower Nakajima 5F</p>
+                </div>
+                
+                <div class="info-group">
+                    <h3>🚇 Access</h3>
+                    <p><strong>Susukino Station</strong> (Namboku Line) - 5 minutes walk</p>
+                    <p><strong>Nakajima-koen Station</strong> (Namboku Line) - 3 minutes walk</p>
+                </div>
+                
+                <div class="info-group">
+                    <h3>🕐 Business Hours</h3>
+                    <p><strong>Monday - Friday:</strong> 10:00 - 20:00 (Last appointment 19:00)</p>
+                    <p><strong>Saturday:</strong> 10:00 - 18:00 (Last appointment 17:00)</p>
+                    <p><strong>Sunday & Holidays:</strong> Closed</p>
+                    <small>* Hours may vary on holidays</small>
+                </div>
+                
+                <div class="info-group">
+                    <h3>📞 Contact</h3>
+                    <p><strong>Phone:</strong> <a href="tel:011-123-4567">011-123-4567</a></p>
+                    <p><strong>Email:</strong> <a href="mailto:info@gracespa.com">info@gracespa.com</a></p>
+                </div>
+            </div>
+            
+            <!-- Map area (placeholder) -->
+            <div class="map-area">
+                <div class="map-placeholder">
+                    <p>🗺️ Map</p>
+                    <small>Interactive map will be displayed here</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    /* Hero Section */
+    .hero {
+        position: relative;
+        height: 100vh;
+        min-height: 600px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+
+    .hero-background {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 1;
+    }
+
+    .hero-image {
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #8b7355 0%, #a68b5b 50%, #d4c4a8 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        color: rgba(255, 255, 255, 0.5);
+    }
+
+    .hero-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.3);
+    }
+
+    .hero-content {
+        position: relative;
+        z-index: 3;
+        text-align: center;
+        color: white;
+    }
+
+    .hero-logo {
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .hero-logo-image {
+        max-width: 300px;
+        height: auto;
+        margin-bottom: 2rem;
+        filter: brightness(0) invert(1);
+    }
+
+    .hero-text p {
+        font-size: 1.2rem;
+        line-height: 1.8;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    }
+
+    /* About Section */
+    .section {
+        padding: 4rem 0;
+        background: white;
+    }
+
+    .section h2 {
+        text-align: center;
+        font-size: 2.5rem;
+        margin-bottom: 3rem;
+        color: #8b7355;
+        position: relative;
+    }
+
+    .section h2::after {
+        content: '';
+        position: absolute;
+        bottom: -10px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 60px;
+        height: 3px;
+        background: linear-gradient(135deg, #8b7355 0%, #a68b5b 100%);
+    }
+
+    .about-content {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 3rem;
+        align-items: center;
+    }
+
+    .about-text p {
+        font-size: 1.1rem;
+        line-height: 1.8;
+        color: #555;
+        margin-bottom: 1.5rem;
+    }
+
+    .treatment-image {
+        background: #f0f0f0;
+        border-radius: 15px;
+        height: 300px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #999;
+        font-size: 1rem;
+        border: 2px dashed #adb5bd;
+    }
+
+    .treatment-image img {
+        width: 100%;
+        height: 300px;
+        object-fit: cover;
+        border-radius: 15px;
+    }
+
+    /* Services Section */
+    .services {
+        background: white;
+        padding: 4rem 0;
+    }
+
+    .services h2 {
+        text-align: center;
+        font-size: 2.5rem;
+        margin-bottom: 3rem;
+        color: #8b7355;
+        position: relative;
+    }
+
+    .services h2::after {
+        content: '';
+        position: absolute;
+        bottom: -10px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 60px;
+        height: 3px;
+        background: linear-gradient(135deg, #8b7355 0%, #a68b5b 100%);
+    }
+
+    .services-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+        margin-top: 2rem;
+    }
+
+    .service-card {
+        background: white;
+        padding: 2rem;
+        border-radius: 15px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        transition: transform 0.3s;
+        position: relative;
+        border: 2px solid transparent;
+    }
+
+    .service-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .service-card h3 {
+        color: #8b7355;
+        margin-bottom: 1rem;
+        font-size: 1.3rem;
+        line-height: 1.4;
+    }
+
+    .service-duration {
+        font-size: 1.1rem;
+        color: #666;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+    }
+
+    .price {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #a68b5b;
+        margin: 1rem 0;
+    }
+
+    .service-card p {
+        color: #555;
+        line-height: 1.6;
+        font-size: 0.95rem;
+    }
+
+    /* Combo Menu Styles */
+    .combo-service {
+        border-color: #8b7355;
+        background: linear-gradient(135deg, #f8f5f0 0%, #ffffff 100%);
+    }
+
+    .combo-badge {
+        position: absolute;
+        top: -10px;
+        right: 15px;
+        background: linear-gradient(135deg, #8b7355 0%, #a68b5b 100%);
+        color: white;
+        padding: 0.3rem 0.8rem;
+        border-radius: 15px;
+        font-size: 0.8rem;
+        font-weight: bold;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Book Now Section */
+    .book-now-section {
+        text-align: center;
+        margin-top: 3rem;
+        padding: 2rem;
+        background: linear-gradient(135deg, #f8f5f0 0%, #fff9e6 100%);
+        border-radius: 15px;
+    }
+
+    .book-description {
+        font-size: 1.3rem;
+        color: #8b7355;
+        margin-bottom: 1.5rem;
+        font-weight: 500;
+    }
+
+    .book-now-btn {
+        background: linear-gradient(135deg, #8b7355 0%, #a68b5b 100%);
+        color: white;
+        padding: 1.2rem 3rem;
+        font-size: 1.2rem;
+        font-weight: bold;
+        border-radius: 50px;
+        text-decoration: none;
+        display: inline-block;
+        transition: all 0.3s;
+        box-shadow: 0 4px 15px rgba(139, 115, 85, 0.3);
+    }
+
+    .book-now-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(139, 115, 85, 0.4);
+        text-decoration: none;
+        color: white;
+    }
+
+    /* Access Section */
+    .access {
+        background: #f8f5f0;
+        padding: 4rem 0;
+    }
+
+    .access h2 {
+        text-align: center;
+        font-size: 2.5rem;
+        margin-bottom: 3rem;
+        color: #8b7355;
+        position: relative;
+    }
+
+    .access h2::after {
+        content: '';
+        position: absolute;
+        bottom: -10px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 60px;
+        height: 3px;
+        background: linear-gradient(135deg, #8b7355 0%, #a68b5b 100%);
+    }
+
+    .access-content {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 3rem;
+    }
+
+    .access-info {
+        background: white;
+        padding: 2rem;
+        border-radius: 15px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .info-group {
+        margin-bottom: 2rem;
+    }
+
+    .info-group:last-child {
+        margin-bottom: 0;
+    }
+
+    .info-group h3 {
+        color: #8b7355;
+        margin-bottom: 1rem;
+        font-size: 1.2rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .info-group p {
+        color: #555;
+        line-height: 1.6;
+        margin-bottom: 0.5rem;
+    }
+
+    .info-group a {
+        color: #8b7355;
+        text-decoration: none;
+        font-weight: 500;
+    }
+
+    .info-group a:hover {
+        text-decoration: underline;
+    }
+
+    .map-area {
+        background: white;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .map-placeholder {
+        height: 400px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: #f0f0f0;
+        color: #999;
+        font-size: 1.2rem;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .hero {
+            height: 70vh;
+            min-height: 500px;
+        }
+
+        .hero-text p {
+            font-size: 1rem;
+        }
+
+        .about-content {
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+
+        .access-content {
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+
+        .services-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .section h2, .services h2, .access h2 {
+            font-size: 2rem;
+        }
+
+        .book-now-btn {
+            width: 100%;
+            padding: 1rem 2rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .hero-logo-image {
+            max-width: 200px;
+        }
+
+        .service-card {
+            padding: 1.5rem;
+        }
+
+        .access-info {
+            padding: 1.5rem;
+        }
+    }
+</style>
+{% endblock %}

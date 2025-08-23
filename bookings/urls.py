@@ -11,6 +11,13 @@ urlpatterns = [
     path('booking/confirm/', views.booking_confirm, name='booking_confirm'),  # 確認画面
     path('booking/complete/', views.booking_complete, name='booking_complete'),  # 完了画面
     
+    # ★ 新規追加: 英語版3ステップ予約フォーム
+    path('en/booking/step1/', views.booking_step1_en, name='booking_step1_en'),  # Service Selection
+    path('en/booking/step2/', views.booking_step2_en, name='booking_step2_en'),  # Date & Time Selection
+    path('en/booking/step3/', views.booking_step3_en, name='booking_step3_en'),  # Customer Information
+    path('en/booking/confirm/', views.booking_confirm_en, name='booking_confirm_en'),  # Confirmation
+    path('en/booking/complete/', views.booking_complete_en, name='booking_complete_en'),  # Completion
+    
     # 予約管理機能（管理者用）
     path('booking/<int:booking_id>/cancel/', views.cancel_booking, name='cancel_booking'),
     path('booking/<int:booking_id>/confirm/', views.confirm_booking, name='confirm_booking'),

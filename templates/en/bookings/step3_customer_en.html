@@ -1,0 +1,100 @@
+{% extends 'en/base_en.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="booking-steps-container">
+    <div class="container">
+        <div class="step-content">
+            <h1>Step 3: Customer Information</h1>
+            
+            <div class="temporary-notice">
+                <h3>🚧 Under Construction</h3>
+                <p>The customer information form is currently under development.</p>
+                <p>Please contact us directly to complete your booking.</p>
+                <div class="contact-options">
+                    <a href="tel:011-123-4567" class="btn btn-primary">📞 Call Now</a>
+                    <a href="mailto:info@gracespa.com" class="btn btn-secondary">📧 Email</a>
+                </div>
+                <p style="margin-top: 2rem;">
+                    <a href="{% url 'bookings:booking_step1_en' %}">← Back to Service Selection</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .booking-steps-container {
+        min-height: calc(100vh - 120px);
+        background: linear-gradient(135deg, #faf8f5 0%, #f0ebe3 100%);
+        padding: 2rem 0;
+    }
+
+    .step-content {
+        background: white;
+        padding: 3rem;
+        border-radius: 15px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        text-align: center;
+    }
+
+    .step-content h1 {
+        color: #8b7355;
+        margin-bottom: 2rem;
+        font-size: 2rem;
+    }
+
+    .temporary-notice {
+        padding: 3rem 2rem;
+        background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+        border-radius: 15px;
+        border: 2px solid #ffc107;
+    }
+
+    .temporary-notice h3 {
+        color: #856404;
+        margin-bottom: 1rem;
+        font-size: 1.5rem;
+    }
+
+    .temporary-notice p {
+        color: #856404;
+        margin-bottom: 1rem;
+        font-size: 1.1rem;
+        line-height: 1.6;
+    }
+
+    .contact-options {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        margin: 2rem 0;
+    }
+
+    .contact-options .btn {
+        padding: 1rem 2rem;
+        font-size: 1.1rem;
+        text-decoration: none;
+        border-radius: 50px;
+        transition: all 0.3s;
+    }
+
+    .contact-options .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        text-decoration: none;
+    }
+
+    @media (max-width: 768px) {
+        .contact-options {
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .contact-options .btn {
+            width: 200px;
+        }
+    }
+</style>
+{% endblock %}

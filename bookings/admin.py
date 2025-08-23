@@ -7,24 +7,77 @@ from .models import Service, Therapist, Customer, Booking, BusinessHours, Bookin
 
 @admin.register(Service)
 class ServiceAdmin(admin.ModelAdmin):
-    list_display = ['name', 'duration_minutes', 'price_formatted', 'is_active', 'sort_order']
+    list_display = ['name', 'name_en_preview', 'duration_minutes', 'price_formatted', 'is_active', 'sort_order']
     list_filter = ['is_active']
-    search_fields = ['name', 'description']
+    search_fields = ['name', 'name_en', 'description', 'description_en']
     ordering = ['sort_order', 'name']
     list_editable = ['is_active', 'sort_order']
     
+    # ★ 新規追加: 英語名の一覧表示
+    def name_en_preview(self, obj):
+        """英語名のプレビュー表示"""
+        if obj.name_en:
+            return obj.name_en[:30] + ('...' if len(obj.name_en) > 30 else '')
+        return format_html('<span style="color: #999;">未設定</span>')
+    name_en_preview.short_description = '英語名'
+
     def price_formatted(self, obj):
         return f'¥{obj.price:,}'
     price_formatted.short_description = '料金'
 
+# ★ 新規追加: fieldsetsで編集画面を整理
+    fieldsets = (
+        ('日本語情報', {
+            'fields': ('name', 'description'),
+            'description': 'サービスの日本語での表示内容を設定してください。'
+        }),
+        ('英語情報', {
+            'fields': ('name_en', 'description_en'),
+            'description': '英語版サイト用の情報を設定してください。空欄の場合は日本語版の情報が使用されます。',
+            'classes': ('wide',)
+        }),
+        ('サービス詳細', {
+            'fields': ('duration_minutes', 'price', 'is_active', 'sort_order')
+        }),
+    )
+
+
 @admin.register(Therapist)
 class TherapistAdmin(admin.ModelAdmin):
-    list_display = ['display_name', 'name', 'is_active', 'sort_order']
+    list_display = ['display_name', 'display_name_en_preview', 'name', 'is_active', 'sort_order']
     list_filter = ['is_active']
-    search_fields = ['name', 'display_name', 'description']
+    search_fields = ['name', 'display_name', 'display_name_en', 'description', 'description_en']  # ★ 英語フィールドも検索対象に
     ordering = ['sort_order', 'name']
     list_editable = ['is_active', 'sort_order']
 
+     # ★ 新規追加: 英語表示名のプレビュー表示
+    def display_name_en_preview(self, obj):
+        """英語表示名のプレビュー表示"""
+        if obj.display_name_en:
+            return obj.display_name_en
+        return format_html('<span style="color: #999;">未設定</span>')
+    display_name_en_preview.short_description = '英語表示名'
+
+     # ★ 新規追加: fieldsetsで編集画面を整理
+    fieldsets = (
+        ('基本情報', {
+            'fields': ('name', 'is_active', 'sort_order'),
+            'description': 'システム内部で使用される名前と基本設定'
+        }),
+        ('日本語表示情報', {
+            'fields': ('display_name', 'description'),
+            'description': '日本語サイトで表示される情報を設定してください。'
+        }),
+        ('英語表示情報', {
+            'fields': ('display_name_en', 'description_en'),
+            'description': '英語版サイト用の情報を設定してください。空欄の場合は日本語版の情報が使用されます。',
+            'classes': ('wide',)
+        }),
+        ('画像', {
+            'fields': ('image',),
+            'description': '施術者の写真をアップロードできます。'
+        }),
+    )
 @admin.register(Customer)
 class CustomerAdmin(admin.ModelAdmin):
     # ★ 修正: list_displayに性別アイコンを追加

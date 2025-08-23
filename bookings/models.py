@@ -8,7 +8,9 @@ import datetime
 class Service(models.Model):
     """サービスモデル"""
     name = models.CharField('サービス名', max_length=100)
+    name_en = models.CharField('サービス名（英語）', max_length=100, blank=True, default='')  # ★ 追加
     description = models.TextField('説明', blank=True)
+    description_en = models.TextField('説明（英語）', blank=True, default='')  # ★ 追加
     duration_minutes = models.PositiveIntegerField('施術時間（分）')
     price = models.PositiveIntegerField('料金')
     is_active = models.BooleanField('有効', default=True)
@@ -23,12 +25,27 @@ class Service(models.Model):
     
     def __str__(self):
         return f'{self.name} ({self.duration_minutes}分 ¥{self.price:,})'
-
+    
+      # ★ 追加: 言語に応じた名前を返すメソッド
+    def get_name(self, language='ja'):
+        """言語に応じたサービス名を返す"""
+        if language == 'en' and self.name_en:
+            return self.name_en
+        return self.name
+    
+    # ★ 追加: 言語に応じた説明を返すメソッド  
+    def get_description(self, language='ja'):
+        """言語に応じた説明を返す"""
+        if language == 'en' and self.description_en:
+            return self.description_en
+        return self.description
 class Therapist(models.Model):
     """施術者モデル"""
     name = models.CharField('名前', max_length=50)
     display_name = models.CharField('表示名', max_length=50, help_text='お客様に表示される名前')
+    display_name_en = models.CharField('表示名（英語）', max_length=50, blank=True, default='', help_text='英語版で表示される名前')  # ★ 追加
     description = models.TextField('紹介文', blank=True)
+    description_en = models.TextField('紹介文（英語）', blank=True, default='')  # ★ 追加
     image = models.ImageField('写真', upload_to='therapists/', blank=True, null=True)
     is_active = models.BooleanField('有効', default=True)
     sort_order = models.PositiveIntegerField('表示順', default=0)
@@ -42,7 +59,21 @@ class Therapist(models.Model):
     
     def __str__(self):
         return self.display_name
-
+    
+    # ★ 追加: 言語に応じた表示名を返すメソッド
+    def get_display_name(self, language='ja'):
+        """言語に応じた表示名を返す"""
+        if language == 'en' and self.display_name_en:
+            return self.display_name_en
+        return self.display_name
+    
+    # ★ 追加: 言語に応じた紹介文を返すメソッド
+    def get_description(self, language='ja'):
+        """言語に応じた紹介文を返す"""
+        if language == 'en' and self.description_en:
+            return self.description_en
+        return self.description
+    
 # bookings/models.py の Customer モデル部分に以下のフィールドを追加してください
 
 class Customer(models.Model):

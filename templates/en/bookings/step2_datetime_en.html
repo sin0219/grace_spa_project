@@ -1,0 +1,243 @@
+{% extends 'en/base_en.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="booking-steps-container">
+    <div class="container">
+        <!-- Progress Bar -->
+        <div class="progress-container">
+            <div class="progress-bar">
+                <div class="step completed">
+                    <div class="step-number">✓</div>
+                    <div class="step-label">Service Selection</div>
+                </div>
+                <div class="step active">
+                    <div class="step-number">2</div>
+                    <div class="step-label">Date & Time</div>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-label">Customer Info</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 2: Date & Time Selection -->
+        <div class="step-content">
+            <h1>Step 2: Select Date & Time</h1>
+            
+            <!-- Selected Service Info -->
+            <div class="service-summary">
+                <h3>Selected Service</h3>
+                <div class="service-details">
+                    <h4>{{ service.name_en }}</h4>
+                    <p class="service-duration">Treatment Time: {{ service.duration_minutes }} minutes</p>
+                    <p class="service-price">Price: ¥{{ service.price|floatformat:0 }}</p>
+                    {% if service.description_en %}
+                        <p class="service-description">{{ service.description_en }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Temporary Notice -->
+            <div class="temporary-notice">
+                <h3>🚧 Under Construction</h3>
+                <p>The date and time selection system is currently under development. Please contact us directly for bookings.</p>
+                <div class="contact-options">
+                    <a href="tel:011-123-4567" class="btn btn-primary">📞 Call Now</a>
+                    <a href="mailto:info@gracespa.com" class="btn btn-secondary">📧 Email</a>
+                </div>
+                <p style="margin-top: 2rem;">
+                    <a href="{% url 'bookings:booking_step1_en' %}">← Back to Service Selection</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .booking-steps-container {
+        min-height: calc(100vh - 120px);
+        background: linear-gradient(135deg, #faf8f5 0%, #f0ebe3 100%);
+        padding: 2rem 0;
+    }
+
+    .progress-container {
+        margin-bottom: 3rem;
+    }
+
+    .progress-bar {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        max-width: 600px;
+        margin: 0 auto;
+        position: relative;
+    }
+
+    .progress-bar::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 20%;
+        right: 20%;
+        height: 2px;
+        background: #ddd;
+        z-index: 1;
+    }
+
+    .step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        flex: 1;
+        position: relative;
+        z-index: 2;
+    }
+
+    .step-number {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: #ddd;
+        color: #666;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        z-index: 2;
+        position: relative;
+    }
+
+    .step.completed .step-number {
+        background: #8b7355;
+        color: white;
+    }
+
+    .step.active .step-number {
+        background: #8b7355;
+        color: white;
+    }
+
+    .step-label {
+        font-size: 0.9rem;
+        color: #666;
+        text-align: center;
+    }
+
+    .step.active .step-label {
+        color: #8b7355;
+        font-weight: bold;
+    }
+
+    .step-content {
+        background: white;
+        padding: 3rem;
+        border-radius: 15px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    .step-content h1 {
+        color: #8b7355;
+        text-align: center;
+        margin-bottom: 2rem;
+        font-size: 2rem;
+    }
+
+    .service-summary {
+        background: #f8f5f0;
+        border-radius: 15px;
+        padding: 2rem;
+        margin-bottom: 3rem;
+        border-left: 5px solid #8b7355;
+    }
+
+    .service-summary h3 {
+        color: #8b7355;
+        margin-bottom: 1rem;
+        font-size: 1.2rem;
+    }
+
+    .service-details h4 {
+        color: #333;
+        margin-bottom: 0.5rem;
+        font-size: 1.4rem;
+    }
+
+    .service-duration, .service-price {
+        color: #666;
+        margin-bottom: 0.25rem;
+        font-weight: 500;
+    }
+
+    .service-price {
+        color: #8b7355;
+        font-size: 1.1rem;
+        font-weight: bold;
+    }
+
+    .service-description {
+        color: #666;
+        margin-top: 1rem;
+        line-height: 1.6;
+    }
+
+    .temporary-notice {
+        text-align: center;
+        padding: 3rem 2rem;
+        background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+        border-radius: 15px;
+        border: 2px solid #ffc107;
+    }
+
+    .temporary-notice h3 {
+        color: #856404;
+        margin-bottom: 1rem;
+        font-size: 1.5rem;
+    }
+
+    .temporary-notice p {
+        color: #856404;
+        margin-bottom: 2rem;
+        font-size: 1.1rem;
+        line-height: 1.6;
+    }
+
+    .contact-options {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        margin-bottom: 2rem;
+    }
+
+    .contact-options .btn {
+        padding: 1rem 2rem;
+        font-size: 1.1rem;
+        text-decoration: none;
+        border-radius: 50px;
+        transition: all 0.3s;
+    }
+
+    .contact-options .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        text-decoration: none;
+    }
+
+    @media (max-width: 768px) {
+        .step-content {
+            padding: 2rem;
+        }
+
+        .contact-options {
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .contact-options .btn {
+            width: 200px;
+        }
+    }
+</style>
+{% endblock %}

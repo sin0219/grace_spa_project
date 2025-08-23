@@ -6,13 +6,13 @@ from django.conf import settings
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 from django.db.models import Q
-from django.utils.translation import get_language
 import datetime
 import json
 import logging
 
 from .models import Service, Therapist, Booking, Customer, BusinessHours, BookingSettings, Schedule
 from .forms import ServiceSelectionForm, DateTimeTherapistForm, CustomerInfoForm, validate_booking_time_slot
+from .utils.language import get_language
 
 # メール機能のインポート
 from emails.utils import (
@@ -25,7 +25,6 @@ logger = logging.getLogger(__name__)
 
 def booking_step1(request):
     """ステップ1: サービス選択"""
-    current_language = get_language()
     
     # デバッグ: サービス情報を確認
     all_services = Service.objects.all()
@@ -56,48 +55,29 @@ def booking_step1(request):
     services = Service.objects.filter(is_active=True).order_by('sort_order', 'name')
     logger.debug(f"テンプレートに渡すサービス数: {services.count()}")
     
-    # 言語に応じてコンテンツを分ける
-    if current_language == 'en':
-        context = {
-            'form': form,
-            'services': services,
-            'title': 'Step 1: Service Selection - GRACE SPA',
-            'step': 1,
-            'total_steps': 3
-        }
-        template_name = 'bookings/step1_service_en.html'
-    else:
-        context = {
-            'form': form,
-            'services': services,
-            'title': 'ステップ1: サービス選択 - GRACE SPA',
-            'step': 1,
-            'total_steps': 3
-        }
-        template_name = 'bookings/step1_service.html'
-    
-    return render(request, template_name, context)
+# ★ 常に日本語版テンプレートを使用
+    context = {
+        'form': form,
+        'services': services,
+        'title': 'ステップ1: サービス選択 - GRACE SPA',
+        'step': 1,
+        'total_steps': 3
+    }
+    return render(request, 'bookings/step1_service.html', context)
 
 def booking_step2(request):
     """ステップ2: 日時・施術者選択"""
-    current_language = get_language()
     
     # セッションからサービス情報を取得
     service_id = request.session.get('booking_service_id')
     if not service_id:
-        if current_language == 'en':
-            messages.error(request, 'No service selected. Please start over.')
-        else:
-            messages.error(request, 'サービスが選択されていません。最初からやり直してください。')
+        messages.error(request, 'サービスが選択されていません。最初からやり直してください。')
         return redirect('bookings:booking_step1')
     
     try:
         service = Service.objects.get(id=service_id)
     except Service.DoesNotExist:
-        if current_language == 'en':
-            messages.error(request, 'Selected service not found.')
-        else:
-            messages.error(request, '選択されたサービスが見つかりません。')
+        messages.error(request, '選択されたサービスが見つかりません。')
         return redirect('bookings:booking_step1')
     
     # 施術者選択機能が有効かチェック
@@ -130,36 +110,20 @@ def booking_step2(request):
     # アクティブな施術者を取得
     therapists = Therapist.objects.filter(is_active=True).order_by('sort_order', 'name')
     
-    # 言語に応じてコンテンツを分ける
-    if current_language == 'en':
-        context = {
-            'form': form,
-            'service': service,
-            'therapists': therapists,
-            'enable_therapist_selection': enable_therapist_selection,
-            'title': 'Step 2: Date & Therapist Selection - GRACE SPA',
-            'step': 2,
-            'total_steps': 3
-        }
-        template_name = 'bookings/step2_datetime_en.html'
-    else:
-        context = {
-            'form': form,
-            'service': service,
-            'therapists': therapists,
-            'enable_therapist_selection': enable_therapist_selection,
-            'title': 'ステップ2: 日時・施術者選択 - GRACE SPA',
-            'step': 2,
-            'total_steps': 3
-        }
-        template_name = 'bookings/step2_datetime.html'
-    
-    return render(request, template_name, context)
+   # ★ 常に日本語版テンプレートを使用
+    context = {
+        'form': form,
+        'service': service,
+        'therapists': therapists,
+        'enable_therapist_selection': enable_therapist_selection,
+        'title': 'ステップ2: 日時・施術者選択 - GRACE SPA',
+        'step': 2,
+        'total_steps': 3
+    }
+    return render(request, 'bookings/step2_datetime.html', context)
 
 def booking_step3(request):
     """ステップ3: お客様情報入力"""
-    current_language = get_language()
-    
     # セッションから予約情報を取得
     service_id = request.session.get('booking_service_id')
     booking_date_str = request.session.get('booking_date')
@@ -167,10 +131,7 @@ def booking_step3(request):
     therapist_id = request.session.get('booking_therapist_id')
     
     if not all([service_id, booking_date_str, booking_time_str]):
-        if current_language == 'en':
-            messages.error(request, 'Booking information is incomplete. Please start over.')
-        else:
-            messages.error(request, '予約情報が不完全です。最初からやり直してください。')
+        messages.error(request, '予約情報が不完全です。最初からやり直してください。')
         return redirect('bookings:booking_step1')
     
     try:
@@ -178,11 +139,8 @@ def booking_step3(request):
         booking_date = datetime.datetime.fromisoformat(booking_date_str).date()
         booking_time = datetime.datetime.strptime(booking_time_str, '%H:%M').time()
         therapist = Therapist.objects.get(id=therapist_id) if therapist_id else None
-    except (Service.DoesNotExist, Therapist.DoesNotExist, ValueError):
-        if current_language == 'en':
-            messages.error(request, 'There is a problem with the booking information. Please start over.')
-        else:
-            messages.error(request, '予約情報に問題があります。最初からやり直してください。')
+    except (Service.DoesNotExist, Therapist.DoesNotExist, ValueError): 
+        messages.error(request, '予約情報に問題があります。最初からやり直してください。')
         return redirect('bookings:booking_step1')
     
     # 予約可能性をチェック（表示時のみ - 実際の予約確定は後で行う）
@@ -211,16 +169,10 @@ def booking_step3(request):
             
             # 両方に内容がある場合は改行で区切って統合
             combined_notes = []
-            if step2_notes.strip():
-                if current_language == 'en':
-                    combined_notes.append(f"【Requests】{step2_notes.strip()}")
-                else:
-                    combined_notes.append(f"【ご要望】{step2_notes.strip()}")
+            if step2_notes.strip(): 
+                combined_notes.append(f"【ご要望】{step2_notes.strip()}")
             if step3_notes.strip():
-                if current_language == 'en':
-                    combined_notes.append(f"【Notes】{step3_notes.strip()}")
-                else:
-                    combined_notes.append(f"【備考】{step3_notes.strip()}")
+                combined_notes.append(f"【備考】{step3_notes.strip()}")
             
             request.session['booking_notes'] = '\n'.join(combined_notes)
             
@@ -228,21 +180,7 @@ def booking_step3(request):
     else:
         form = CustomerInfoForm()
     
-    # 言語に応じてコンテンツを分ける
-    if current_language == 'en':
-        context = {
-            'form': form,
-            'service': service,
-            'therapist': therapist,
-            'booking_date': booking_date,
-            'booking_time': booking_time,
-            'validation_error': validation_error,
-            'title': 'Step 3: Customer Information - GRACE SPA',
-            'step': 3,
-            'total_steps': 3
-        }
-        template_name = 'bookings/step3_customer_en.html'
-    else:
+     # ★ 常に日本語版テンプレートを使用
         context = {
             'form': form,
             'service': service,
@@ -254,9 +192,8 @@ def booking_step3(request):
             'step': 3,
             'total_steps': 3
         }
-        template_name = 'bookings/step3_customer.html'
     
-    return render(request, template_name, context)
+    return render(request, 'bookings/step3_customer.html', context)
 
 def booking_confirm(request):
     """確認画面"""
@@ -444,6 +381,218 @@ def booking_complete(request):
         template_name = 'bookings/complete.html'
     
     return render(request, template_name, context)
+
+# bookings/views.py の最後に以下の英語版ビュー関数を追加してください
+
+# ============ 英語版予約システム ============
+
+def booking_step1_en(request):
+    """Step 1: Service Selection (English)"""
+    from .forms import ServiceSelectionForm
+    from .models import Service
+    
+    if request.method == 'POST':
+        form = ServiceSelectionForm(request.POST)
+        if form.is_valid():
+            # セッションに選択したサービスIDと言語を保存
+            request.session['booking_service_id'] = form.cleaned_data['service'].id
+            request.session['language'] = 'en'
+            return redirect('bookings:booking_step2_en')
+    else:
+        form = ServiceSelectionForm()
+    
+    # アクティブなサービスを取得して英語版に変換
+    services_data = Service.objects.filter(is_active=True).order_by('sort_order', 'name')
+    services = []
+    
+    for service in services_data:
+        services.append({
+            'id': service.id,
+            'name_en': service.get_name('en'),
+            'description_en': service.get_description('en'),
+            'duration_minutes': service.duration_minutes,
+            'price': service.price,
+            'is_active': service.is_active
+        })
+    
+    context = {
+        'form': form,
+        'services': services,
+        'title': 'Step 1: Service Selection - GRACE SPA',
+        'step': 1,
+        'total_steps': 3
+    }
+    return render(request, 'en/bookings/step1_service_en.html', context)
+
+
+def booking_step2_en(request):
+    """Step 2: Date & Therapist Selection (English)"""
+    
+    # セッションから予約情報を取得
+    service_id = request.session.get('booking_service_id')
+    if not service_id:
+        messages.error(request, 'Service not selected. Please start over.')
+        return redirect('bookings:booking_step1_en')
+    
+    try:
+        service = Service.objects.get(id=service_id)
+    except Service.DoesNotExist:
+        messages.error(request, 'Selected service not found.')
+        return redirect('bookings:booking_step1_en')
+    
+    # 施術者選択機能が有効かチェック
+    try:
+        booking_settings = BookingSettings.get_current_settings()
+        enable_therapist_selection = booking_settings.enable_therapist_selection
+    except:
+        enable_therapist_selection = True  # デフォルトは有効
+    
+    if request.method == 'POST':
+        form = DateTimeTherapistForm(request.POST, enable_therapist_selection=enable_therapist_selection)
+        if form.is_valid():
+            # セッションに選択情報を保存
+            request.session['booking_date'] = form.cleaned_data['booking_date'].isoformat()
+            request.session['booking_time'] = form.cleaned_data['booking_time'].strftime('%H:%M')
+            
+            if enable_therapist_selection:
+                therapist = form.cleaned_data.get('therapist')
+                request.session['booking_therapist_id'] = therapist.id if therapist else None
+            else:
+                request.session['booking_therapist_id'] = None
+            
+            # ステップ2の備考をセッションに保存
+            request.session['booking_notes'] = form.cleaned_data.get('notes', '')
+            
+            return redirect('bookings:booking_step3_en')
+    else:
+        form = DateTimeTherapistForm(enable_therapist_selection=enable_therapist_selection)
+    
+    # アクティブな施術者を取得して英語版に変換
+    therapists_data = Therapist.objects.filter(is_active=True).order_by('sort_order', 'name')
+    therapists = []
+    
+    for therapist in therapists_data:
+        therapists.append({
+            'id': therapist.id,
+            'display_name_en': therapist.get_display_name('en'),
+            'description_en': therapist.get_description('en'),
+            'image': therapist.image,
+            'is_active': therapist.is_active
+        })
+    
+    context = {
+        'form': form,
+        'service': {
+            'id': service.id,
+            'name_en': service.get_name('en'),
+            'description_en': service.get_description('en'),
+            'duration_minutes': service.duration_minutes,
+            'price': service.price
+        },
+        'therapists': therapists,
+        'enable_therapist_selection': enable_therapist_selection,
+        'title': 'Step 2: Date & Therapist Selection - GRACE SPA',
+        'step': 2,
+        'total_steps': 3
+    }
+    return render(request, 'en/bookings/step2_datetime_en.html', context)
+
+
+def booking_step3_en(request):
+    """Step 3: Customer Information (English)"""
+    
+    # セッションから予約情報を取得
+    service_id = request.session.get('booking_service_id')
+    booking_date_str = request.session.get('booking_date')
+    booking_time_str = request.session.get('booking_time')
+    therapist_id = request.session.get('booking_therapist_id')
+    
+    if not all([service_id, booking_date_str, booking_time_str]):
+        messages.error(request, 'Booking information is incomplete. Please start over.')
+        return redirect('bookings:booking_step1_en')
+    
+    try:
+        service = Service.objects.get(id=service_id)
+        booking_date = datetime.datetime.fromisoformat(booking_date_str).date()
+        booking_time = datetime.datetime.strptime(booking_time_str, '%H:%M').time()
+        therapist = Therapist.objects.get(id=therapist_id) if therapist_id else None
+    except (Service.DoesNotExist, Therapist.DoesNotExist, ValueError):
+        messages.error(request, 'There is a problem with the booking information. Please start over.')
+        return redirect('bookings:booking_step1_en')
+    
+    # 予約可能性をチェック（表示時のみ）
+    validation_error = None
+    try:
+        validate_booking_time_slot(service, booking_date, booking_time, therapist)
+    except ValidationError as e:
+        validation_error = str(e)
+        logger.warning(f"Booking time conflict check: {validation_error}")
+    
+    if request.method == 'POST':
+        form = CustomerInfoForm(request.POST)
+        if form.is_valid():
+            # セッションに顧客情報を保存
+            request.session['customer_name'] = form.cleaned_data['customer_name']
+            request.session['customer_email'] = form.cleaned_data['customer_email']
+            request.session['customer_phone'] = form.cleaned_data['customer_phone']
+            request.session['customer_gender'] = form.cleaned_data['gender']
+            request.session['customer_is_first_visit'] = form.cleaned_data['is_first_visit']
+
+            # ステップ2とステップ3の備考を統合
+            step2_notes = request.session.get('booking_notes', '')
+            step3_notes = form.cleaned_data.get('notes', '')
+            
+            # 両方に内容がある場合は改行で区切って統合
+            combined_notes = []
+            if step2_notes.strip():
+                combined_notes.append(f"【Requests】{step2_notes.strip()}")
+            if step3_notes.strip():
+                combined_notes.append(f"【Notes】{step3_notes.strip()}")
+            
+            request.session['booking_notes'] = '\n'.join(combined_notes)
+            
+            return redirect('bookings:booking_confirm_en')
+    else:
+        form = CustomerInfoForm()
+    
+    context = {
+        'form': form,
+        'service': {
+            'id': service.id,
+            'name_en': service.get_name('en'),
+            'price': service.price
+        },
+        'therapist': {
+            'display_name_en': therapist.get_display_name('en') if therapist else None
+        } if therapist else None,
+        'booking_date': booking_date,
+        'booking_time': booking_time,
+        'validation_error': validation_error,
+        'title': 'Step 3: Customer Information - GRACE SPA',
+        'step': 3,
+        'total_steps': 3
+    }
+    return render(request, 'en/bookings/step3_customer_en.html', context)
+
+
+def booking_confirm_en(request):
+    """Booking Confirmation (English)"""
+    # 英語版の確認画面
+    # ... （詳細実装は次のステップで）...
+    context = {
+        'title': 'Booking Confirmation - GRACE SPA'
+    }
+    return render(request, 'en/bookings/confirm_en.html', context)
+
+
+def booking_complete_en(request):
+    """Booking Completion (English)"""
+    # 英語版の完了画面
+    # ... （詳細実装は次のステップで）...
+    context = {
+        'title': 'Booking Complete - GRACE SPA'
+    }
+    return render(request, 'en/bookings/complete_en.html', context)
 
 def get_available_times(request):
     """AJAX: 指定された日付の利用可能時間を取得（①当日時刻チェック ②直前予約制限対応）"""

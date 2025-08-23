@@ -1,0 +1,49 @@
+{% extends 'en/base_en.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="completion-content">
+        <h1>Booking Complete</h1>
+        <div class="temporary-notice">
+            <h3>🚧 Under Construction</h3>
+            <p>The booking completion page is currently under development.</p>
+            <p><a href="{% url 'website:home_en' %}">← Back to Home</a></p>
+        </div>
+    </div>
+</div>
+
+<style>
+    .completion-content {
+        background: white;
+        padding: 3rem;
+        border-radius: 15px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        text-align: center;
+        margin: 2rem 0;
+    }
+
+    .completion-content h1 {
+        color: #8b7355;
+        margin-bottom: 2rem;
+    }
+
+    .temporary-notice {
+        padding: 2rem;
+        background: #d4edda;
+        border-radius: 10px;
+        border: 2px solid #28a745;
+    }
+
+    .temporary-notice h3 {
+        color: #155724;
+        margin-bottom: 1rem;
+    }
+
+    .temporary-notice p {
+        color: #155724;
+        margin: 1rem 0;
+    }
+</style>
+{% endblock %}
