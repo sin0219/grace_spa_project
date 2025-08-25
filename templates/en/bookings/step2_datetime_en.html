@@ -31,213 +31,659 @@
             <div class="service-summary">
                 <h3>Selected Service</h3>
                 <div class="service-details">
-                    <h4>{{ service.name_en }}</h4>
-                    <p class="service-duration">Treatment Time: {{ service.duration_minutes }} minutes</p>
-                    <p class="service-price">Price: ¥{{ service.price|floatformat:0 }}</p>
-                    {% if service.description_en %}
-                        <p class="service-description">{{ service.description_en }}</p>
-                    {% endif %}
+                    <h4>Test Service Name</h4>
+                    <p class="service-duration">Treatment Duration: 60 minutes</p>
+                    <p class="service-price">Price: ¥10,000</p>
                 </div>
             </div>
 
-            <!-- Temporary Notice -->
-            <div class="temporary-notice">
-                <h3>🚧 Under Construction</h3>
-                <p>The date and time selection system is currently under development. Please contact us directly for bookings.</p>
-                <div class="contact-options">
-                    <a href="tel:011-123-4567" class="btn btn-primary">📞 Call Now</a>
-                    <a href="mailto:info@gracespa.com" class="btn btn-secondary">📧 Email</a>
+            <form method="post" class="datetime-form" id="datetimeForm">
+                {% csrf_token %}
+
+                <!-- Date Selection -->
+                <div class="date-selection">
+                    <h3>Preferred Date</h3>
+                    <div class="calendar-container">
+                        <div class="calendar-header">
+                            <button type="button" class="calendar-nav" id="prevMonth">‹</button>
+                            <h4 id="currentMonth">Loading...</h4>
+                            <button type="button" class="calendar-nav" id="nextMonth">›</button>
+                        </div>
+                        <div class="calendar-weekdays">
+                            <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+                        </div>
+                        <div class="calendar-days" id="calendarDays">
+                            <!-- Generated dynamically by JavaScript -->
+                        </div>
+                    </div>
+                    <input type="hidden" name="booking_date" id="bookingDate">
+                    <input type="hidden" id="serviceId" value="1">
                 </div>
-                <p style="margin-top: 2rem;">
-                    <a href="{% url 'bookings:booking_step1_en' %}">← Back to Service Selection</a>
-                </p>
-            </div>
+
+                <!-- Time Selection -->
+                <div class="time-selection">
+                    <h3>Preferred Time</h3>
+                    <div class="time-slots-container" id="timeSlotsContainer">
+                        <p class="select-date-first">Please select your preferred date first</p>
+                    </div>
+                    <input type="hidden" name="booking_time" id="bookingTime">
+                </div>
+
+                <!-- Notes Section -->
+                <div class="notes-section">
+                    <h3>Special Requests / Notes (Optional)</h3>
+                    <textarea name="notes" placeholder="Any special requests or notes..." rows="4" style="width:100%; padding:1rem; border:2px solid #e9ecef; border-radius:8px;"></textarea>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="form-actions">
+                    <a href="/en/booking/step1/" class="btn btn-secondary">Back</a>
+                    <button type="submit" class="btn btn-primary" id="submitBtn" disabled>Next Step</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
+{% endblock %}
 
+{% block extra_css %}
 <style>
-    .booking-steps-container {
-        min-height: calc(100vh - 120px);
-        background: linear-gradient(135deg, #faf8f5 0%, #f0ebe3 100%);
-        padding: 2rem 0;
-    }
+.booking-steps-container {
+    padding: 2rem 0;
+    background: linear-gradient(135deg, #f8f5f0 0%, #fff 100%);
+    min-height: 100vh;
+}
 
-    .progress-container {
-        margin-bottom: 3rem;
-    }
+/* Progress Bar */
+.progress-container {
+    margin-bottom: 3rem;
+}
 
-    .progress-bar {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        max-width: 600px;
-        margin: 0 auto;
-        position: relative;
-    }
+.progress-bar {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 2rem;
+    max-width: 600px;
+    margin: 0 auto;
+}
 
-    .progress-bar::before {
-        content: '';
-        position: absolute;
-        top: 50%;
-        left: 20%;
-        right: 20%;
-        height: 2px;
-        background: #ddd;
-        z-index: 1;
-    }
+.step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    position: relative;
+}
 
-    .step {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        flex: 1;
-        position: relative;
-        z-index: 2;
-    }
+.step:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 20px;
+    left: 100%;
+    width: 2rem;
+    height: 2px;
+    background: #ddd;
+    z-index: 1;
+}
 
-    .step-number {
-        width: 50px;
-        height: 50px;
-        border-radius: 50%;
-        background: #ddd;
-        color: #666;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: bold;
-        z-index: 2;
-        position: relative;
-    }
+.step.completed:not(:last-child)::after,
+.step.active:not(:last-child)::after {
+    background: #8b7355;
+}
 
-    .step.completed .step-number {
-        background: #8b7355;
-        color: white;
-    }
+.step-number {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    background: #ddd;
+    color: #666;
+    z-index: 2;
+    position: relative;
+}
 
-    .step.active .step-number {
-        background: #8b7355;
-        color: white;
-    }
+.step.completed .step-number {
+    background: #8b7355;
+    color: white;
+}
 
-    .step-label {
-        font-size: 0.9rem;
-        color: #666;
-        text-align: center;
-    }
+.step.active .step-number {
+    background: #8b7355;
+    color: white;
+}
 
-    .step.active .step-label {
-        color: #8b7355;
-        font-weight: bold;
-    }
+.step-label {
+    font-size: 0.9rem;
+    color: #666;
+    text-align: center;
+    white-space: nowrap;
+}
 
+.step.completed .step-label,
+.step.active .step-label {
+    color: #8b7355;
+    font-weight: bold;
+}
+
+/* Main Content */
+.step-content {
+    background: white;
+    border-radius: 20px;
+    padding: 3rem;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+.step-content h1 {
+    text-align: center;
+    color: #8b7355;
+    margin-bottom: 3rem;
+    font-size: 2.5rem;
+}
+
+/* Service Summary */
+.service-summary {
+    background: linear-gradient(135deg, #f4e4bc 0%, #fff 100%);
+    border-radius: 15px;
+    padding: 2rem;
+    margin-bottom: 3rem;
+}
+
+.service-summary h3 {
+    color: #8b7355;
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid #f4e4bc;
+    padding-bottom: 0.5rem;
+}
+
+.service-details h4 {
+    color: #8b7355;
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.service-duration, .service-price {
+    font-weight: bold;
+    color: #666;
+    margin-bottom: 0.5rem;
+}
+
+/* Date Selection */
+.date-selection {
+    margin-bottom: 3rem;
+}
+
+.date-selection h3 {
+    color: #8b7355;
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid #f4e4bc;
+    padding-bottom: 0.5rem;
+}
+
+.calendar-container {
+    background: white;
+    border-radius: 15px;
+    padding: 2rem;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.calendar-nav {
+    background: #8b7355;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.calendar-nav:hover {
+    background: #a68b5b;
+    transform: scale(1.1);
+}
+
+.calendar-header h4 {
+    color: #8b7355;
+    font-size: 1.3rem;
+    margin: 0;
+}
+
+.calendar-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.calendar-weekdays div {
+    text-align: center;
+    font-weight: bold;
+    color: #8b7355;
+    padding: 0.5rem;
+}
+
+.calendar-days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0.5rem;
+}
+
+.calendar-day {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid transparent;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-weight: bold;
+}
+
+.calendar-day:hover {
+    background: #f0f0f0;
+}
+
+.calendar-day.other-month {
+    color: #ccc;
+    cursor: not-allowed;
+}
+
+.calendar-day.today {
+    background: #e8f4f8;
+    color: #0c5460;
+    border: 2px solid #17a2b8;
+}
+
+.calendar-day.selected {
+    background: #8b7355;
+    color: white;
+    box-shadow: 0 0 10px rgba(139, 115, 85, 0.5);
+}
+
+.calendar-day.past {
+    color: #ccc;
+    cursor: not-allowed;
+}
+
+/* Time Selection */
+.time-selection {
+    margin-bottom: 3rem;
+}
+
+.time-selection h3 {
+    color: #8b7355;
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid #f4e4bc;
+    padding-bottom: 0.5rem;
+}
+
+.time-slots-container {
+    background: white;
+    border-radius: 15px;
+    padding: 2rem;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    min-height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.time-slots-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 1rem;
+    width: 100%;
+}
+
+.time-slot {
+    padding: 1rem;
+    border: 2px solid #e9ecef;
+    border-radius: 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-weight: bold;
+    background: white;
+}
+
+.time-slot:hover {
+    border-color: #8b7355;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.time-slot.selected {
+    background: #8b7355;
+    border-color: #8b7355;
+    color: white;
+    box-shadow: 0 0 10px rgba(139, 115, 85, 0.5);
+}
+
+.time-slot.unavailable {
+    background: #f8f9fa;
+    color: #999;
+    border-color: #e9ecef;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.select-date-first {
+    text-align: center;
+    color: #666;
+    font-style: italic;
+    padding: 2rem;
+}
+
+/* Notes Section */
+.notes-section {
+    margin-bottom: 3rem;
+}
+
+.notes-section h3 {
+    color: #8b7355;
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid #f4e4bc;
+    padding-bottom: 0.5rem;
+}
+
+.notes-section textarea {
+    width: 100%;
+    min-height: 120px;
+    padding: 1rem;
+    border: 2px solid #e9ecef;
+    border-radius: 10px;
+    resize: vertical;
+    font-family: inherit;
+    font-size: 1rem;
+    transition: border-color 0.3s;
+}
+
+.notes-section textarea:focus {
+    outline: none;
+    border-color: #8b7355;
+    box-shadow: 0 0 10px rgba(139, 115, 85, 0.2);
+}
+
+/* Form Actions */
+.form-actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.btn {
+    padding: 1rem 3rem;
+    border: none;
+    border-radius: 50px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+}
+
+.btn-primary {
+    background: #8b7355;
+    color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: #a68b5b;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(139, 115, 85, 0.4);
+}
+
+.btn-primary:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.btn-secondary {
+    background: transparent;
+    color: #8b7355;
+    border: 2px solid #8b7355;
+}
+
+.btn-secondary:hover {
+    background: #8b7355;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(139, 115, 85, 0.3);
+    text-decoration: none;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
     .step-content {
-        background: white;
-        padding: 3rem;
-        border-radius: 15px;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        padding: 2rem;
     }
-
+    
     .step-content h1 {
-        color: #8b7355;
-        text-align: center;
-        margin-bottom: 2rem;
         font-size: 2rem;
     }
 
-    .service-summary {
-        background: #f8f5f0;
-        border-radius: 15px;
-        padding: 2rem;
-        margin-bottom: 3rem;
-        border-left: 5px solid #8b7355;
-    }
-
-    .service-summary h3 {
-        color: #8b7355;
-        margin-bottom: 1rem;
-        font-size: 1.2rem;
-    }
-
-    .service-details h4 {
-        color: #333;
-        margin-bottom: 0.5rem;
-        font-size: 1.4rem;
-    }
-
-    .service-duration, .service-price {
-        color: #666;
-        margin-bottom: 0.25rem;
-        font-weight: 500;
-    }
-
-    .service-price {
-        color: #8b7355;
-        font-size: 1.1rem;
-        font-weight: bold;
-    }
-
-    .service-description {
-        color: #666;
-        margin-top: 1rem;
-        line-height: 1.6;
-    }
-
-    .temporary-notice {
-        text-align: center;
-        padding: 3rem 2rem;
-        background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
-        border-radius: 15px;
-        border: 2px solid #ffc107;
-    }
-
-    .temporary-notice h3 {
-        color: #856404;
-        margin-bottom: 1rem;
-        font-size: 1.5rem;
-    }
-
-    .temporary-notice p {
-        color: #856404;
-        margin-bottom: 2rem;
-        font-size: 1.1rem;
-        line-height: 1.6;
-    }
-
-    .contact-options {
-        display: flex;
+    .progress-bar {
         gap: 1rem;
-        justify-content: center;
-        margin-bottom: 2rem;
     }
 
-    .contact-options .btn {
-        padding: 1rem 2rem;
-        font-size: 1.1rem;
-        text-decoration: none;
-        border-radius: 50px;
-        transition: all 0.3s;
+    .step-label {
+        font-size: 0.8rem;
     }
 
-    .contact-options .btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        text-decoration: none;
+    .form-actions {
+        flex-direction: column;
     }
 
-    @media (max-width: 768px) {
-        .step-content {
-            padding: 2rem;
-        }
-
-        .contact-options {
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .contact-options .btn {
-            width: 200px;
-        }
+    .btn {
+        width: 100%;
+        padding: 1.2rem 2rem;
     }
+
+    .calendar-container {
+        padding: 1rem;
+    }
+
+    .time-slots-grid {
+        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    }
+}
 </style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// グローバル変数
+let currentDate = new Date();
+let selectedDate = null;
+let selectedTime = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Step 2 English page loaded successfully');
+    
+    // カレンダー初期化
+    generateCalendar();
+    
+    // ボタンイベント
+    document.getElementById('prevMonth').addEventListener('click', function() {
+        currentDate.setMonth(currentDate.getMonth() - 1);
+        generateCalendar();
+    });
+    
+    document.getElementById('nextMonth').addEventListener('click', function() {
+        currentDate.setMonth(currentDate.getMonth() + 1);
+        generateCalendar();
+    });
+});
+
+function generateCalendar() {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                       'July', 'August', 'September', 'October', 'November', 'December'];
+    
+    document.getElementById('currentMonth').textContent = `${monthNames[month]} ${year}`;
+    
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const startDate = new Date(firstDay);
+    startDate.setDate(startDate.getDate() - firstDay.getDay());
+    
+    const calendarDays = document.getElementById('calendarDays');
+    calendarDays.innerHTML = '';
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    for (let i = 0; i < 42; i++) {
+        const date = new Date(startDate);
+        date.setDate(startDate.getDate() + i);
+        
+        const dayElement = document.createElement('div');
+        dayElement.className = 'calendar-day';
+        dayElement.textContent = date.getDate();
+        
+        if (date.getMonth() !== month) {
+            dayElement.classList.add('other-month');
+        } else if (date < today) {
+            dayElement.classList.add('past');
+        } else if (date.getTime() === today.getTime()) {
+            dayElement.classList.add('today');
+        }
+        
+        // 選択可能な日付にクリックイベントを追加
+        if (!dayElement.classList.contains('other-month') && 
+            !dayElement.classList.contains('past')) {
+            dayElement.addEventListener('click', () => selectDate(date, dayElement));
+        }
+        
+        // 選択状態を復元
+        if (selectedDate && date.toDateString() === selectedDate.toDateString()) {
+            dayElement.classList.add('selected');
+        }
+        
+        calendarDays.appendChild(dayElement);
+    }
+}
+
+function selectDate(date, element) {
+    console.log('Date selected:', date);
+    
+    // 前の選択を解除
+    document.querySelectorAll('.calendar-day.selected').forEach(el => {
+        el.classList.remove('selected');
+    });
+    
+    // 新しい選択を設定
+    element.classList.add('selected');
+    selectedDate = date;
+    
+    // 隠しフィールドに設定
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    document.getElementById('bookingDate').value = `${year}-${month}-${day}`;
+    
+    // 時間選択をリセット
+    selectedTime = null;
+    const bookingTimeField = document.getElementById('bookingTime');
+    if (bookingTimeField) {
+        bookingTimeField.value = '';
+    }
+    
+    // 利用可能時間を読み込み
+    loadAvailableTimes(date);
+    
+    updateSubmitButton();
+}
+
+function loadAvailableTimes(date) {
+    const timeSlotsContainer = document.getElementById('timeSlotsContainer');
+    
+    // テスト用のモック時間スロット
+    const mockTimes = [];
+    for (let hour = 9; hour < 20; hour++) {
+        for (let minute = 0; minute < 60; minute += 30) {
+            mockTimes.push({
+                time: `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`,
+                available: true
+            });
+        }
+    }
+    
+    displayTimeSlots(mockTimes, date);
+}
+
+function displayTimeSlots(availableTimes, date) {
+    const timeSlotsContainer = document.getElementById('timeSlotsContainer');
+    
+    const timeSlotsGrid = document.createElement('div');
+    timeSlotsGrid.className = 'time-slots-grid';
+    
+    availableTimes.forEach(timeData => {
+        const timeSlot = document.createElement('div');
+        timeSlot.className = 'time-slot';
+        timeSlot.textContent = timeData.time;
+        
+        if (timeData.available) {
+            timeSlot.addEventListener('click', () => selectTime(timeData.time, timeSlot));
+        } else {
+            timeSlot.classList.add('unavailable');
+        }
+        
+        timeSlotsGrid.appendChild(timeSlot);
+    });
+    
+    timeSlotsContainer.innerHTML = '';
+    timeSlotsContainer.appendChild(timeSlotsGrid);
+}
+
+function selectTime(time, element) {
+    console.log('Time selected:', time);
+    
+    // 前の選択を解除
+    document.querySelectorAll('.time-slot.selected').forEach(el => {
+        el.classList.remove('selected');
+    });
+    
+    // 新しい選択を設定
+    element.classList.add('selected');
+    selectedTime = time;
+    
+    // 隠しフィールドに設定
+    const bookingTimeField = document.getElementById('bookingTime');
+    if (bookingTimeField) {
+        bookingTimeField.value = time;
+    }
+    
+    updateSubmitButton();
+}
+
+function updateSubmitButton() {
+    const submitBtn = document.getElementById('submitBtn');
+    if (submitBtn) {
+        submitBtn.disabled = !(selectedDate && selectedTime);
+    }
+}
+</script>
 {% endblock %}

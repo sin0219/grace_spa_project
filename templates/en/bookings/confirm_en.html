@@ -3,47 +3,417 @@
 {% block title %}{{ title }}{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="confirmation-content">
+<div class="booking-confirm-container">
+    <div class="container">
         <h1>Booking Confirmation</h1>
-        <div class="temporary-notice">
-            <h3>🚧 Under Construction</h3>
-            <p>The booking confirmation page is currently under development.</p>
-            <p><a href="{% url 'bookings:booking_step1_en' %}">← Back to Service Selection</a></p>
+        
+        <!-- Error Message Display Area -->
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        
+        <!-- Direct Error Display via validation_error -->
+        {% if validation_error %}
+            <div class="alert alert-danger">
+                <strong>Booking Error:</strong> {{ validation_error }}
+            </div>
+        {% endif %}
+
+        <div class="booking-details-card">
+            <div class="booking-summary">
+                <h2>Booking Details</h2>
+                
+                <div class="detail-section">
+                    <h3>Service Information</h3>
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <span class="label">Service Name:</span>
+                            <span class="value">{{ service.name_en }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="label">Price:</span>
+                            <span class="value price">¥{{ service.price|floatformat:0 }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="label">Treatment Duration:</span>
+                            <span class="value">{{ service.duration_minutes }} minutes</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <h3>Appointment Details</h3>
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <span class="label">Date & Time:</span>
+                            <span class="value">{{ booking_date|date:"F j, Y (D)" }} {{ booking_time }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="label">Therapist:</span>
+                            <span class="value">
+                                {% if therapist %}
+                                    {{ therapist.display_name_en }}
+                                {% else %}
+                                    No preference (Any available)
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <h3>Customer Information</h3>
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <span class="label">Full Name:</span>
+                            <span class="value">{{ customer_name }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="label">Email Address:</span>
+                            <span class="value">{{ customer_email }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="label">Phone Number:</span>
+                            <span class="value">{{ customer_phone }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                {% if notes %}
+                <div class="detail-section">
+                    <h3>Special Requests / Notes</h3>
+                    <div class="notes-content">
+                        {{ notes|linebreaks }}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="important-notice">
+                <h3>Important Information</h3>
+                <ul>
+                    <li>Your booking is not yet confirmed. Our staff will review and contact you with confirmation</li>
+                    <li>Please arrive 10 minutes before your appointment time</li>
+                    <li>Same-day cancellations incur a 100% cancellation fee</li>
+                </ul>
+            </div>
+
+            <form method="post" class="confirm-form">
+                {% csrf_token %}
+                <div class="form-actions">
+                    <a href="{% url 'bookings:booking_step3_en' %}" class="btn btn-secondary">Back to Edit</a>
+                    {% if not validation_error %}
+                        <button type="submit" class="btn btn-primary btn-large">Submit Booking Request</button>
+                    {% else %}
+                        <button type="button" class="btn btn-primary btn-large" disabled>
+                            Cannot book due to time conflict
+                        </button>
+                        <a href="{% url 'bookings:booking_step2_en' %}" class="btn btn-warning">Change Date/Time</a>
+                    {% endif %}
+                </div>
+            </form>
         </div>
     </div>
 </div>
 
 <style>
-    .confirmation-content {
-        background: white;
-        padding: 3rem;
-        border-radius: 15px;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        text-align: center;
-        margin: 2rem 0;
-    }
+.booking-confirm-container {
+    padding: 2rem 0;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e3f2fd 100%);
+    min-height: calc(100vh - 200px);
+}
 
-    .confirmation-content h1 {
-        color: #8b7355;
-        margin-bottom: 2rem;
-    }
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 1rem;
+}
 
-    .temporary-notice {
-        padding: 2rem;
-        background: #fff3cd;
-        border-radius: 10px;
-        border: 2px solid #ffc107;
-    }
+h1 {
+    text-align: center;
+    color: #2c3e50;
+    margin-bottom: 2rem;
+    font-size: 2rem;
+    font-weight: 300;
+}
 
-    .temporary-notice h3 {
-        color: #856404;
-        margin-bottom: 1rem;
-    }
+.messages {
+    margin-bottom: 1.5rem;
+}
 
-    .temporary-notice p {
-        color: #856404;
-        margin: 1rem 0;
+.alert {
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    border: 1px solid transparent;
+}
+
+.alert-success {
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+    color: #155724;
+}
+
+.alert-danger {
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+    color: #721c24;
+}
+
+.alert-warning {
+    background-color: #fff3cd;
+    border-color: #ffeaa7;
+    color: #856404;
+}
+
+.alert-info {
+    background-color: #d1ecf1;
+    border-color: #bee5eb;
+    color: #0c5460;
+}
+
+.booking-details-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    margin-bottom: 2rem;
+}
+
+.booking-summary {
+    padding: 2rem;
+}
+
+.booking-summary h2 {
+    color: #2c3e50;
+    margin-bottom: 1.5rem;
+    font-size: 1.5rem;
+    border-bottom: 2px solid #3498db;
+    padding-bottom: 0.5rem;
+}
+
+.detail-section {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid #3498db;
+}
+
+.detail-section h3 {
+    color: #34495e;
+    margin-bottom: 1rem;
+    font-size: 1.2rem;
+    font-weight: 500;
+}
+
+.detail-grid {
+    display: grid;
+    gap: 1rem;
+}
+
+.detail-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    background: white;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
+}
+
+.detail-item .label {
+    font-weight: 600;
+    color: #495057;
+    min-width: 140px;
+}
+
+.detail-item .value {
+    color: #2c3e50;
+    font-weight: 500;
+    text-align: right;
+}
+
+.detail-item .value.price {
+    color: #e74c3c;
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.notes-content {
+    background: white;
+    padding: 1rem;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
+    color: #495057;
+    line-height: 1.6;
+}
+
+.important-notice {
+    background: #fff3cd;
+    padding: 1.5rem;
+    border-top: 1px solid #ffeaa7;
+}
+
+.important-notice h3 {
+    color: #856404;
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+}
+
+.important-notice h3:before {
+    content: "⚠️";
+    margin-right: 0.5rem;
+}
+
+.important-notice ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.important-notice li {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #ffeaa7;
+    color: #856404;
+}
+
+.important-notice li:last-child {
+    border-bottom: none;
+}
+
+.important-notice li:before {
+    content: "•";
+    color: #f39c12;
+    margin-right: 0.5rem;
+    font-weight: bold;
+}
+
+.confirm-form {
+    padding: 2rem;
+    background: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.btn {
+    padding: 0.75rem 2rem;
+    border: none;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-block;
+    text-align: center;
+    min-width: 160px;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: linear-gradient(135deg, #2980b9, #1abc9c);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+}
+
+.btn-primary:disabled {
+    background: #95a5a6;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.btn-secondary {
+    background: #95a5a6;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #7f8c8d;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(149, 165, 166, 0.3);
+    text-decoration: none;
+}
+
+.btn-warning {
+    background: linear-gradient(135deg, #f39c12, #e67e22);
+    color: white;
+}
+
+.btn-warning:hover {
+    background: linear-gradient(135deg, #e67e22, #d35400);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(243, 156, 18, 0.3);
+    text-decoration: none;
+}
+
+.btn-large {
+    padding: 1rem 2.5rem;
+    font-size: 1.1rem;
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 0 0.5rem;
     }
+    
+    h1 {
+        font-size: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .booking-summary {
+        padding: 1.5rem;
+    }
+    
+    .detail-section {
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .detail-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .detail-item .label {
+        min-width: auto;
+    }
+    
+    .detail-item .value {
+        text-align: left;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .btn {
+        width: 100%;
+        min-width: auto;
+    }
+}
 </style>
 {% endblock %}

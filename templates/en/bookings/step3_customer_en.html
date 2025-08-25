@@ -5,95 +5,623 @@
 {% block content %}
 <div class="booking-steps-container">
     <div class="container">
+        <!-- Progress Bar -->
+        <div class="progress-container">
+            <div class="progress-bar">
+                <div class="step completed">
+                    <div class="step-number">✓</div>
+                    <div class="step-label">Service Selection</div>
+                </div>
+                <div class="step completed">
+                    <div class="step-number">✓</div>
+                    <div class="step-label">Date & Time</div>
+                </div>
+                <div class="step active">
+                    <div class="step-number">3</div>
+                    <div class="step-label">Customer Info</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 3: Customer Information -->
         <div class="step-content">
             <h1>Step 3: Customer Information</h1>
             
-            <div class="temporary-notice">
-                <h3>🚧 Under Construction</h3>
-                <p>The customer information form is currently under development.</p>
-                <p>Please contact us directly to complete your booking.</p>
-                <div class="contact-options">
-                    <a href="tel:011-123-4567" class="btn btn-primary">📞 Call Now</a>
-                    <a href="mailto:info@gracespa.com" class="btn btn-secondary">📧 Email</a>
+            <!-- Booking Summary -->
+            <div class="booking-summary">
+                <h3>Booking Summary</h3>
+                <div class="summary-grid">
+                    <div class="summary-item">
+                        <span class="label">Service:</span>
+                        <span class="value">{{ service.name_en }}</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="label">Therapist:</span>
+                        <span class="value">
+                            {% if therapist %}
+                                {{ therapist.display_name_en }}
+                            {% else %}
+                                No preference (Any available)
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="label">Date & Time:</span>
+                        <span class="value">{{ booking_date|date:"F j, Y (D)" }} {{ booking_time }}</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="label">Price:</span>
+                        <span class="value price">¥{{ service.price|floatformat:0 }}</span>
+                    </div>
                 </div>
-                <p style="margin-top: 2rem;">
-                    <a href="{% url 'bookings:booking_step1_en' %}">← Back to Service Selection</a>
-                </p>
             </div>
+
+            <form method="post" class="customer-form">
+                {% csrf_token %}
+                
+                {% if form.errors %}
+                    <div class="alert alert-error">
+                        {% for field, errors in form.errors.items %}
+                            {% for error in errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <div class="form-section">
+                    <h3>Customer Information</h3>
+                    
+                    <div class="form-group">
+                        <label for="{{ form.customer_name.id_for_label }}">Full Name</label>
+                        {{ form.customer_name }}
+                        {% if form.customer_name.errors %}
+                            <div class="field-error">{{ form.customer_name.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="{{ form.customer_email.id_for_label }}">Email Address</label>
+                            {{ form.customer_email }}
+                            <small class="form-help">We will send you a booking confirmation email</small>
+                            {% if form.customer_email.errors %}
+                                <div class="field-error">{{ form.customer_email.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="{{ form.customer_phone.id_for_label }}">Phone Number</label>
+                            {{ form.customer_phone }}
+                            <small class="form-help">Used for emergency contact purposes</small>
+                            {% if form.customer_phone.errors %}
+                                <div class="field-error">{{ form.customer_phone.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Gender Selection -->
+                    <div class="form-group">
+                        <label>Gender</label>
+                        <div class="radio-group">
+                            {% for choice in form.gender %}
+                                <div class="radio-item">
+                                    {{ choice.tag }}
+                                    <label for="{{ choice.id_for_label }}">
+                                        {% if choice.choice_value == 'male' %}
+                                            Male
+                                        {% elif choice.choice_value == 'female' %}
+                                            Female
+                                        {% else %}
+                                            {{ choice.choice_label }}
+                                        {% endif %}
+                                    </label>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        {% if form.gender.errors %}
+                            <div class="field-error">{{ form.gender.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- First Visit Confirmation -->
+                    <div class="form-group">
+                        <div class="checkbox-item">
+                            {{ form.is_first_visit }}
+                            <label for="{{ form.is_first_visit.id_for_label }}">Is this your first visit to our salon?</label>
+                        </div>
+                        {% if form.is_first_visit.errors %}
+                            <div class="field-error">{{ form.is_first_visit.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Important Terms and Conditions -->
+                <div class="terms-section">
+                    <h3>Important Information</h3>
+                    <div class="terms-box">
+                        <h4>Terms & Conditions - Important Notice</h4>
+                        
+                        <div class="terms-content">
+                            <p><strong>※ We cannot provide services to customers who fall under any of the following categories:</strong></p>
+                            <ul class="prohibition-list">
+                                <li>◆ Customers who engage in or request sexual acts or inappropriate services</li>
+                                <li>◆ Customers with severe athlete's foot, skin infections, or contagious conditions</li>
+                                <li>◆ Pregnant customers</li>
+                                <li>◆ Customers who are intoxicated</li>
+                                <li>◆ Customers with fever, cough, or other symptoms indicating illness</li>
+                            </ul>
+                            
+                            <p><strong>※ Same-day cancellations will incur a 100% cancellation fee.</strong></p>
+                        </div>
+                        
+                        <div class="form-group">
+                            <div class="checkbox-item terms-check">
+                                {{ form.terms_confirmed }}
+                                <label for="{{ form.terms_confirmed.id_for_label }}">
+                                    <strong>I have read and agree to the above terms and conditions</strong>
+                                </label>
+                            </div>
+                            {% if form.terms_confirmed.errors %}
+                                <div class="field-error">{{ form.terms_confirmed.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notes Section -->
+                <div class="form-section">
+                    <h3>Additional Notes / Special Requests (Optional)</h3>
+                    {{ form.notes }}
+                </div>
+
+                <!-- Form Actions -->
+                <div class="form-actions">
+                    <a href="{% url 'bookings:booking_step2_en' %}" class="btn btn-secondary">Back</a>
+                    <button type="submit" class="btn btn-primary">Confirm Booking</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
+{% endblock %}
 
+{% block extra_css %}
 <style>
     .booking-steps-container {
-        min-height: calc(100vh - 120px);
-        background: linear-gradient(135deg, #faf8f5 0%, #f0ebe3 100%);
         padding: 2rem 0;
+        background: linear-gradient(135deg, #f8f5f0 0%, #fff 100%);
+        min-height: 100vh;
     }
 
+    /* Progress Bar */
+    .progress-container {
+        margin-bottom: 3rem;
+    }
+
+    .progress-bar {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 2rem;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        position: relative;
+    }
+
+    .step:not(:last-child)::after {
+        content: '';
+        position: absolute;
+        top: 20px;
+        left: 100%;
+        width: 2rem;
+        height: 2px;
+        background: #ddd;
+        z-index: 1;
+    }
+
+    .step.completed:not(:last-child)::after,
+    .step.active:not(:last-child)::after {
+        background: #8b7355;
+    }
+
+    .step-number {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #ddd;
+        color: #666;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        z-index: 2;
+        position: relative;
+    }
+
+    .step.completed .step-number {
+        background: #8b7355;
+        color: white;
+    }
+
+    .step.active .step-number {
+        background: #8b7355;
+        color: white;
+        box-shadow: 0 0 0 3px rgba(139, 115, 85, 0.3);
+    }
+
+    .step-label {
+        font-size: 0.9rem;
+        color: #666;
+        text-align: center;
+    }
+
+    .step.active .step-label,
+    .step.completed .step-label {
+        color: #8b7355;
+        font-weight: bold;
+    }
+
+    /* Main Content */
     .step-content {
         background: white;
         padding: 3rem;
         border-radius: 15px;
         box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        text-align: center;
     }
 
     .step-content h1 {
         color: #8b7355;
+        text-align: center;
         margin-bottom: 2rem;
         font-size: 2rem;
     }
 
-    .temporary-notice {
-        padding: 3rem 2rem;
-        background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
-        border-radius: 15px;
-        border: 2px solid #ffc107;
+    /* Booking Summary */
+    .booking-summary {
+        background: #f8f5f0;
+        padding: 2rem;
+        border-radius: 10px;
+        margin-bottom: 3rem;
+        border-left: 4px solid #8b7355;
     }
 
-    .temporary-notice h3 {
-        color: #856404;
-        margin-bottom: 1rem;
-        font-size: 1.5rem;
+    .booking-summary h3 {
+        color: #8b7355;
+        margin-bottom: 1.5rem;
+        font-size: 1.3rem;
     }
 
-    .temporary-notice p {
-        color: #856404;
-        margin-bottom: 1rem;
-        font-size: 1.1rem;
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+    }
+
+    .summary-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.8rem;
+        background: white;
+        border-radius: 8px;
+    }
+
+    .summary-item .label {
+        font-weight: bold;
+        color: #666;
+    }
+
+    .summary-item .value {
+        font-weight: bold;
+        color: #333;
+    }
+
+    .summary-item .value.price {
+        font-size: 1.2rem;
+        color: #8b7355;
+    }
+
+    /* Form Sections */
+    .form-section {
+        margin-bottom: 3rem;
+    }
+
+    .form-section h3 {
+        color: #8b7355;
+        margin-bottom: 1.5rem;
+        border-bottom: 2px solid #f4e4bc;
+        padding-bottom: 0.5rem;
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+        display: block;
+        font-weight: bold;
+        color: #555;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 1rem;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: border-color 0.3s;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #8b7355;
+        box-shadow: 0 0 5px rgba(139, 115, 85, 0.3);
+    }
+
+    .form-help {
+        display: block;
+        font-size: 0.9rem;
+        color: #666;
+        margin-top: 0.5rem;
+    }
+
+    .field-error {
+        color: #dc3545;
+        font-size: 0.9rem;
+        margin-top: 0.5rem;
+    }
+
+    /* Radio Buttons and Checkboxes */
+    .radio-group {
+        display: flex;
+        gap: 2rem;
+        margin-top: 0.5rem;
+    }
+
+    .radio-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .checkbox-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.8rem;
+        margin-top: 0.5rem;
+    }
+
+    .checkbox-item input[type="checkbox"],
+    .radio-item input[type="radio"] {
+        width: auto;
+        margin: 0;
+        transform: scale(1.2);
+    }
+
+    .checkbox-item label,
+    .radio-item label {
+        margin-bottom: 0;
+        cursor: pointer;
+        font-weight: normal;
+    }
+
+    /* Terms and Conditions */
+    .terms-section {
+        margin-bottom: 3rem;
+    }
+
+    .terms-section h3 {
+        color: #dc3545;
+        margin-bottom: 1.5rem;
+        border-bottom: 2px solid #dc3545;
+        padding-bottom: 0.5rem;
+    }
+
+    .terms-box {
+        background: #fff5f5;
+        border: 2px solid #dc3545;
+        border-radius: 10px;
+        padding: 2rem;
+    }
+
+    .terms-box h4 {
+        color: #dc3545;
+        margin-bottom: 1.5rem;
+        font-size: 1.2rem;
+        text-align: center;
+    }
+
+    .terms-content {
+        margin-bottom: 2rem;
         line-height: 1.6;
     }
 
-    .contact-options {
-        display: flex;
-        gap: 1rem;
-        justify-content: center;
-        margin: 2rem 0;
+    .terms-content p {
+        margin-bottom: 1rem;
+        color: #333;
     }
 
-    .contact-options .btn {
-        padding: 1rem 2rem;
+    .prohibition-list {
+        margin: 1rem 0;
+        padding-left: 1rem;
+        color: #333;
+    }
+
+    .prohibition-list li {
+        margin-bottom: 0.5rem;
+        line-height: 1.5;
+    }
+
+    .terms-check {
+        border-top: 2px solid #dee2e6;
+        padding-top: 1.5rem;
+        margin-top: 1.5rem;
+    }
+
+    .terms-check label {
         font-size: 1.1rem;
-        text-decoration: none;
+        line-height: 1.4;
+    }
+
+    /* Notes Section */
+    .form-section textarea {
+        width: 100%;
+        min-height: 120px;
+        padding: 1rem;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        resize: vertical;
+        font-family: inherit;
+        font-size: 1rem;
+        transition: border-color 0.3s;
+    }
+
+    .form-section textarea:focus {
+        outline: none;
+        border-color: #8b7355;
+        box-shadow: 0 0 5px rgba(139, 115, 85, 0.3);
+    }
+
+    /* Form Actions */
+    .form-actions {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-top: 2rem;
+    }
+
+    .btn {
+        padding: 1rem 3rem;
+        border: none;
         border-radius: 50px;
+        font-weight: bold;
+        cursor: pointer;
         transition: all 0.3s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
     }
 
-    .contact-options .btn:hover {
+    .btn-primary {
+        background: #8b7355;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: #a68b5b;
         transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        box-shadow: 0 5px 15px rgba(139, 115, 85, 0.4);
+    }
+
+    .btn-secondary {
+        background: transparent;
+        color: #8b7355;
+        border: 2px solid #8b7355;
+    }
+
+    .btn-secondary:hover {
+        background: #8b7355;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(139, 115, 85, 0.3);
         text-decoration: none;
     }
 
+    /* Alert Messages */
+    .alert {
+        padding: 1rem 1.5rem;
+        border-radius: 10px;
+        margin-bottom: 2rem;
+    }
+
+    .alert-error {
+        background: #f8d7da;
+        color: #721c24;
+        border: 2px solid #f5c6cb;
+    }
+
+    /* Responsive Design */
     @media (max-width: 768px) {
-        .contact-options {
-            flex-direction: column;
-            align-items: center;
+        .step-content {
+            padding: 2rem;
+        }
+        
+        .step-content h1 {
+            font-size: 1.8rem;
         }
 
-        .contact-options .btn {
-            width: 200px;
+        .progress-bar {
+            gap: 1rem;
+        }
+
+        .step-label {
+            font-size: 0.8rem;
+        }
+
+        .summary-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+
+        .form-actions {
+            flex-direction: column;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 1.2rem 2rem;
+        }
+
+        .radio-group {
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .terms-box {
+            padding: 1.5rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .booking-steps-container {
+            padding: 1rem 0;
+        }
+
+        .progress-bar {
+            gap: 0.5rem;
+        }
+
+        .step-number {
+            width: 35px;
+            height: 35px;
+        }
+
+        .step:not(:last-child)::after {
+            width: 1rem;
+        }
+
+        .step-content {
+            padding: 1.5rem;
         }
     }
 </style>

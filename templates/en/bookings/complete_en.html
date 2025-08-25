@@ -3,47 +3,426 @@
 {% block title %}{{ title }}{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="completion-content">
-        <h1>Booking Complete</h1>
-        <div class="temporary-notice">
-            <h3>🚧 Under Construction</h3>
-            <p>The booking completion page is currently under development.</p>
-            <p><a href="{% url 'website:home_en' %}">← Back to Home</a></p>
+<div class="complete-container">
+    <div class="container">
+        <div class="complete-card">
+            <div class="success-animation">
+                <div class="success-icon">
+                    <div class="success-circle">
+                        <div class="success-checkmark">✓</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="complete-content">
+                <h1>Booking Request Submitted!</h1>
+                <p class="complete-message">
+                    Thank you!<br>
+                    We have received your booking request.
+                </p>
+
+                <div class="next-steps">
+                    <h2>What Happens Next</h2>
+                    <div class="steps-timeline">
+                        <div class="timeline-step">
+                            <div class="step-icon">📧</div>
+                            <div class="step-content">
+                                <h3>1. Confirmation Email Sent</h3>
+                                <p>We will send you a confirmation email with your booking details within a few minutes</p>
+                            </div>
+                        </div>
+                        <div class="timeline-step">
+                            <div class="step-icon">👀</div>
+                            <div class="step-content">
+                                <h3>2. Staff Review</h3>
+                                <p>Our staff will review your booking request</p>
+                            </div>
+                        </div>
+                        <div class="timeline-step">
+                            <div class="step-icon">✅</div>
+                            <div class="step-content">
+                                <h3>3. Booking Confirmation</h3>
+                                <p>Once confirmed, we will contact you with the final booking confirmation</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="important-reminders">
+                    <h2>Important Reminders for Your Visit</h2>
+                    <div class="reminder-cards">
+                        <div class="reminder-card">
+                            <div class="reminder-icon">🕐</div>
+                            <h3>Arrival Time</h3>
+                            <p>Please do not arrive more than 5 minutes early as we do not have a waiting area</p>
+                        </div>
+                        <div class="reminder-card">
+                            <div class="reminder-icon">⚠️</div>
+                            <h3>Late Arrivals</h3>
+                            <p>Arriving more than 10 minutes late may result in unavailability of foot bath services</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="contact-info">
+                    <h2>Contact Us - Inquiries, Changes & Cancellations</h2>
+                    <p>If you have any questions, please don't hesitate to contact us.</p>
+                    <div class="contact-details">
+                        <div class="contact-item">
+                            <span class="contact-label">Phone:</span>
+                            <span class="contact-value">080-4158-1586</span>
+                        </div>
+                        <div class="contact-item">
+                            <span class="contact-label">Email:</span>
+                            <span class="contact-value">info@gracespa.com</span>
+                        </div>
+                        <div class="contact-item">
+                            <span class="contact-label">Business Hours:</span>
+                            <span class="contact-value">12:00-20:00 (Irregular holidays)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="actions">
+                    <a href="{% url 'website:home_en' %}" class="btn btn-primary">Return to Home</a>
+                    <a href="{% url 'bookings:booking_step1_en' %}" class="btn btn-secondary">Make Another Booking</a>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
 <style>
-    .completion-content {
-        background: white;
-        padding: 3rem;
-        border-radius: 15px;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        text-align: center;
-        margin: 2rem 0;
+    .complete-container {
+        padding: 2rem 0;
+        min-height: 90vh;
+        background: linear-gradient(135deg, #faf8f5 0%, #f0ebe3 100%);
+        display: flex;
+        align-items: center;
     }
 
-    .completion-content h1 {
-        color: #8b7355;
+    .complete-card {
+        background: white;
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 3rem;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+        text-align: center;
+    }
+
+    /* Success Animation */
+    .success-animation {
         margin-bottom: 2rem;
     }
 
-    .temporary-notice {
-        padding: 2rem;
-        background: #d4edda;
-        border-radius: 10px;
-        border: 2px solid #28a745;
+    .success-icon {
+        display: inline-block;
+        animation: bounceIn 0.8s ease-out;
     }
 
-    .temporary-notice h3 {
-        color: #155724;
+    .success-circle {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+        box-shadow: 0 10px 30px rgba(40, 167, 69, 0.3);
+    }
+
+    .success-checkmark {
+        font-size: 4rem;
+        color: white;
+        font-weight: bold;
+        animation: checkmarkAppear 0.5s ease-out 0.3s both;
+    }
+
+    @keyframes bounceIn {
+        0% {
+            transform: scale(0);
+            opacity: 0;
+        }
+        50% {
+            transform: scale(1.1);
+        }
+        100% {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+
+    @keyframes checkmarkAppear {
+        0% {
+            transform: scale(0);
+            opacity: 0;
+        }
+        100% {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+
+    /* Main Content */
+    .complete-content h1 {
+        color: #8b7355;
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+        animation: fadeInUp 0.6s ease-out 0.2s both;
+    }
+
+    .complete-message {
+        font-size: 1.3rem;
+        color: #666;
+        margin-bottom: 3rem;
+        line-height: 1.6;
+        animation: fadeInUp 0.6s ease-out 0.4s both;
+    }
+
+    @keyframes fadeInUp {
+        0% {
+            transform: translateY(30px);
+            opacity: 0;
+        }
+        100% {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    /* Timeline */
+    .next-steps {
+        margin-bottom: 3rem;
+        text-align: left;
+    }
+
+    .next-steps h2 {
+        color: #8b7355;
+        text-align: center;
+        margin-bottom: 2rem;
+        font-size: 1.8rem;
+    }
+
+    .steps-timeline {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .timeline-step {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        padding: 1.5rem;
+        background: #f8f5f0;
+        border-radius: 15px;
+        border-left: 4px solid #8b7355;
+        transition: transform 0.3s;
+    }
+
+    .timeline-step:hover {
+        transform: translateX(5px);
+    }
+
+    .step-icon {
+        font-size: 2.5rem;
+        min-width: 60px;
+        text-align: center;
+    }
+
+    .step-content h3 {
+        color: #8b7355;
+        margin-bottom: 0.5rem;
+        font-size: 1.2rem;
+    }
+
+    .step-content p {
+        color: #666;
+        margin: 0;
+        line-height: 1.5;
+    }
+
+    /* Reminder Cards */
+    .important-reminders {
+        margin-bottom: 3rem;
+    }
+
+    .important-reminders h2 {
+        color: #8b7355;
+        text-align: center;
+        margin-bottom: 2rem;
+        font-size: 1.8rem;
+    }
+
+    .reminder-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .reminder-card {
+        background: #fff3cd;
+        border: 2px solid #ffc107;
+        border-radius: 15px;
+        padding: 2rem;
+        text-align: center;
+        transition: transform 0.3s;
+    }
+
+    .reminder-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .reminder-icon {
+        font-size: 3rem;
         margin-bottom: 1rem;
     }
 
-    .temporary-notice p {
-        color: #155724;
-        margin: 1rem 0;
+    .reminder-card h3 {
+        color: #856404;
+        margin-bottom: 1rem;
+        font-size: 1.1rem;
+    }
+
+    .reminder-card p {
+        color: #856404;
+        margin: 0;
+        line-height: 1.5;
+    }
+
+    /* Contact Information */
+    .contact-info {
+        margin-bottom: 3rem;
+        padding: 2rem;
+        background: #e8f4f8;
+        border-radius: 15px;
+        border: 2px solid #17a2b8;
+    }
+
+    .contact-info h2 {
+        color: #0c5460;
+        margin-bottom: 1rem;
+        font-size: 1.5rem;
+    }
+
+    .contact-info p {
+        color: #0c5460;
+        margin-bottom: 1.5rem;
+    }
+
+    .contact-details {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+    }
+
+    .contact-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        background: white;
+        border-radius: 8px;
+    }
+
+    .contact-label {
+        font-weight: bold;
+        color: #0c5460;
+    }
+
+    .contact-value {
+        color: #0c5460;
+    }
+
+    /* Action Buttons */
+    .actions {
+        display: flex;
+        justify-content: center;
+        gap: 1.5rem;
+        margin-top: 3rem;
+    }
+
+    .btn {
+        padding: 1rem 2.5rem;
+        border: none;
+        border-radius: 50px;
+        font-size: 1.1rem;
+        text-decoration: none;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: inline-block;
+        font-weight: bold;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #8b7355 0%, #a68b5b 100%);
+        color: white;
+    }
+
+    .btn-secondary {
+        background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+        color: white;
+    }
+
+    .btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        text-decoration: none;
+        color: white;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .complete-card {
+            padding: 2rem 1rem;
+            margin: 1rem;
+        }
+
+        .complete-content h1 {
+            font-size: 2rem;
+        }
+
+        .complete-message {
+            font-size: 1.1rem;
+        }
+
+        .success-circle {
+            width: 100px;
+            height: 100px;
+        }
+
+        .success-checkmark {
+            font-size: 3rem;
+        }
+
+        .timeline-step {
+            flex-direction: column;
+            text-align: center;
+        }
+
+        .reminder-cards {
+            grid-template-columns: 1fr;
+        }
+
+        .contact-details {
+            grid-template-columns: 1fr;
+        }
+
+        .contact-item {
+            flex-direction: column;
+            gap: 0.5rem;
+            text-align: center;
+        }
+
+        .actions {
+            flex-direction: column;
+        }
+
+        .btn {
+            width: 100%;
+        }
     }
 </style>
 {% endblock %}
